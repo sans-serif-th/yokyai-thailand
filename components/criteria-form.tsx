@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
+import { BackHeader } from './back-header'
 import { OriginFields } from './origin-fields'
 import { DestinationFields, type DestinationDraft } from './destination-fields'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
@@ -140,10 +141,8 @@ export function CriteriaForm({ teacher, initialDestinations, onSave }: CriteriaF
 
   return (
     <div className="flex flex-col gap-5 max-w-lg mx-auto p-4">
-      <h1 className="text-xl font-semibold">ตั้งค่า</h1>
-      <p className="text-sm text-zinc-600">
-        แก้ไขข้อมูลที่ใช้ในการจับคู่ — การบันทึกจะรีเฟรชผลการจับคู่ให้ทันที
-      </p>
+      <BackHeader title="แก้ไขข้อมูลการจับคู่" href="/criteria" />
+      <p className="text-sm text-zinc-600">การบันทึกจะรีเฟรชผลการจับคู่ให้ทันที</p>
 
       <OriginFields
         position={position}
