@@ -27,10 +27,6 @@ function Row({ label, value }: { label: string; value: string }) {
 export function CriteriaSummary({ teacher, destinations }: CriteriaSummaryProps) {
   const [tab, setTab] = useState<OriginDestinationTab>('origin')
 
-  const origin = [teacher.origin_province, teacher.origin_zone, teacher.origin_district]
-    .filter(Boolean)
-    .join(' ')
-
   return (
     <div className="flex flex-col gap-5 max-w-lg mx-auto p-4">
       <h1 className="text-xl font-semibold">ตั้งค่าการค้นหา</h1>
@@ -44,7 +40,9 @@ export function CriteriaSummary({ teacher, destinations }: CriteriaSummaryProps)
         <div className="flex flex-col">
           <Row label="ตำแหน่ง" value={positionLabel(teacher.position)} />
           <Row label="หน่วยงานต้นสังกัด" value={serviceTypeAbbr(teacher.service_type)} />
-          <Row label="อำเภอ - จังหวัด" value={origin} />
+          <Row label="จังหวัด" value={teacher.origin_province} />
+          {teacher.origin_district && <Row label="อำเภอ (ไม่บังคับ)" value={teacher.origin_district} />}
+          {teacher.origin_zone && <Row label="เขตพื้นที่ (ไม่บังคับ)" value={teacher.origin_zone} />}
           {teacher.current_school && <Row label="โรงเรียนปัจจุบัน" value={teacher.current_school} />}
           {teacher.teaching_group && (
             <Row

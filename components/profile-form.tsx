@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { POSITIONS, requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
-import { OriginFields } from './origin-fields'
+import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
 import { DestinationFields, findDuplicateProvince, type DestinationDraft } from './destination-fields'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
@@ -56,7 +56,9 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
   const [originZone, setOriginZone] = useState(initialTeacher?.origin_zone ?? '')
   const [currentSchool, setCurrentSchool] = useState(initialTeacher?.current_school ?? '')
   const [teachingGroup, setTeachingGroup] = useState(initialTeacher?.teaching_group ?? '')
-  const [subject, setSubject] = useState(initialTeacher?.subject ?? '')
+  const [subjects, setSubjects] = useState<string[]>(() =>
+    splitSubjects(initialTeacher?.subject ?? null)
+  )
   const [transferRound, setTransferRound] = useState<number | ''>(
     initialTeacher?.transfer_round ?? ''
   )
@@ -90,8 +92,20 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
     setPosition(value as PositionCode | '')
     if (!requiresTeachingGroup(value)) {
       setTeachingGroup('')
-      setSubject('')
+      setSubjects([''])
     }
+  }
+
+  function updateSubject(index: number, value: string) {
+    setSubjects((prev) => prev.map((s, i) => (i === index ? value : s)))
+  }
+
+  function addSubject() {
+    setSubjects((prev) => [...prev, ''])
+  }
+
+  function removeSubject(index: number) {
+    setSubjects((prev) => prev.filter((_, i) => i !== index))
   }
 
   function handleSelectCategory(value: PositionCode) {
@@ -197,7 +211,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
         originZone: originZone.trim() || null,
         currentSchool: currentSchool.trim() || null,
         teachingGroup: isTeacher ? teachingGroup : null,
-        subject: isTeacher ? subject.trim() || null : null,
+        subject: isTeacher ? joinSubjects(subjects) : null,
         benefitNote: benefitNote.trim() || null,
         transferRound: transferRound || null,
         destinations: validDestinations.map((d) => ({
@@ -262,8 +276,10 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
           onCurrentSchoolChange={setCurrentSchool}
           teachingGroup={teachingGroup}
           onTeachingGroupChange={setTeachingGroup}
-          subject={subject}
-          onSubjectChange={setSubject}
+          subjects={subjects}
+          onUpdateSubject={updateSubject}
+          onAddSubject={addSubject}
+          onRemoveSubject={removeSubject}
           transferRound={transferRound}
           onTransferRoundChange={setTransferRound}
           transferYearOptions={transferYearOptions}

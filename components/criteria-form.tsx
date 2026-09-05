@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
 import { BackHeader } from './back-header'
-import { OriginFields } from './origin-fields'
+import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
 import { DestinationFields, findDuplicateProvince, type DestinationDraft } from './destination-fields'
 import { OriginDestinationTabs, type OriginDestinationTab } from './origin-destination-tabs'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
@@ -33,7 +33,7 @@ export function CriteriaForm({ teacher, initialDestinations, onSave }: CriteriaF
   const [originZone, setOriginZone] = useState(teacher.origin_zone ?? '')
   const [currentSchool, setCurrentSchool] = useState(teacher.current_school ?? '')
   const [teachingGroup, setTeachingGroup] = useState(teacher.teaching_group ?? '')
-  const [subject, setSubject] = useState(teacher.subject ?? '')
+  const [subjects, setSubjects] = useState<string[]>(() => splitSubjects(teacher.subject))
   const [transferRound, setTransferRound] = useState<number | ''>(teacher.transfer_round ?? '')
   const [benefitNote, setBenefitNote] = useState(teacher.benefit_note ?? '')
   const [transferYearOptions] = useState<number[]>(() => upcomingTransferYears())
@@ -56,8 +56,20 @@ export function CriteriaForm({ teacher, initialDestinations, onSave }: CriteriaF
     setPosition(value as PositionCode | '')
     if (!requiresTeachingGroup(value)) {
       setTeachingGroup('')
-      setSubject('')
+      setSubjects([''])
     }
+  }
+
+  function updateSubject(index: number, value: string) {
+    setSubjects((prev) => prev.map((s, i) => (i === index ? value : s)))
+  }
+
+  function addSubject() {
+    setSubjects((prev) => [...prev, ''])
+  }
+
+  function removeSubject(index: number) {
+    setSubjects((prev) => prev.filter((_, i) => i !== index))
   }
 
   function handleServiceTypeChange(value: string) {
@@ -129,7 +141,7 @@ export function CriteriaForm({ teacher, initialDestinations, onSave }: CriteriaF
         originZone: originZone.trim() || null,
         currentSchool: currentSchool.trim() || null,
         teachingGroup: isTeacher ? teachingGroup : null,
-        subject: isTeacher ? subject.trim() || null : null,
+        subject: isTeacher ? joinSubjects(subjects) : null,
         benefitNote: benefitNote.trim() || null,
         transferRound: transferRound || null,
         destinations: validDestinations.map((d) => ({
@@ -167,8 +179,10 @@ export function CriteriaForm({ teacher, initialDestinations, onSave }: CriteriaF
           onCurrentSchoolChange={setCurrentSchool}
           teachingGroup={teachingGroup}
           onTeachingGroupChange={setTeachingGroup}
-          subject={subject}
-          onSubjectChange={setSubject}
+          subjects={subjects}
+          onUpdateSubject={updateSubject}
+          onAddSubject={addSubject}
+          onRemoveSubject={removeSubject}
           transferRound={transferRound}
           onTransferRoundChange={setTransferRound}
           transferYearOptions={transferYearOptions}

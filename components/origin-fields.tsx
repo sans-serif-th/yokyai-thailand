@@ -9,6 +9,18 @@ import { hasZoneOptions, zonesFor } from '@/lib/education-zones'
 
 export const BENEFIT_NOTE_MAX_LENGTH = 500
 
+// วิชาเอก is stored as a single comma-separated column, but edited as one
+// input per subject (teachers commonly hold more than one เอก).
+export function splitSubjects(subject: string | null): string[] {
+  if (!subject) return ['']
+  return subject.split(',').map((s) => s.trim())
+}
+
+export function joinSubjects(subjects: string[]): string | null {
+  const trimmed = subjects.map((s) => s.trim()).filter(Boolean)
+  return trimmed.length ? trimmed.join(', ') : null
+}
+
 interface OriginFieldsProps {
   position: PositionCode | ''
   onPositionChange: (value: string) => void
@@ -24,8 +36,10 @@ interface OriginFieldsProps {
   onCurrentSchoolChange: (value: string) => void
   teachingGroup: string
   onTeachingGroupChange: (value: string) => void
-  subject: string
-  onSubjectChange: (value: string) => void
+  subjects: string[]
+  onUpdateSubject: (index: number, value: string) => void
+  onAddSubject: () => void
+  onRemoveSubject: (index: number) => void
   transferRound: number | ''
   onTransferRoundChange: (value: number | '') => void
   transferYearOptions: number[]
@@ -51,8 +65,10 @@ export function OriginFields({
   onCurrentSchoolChange,
   teachingGroup,
   onTeachingGroupChange,
-  subject,
-  onSubjectChange,
+  subjects,
+  onUpdateSubject,
+  onAddSubject,
+  onRemoveSubject,
   transferRound,
   onTransferRoundChange,
   transferYearOptions,
@@ -178,15 +194,32 @@ export function OriginFields({
             </select>
           </label>
 
-          <label className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <span className="text-sm font-medium">วิชาเอก (ไม่บังคับ — ใช้สำหรับกรองผลลัพธ์)</span>
-            <input
-              className="input-field"
-              value={subject}
-              onChange={(e) => onSubjectChange(e.target.value)}
-              placeholder="เช่น คณิตศาสตร์"
-            />
-          </label>
+            {subjects.map((s, i) => (
+              <div key={i} className="flex gap-2">
+                <input
+                  className="input-field flex-1"
+                  value={s}
+                  onChange={(e) => onUpdateSubject(i, e.target.value)}
+                  placeholder="เช่น คณิตศาสตร์"
+                />
+                {subjects.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveSubject(i)}
+                    className="text-terracotta px-2"
+                    aria-label="ลบวิชาเอกนี้"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+            <button type="button" onClick={onAddSubject} className="self-start text-sm link-accent">
+              + เพิ่มวิชาเอก
+            </button>
+          </div>
         </>
       )}
 
