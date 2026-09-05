@@ -133,7 +133,15 @@ export async function PUT(request: Request) {
         zone: d.zone ?? null,
       }))
     )
-    if (insertError) throw insertError
+    if (insertError) {
+      if (insertError.code === '23505') {
+        return NextResponse.json(
+          { error: 'มีจังหวัดปลายทางซ้ำกันในรายการ กรุณาเลือกจังหวัดที่ไม่ซ้ำกัน' },
+          { status: 400 }
+        )
+      }
+      throw insertError
+    }
 
     return NextResponse.json({ teacher })
   } catch (err) {

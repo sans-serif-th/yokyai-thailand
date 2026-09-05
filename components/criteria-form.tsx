@@ -5,7 +5,7 @@ import { requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
 import { BackHeader } from './back-header'
 import { OriginFields } from './origin-fields'
-import { DestinationFields, type DestinationDraft } from './destination-fields'
+import { DestinationFields, findDuplicateProvince, type DestinationDraft } from './destination-fields'
 import { OriginDestinationTabs, type OriginDestinationTab } from './origin-destination-tabs'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
@@ -99,6 +99,10 @@ export function CriteriaForm({ teacher, initialDestinations, onSave }: CriteriaF
     if (requiresTeachingGroup(position) && !teachingGroup) return 'กรุณาเลือกกลุ่มสาระการเรียนรู้'
     if (!destinations.some((d) => d.province.trim())) {
       return 'กรุณาเพิ่มปลายทางอย่างน้อย 1 แห่ง'
+    }
+    const duplicateProvince = findDuplicateProvince(destinations)
+    if (duplicateProvince) {
+      return `จังหวัด "${duplicateProvince}" ถูกเพิ่มซ้ำ กรุณาเลือกจังหวัดอื่นหรือลบรายการที่ซ้ำออก`
     }
     return null
   }

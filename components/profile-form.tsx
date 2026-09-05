@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { POSITIONS, requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
 import { OriginFields } from './origin-fields'
-import { DestinationFields, type DestinationDraft } from './destination-fields'
+import { DestinationFields, findDuplicateProvince, type DestinationDraft } from './destination-fields'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
 // 0 is the career-category picker — a gate before the numbered steps, so
@@ -146,6 +146,10 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
   function validateStep2(): string | null {
     if (!destinations.some((d) => d.province.trim())) {
       return 'กรุณาเพิ่มปลายทางอย่างน้อย 1 แห่ง'
+    }
+    const duplicateProvince = findDuplicateProvince(destinations)
+    if (duplicateProvince) {
+      return `จังหวัด "${duplicateProvince}" ถูกเพิ่มซ้ำ กรุณาเลือกจังหวัดอื่นหรือลบรายการที่ซ้ำออก`
     }
     return null
   }

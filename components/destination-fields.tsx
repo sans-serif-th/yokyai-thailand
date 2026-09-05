@@ -11,6 +11,20 @@ export interface DestinationDraft {
   zone: string
 }
 
+// Each teacher can have only one destination row per province (DB unique
+// constraint on teacher_id+province), so catch duplicates before save
+// rather than surfacing the raw constraint violation to the user.
+export function findDuplicateProvince(destinations: DestinationDraft[]): string | null {
+  const seen = new Set<string>()
+  for (const d of destinations) {
+    const province = d.province.trim()
+    if (!province) continue
+    if (seen.has(province)) return province
+    seen.add(province)
+  }
+  return null
+}
+
 interface DestinationFieldsProps {
   serviceType: ServiceTypeCode | ''
   destinations: DestinationDraft[]
