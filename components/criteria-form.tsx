@@ -6,6 +6,7 @@ import type { ServiceTypeCode } from '@/lib/service-types'
 import { BackHeader } from './back-header'
 import { OriginFields } from './origin-fields'
 import { DestinationFields, type DestinationDraft } from './destination-fields'
+import { OriginDestinationTabs, type OriginDestinationTab } from './origin-destination-tabs'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
 function upcomingTransferYears(): number[] {
@@ -49,6 +50,7 @@ export function CriteriaForm({ teacher, initialDestinations, onSave }: CriteriaF
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [tab, setTab] = useState<OriginDestinationTab>('origin')
 
   function handlePositionChange(value: string) {
     setPosition(value as PositionCode | '')
@@ -141,46 +143,50 @@ export function CriteriaForm({ teacher, initialDestinations, onSave }: CriteriaF
 
   return (
     <div className="flex flex-col gap-5 max-w-lg mx-auto p-4">
-      <BackHeader title="แก้ไขข้อมูลการจับคู่" href="/criteria" />
-      <p className="text-sm text-zinc-600">การบันทึกจะรีเฟรชผลการจับคู่ให้ทันที</p>
+      <BackHeader title="แก้ไขการตั้งค่า" href="/criteria" />
 
-      <OriginFields
-        position={position}
-        onPositionChange={handlePositionChange}
-        serviceType={serviceType}
-        onServiceTypeChange={handleServiceTypeChange}
-        originProvince={originProvince}
-        onOriginProvinceChange={handleOriginProvinceChange}
-        originDistrict={originDistrict}
-        onOriginDistrictChange={setOriginDistrict}
-        originZone={originZone}
-        onOriginZoneChange={setOriginZone}
-        currentSchool={currentSchool}
-        onCurrentSchoolChange={setCurrentSchool}
-        teachingGroup={teachingGroup}
-        onTeachingGroupChange={setTeachingGroup}
-        subject={subject}
-        onSubjectChange={setSubject}
-        transferRound={transferRound}
-        onTransferRoundChange={setTransferRound}
-        transferYearOptions={transferYearOptions}
-        benefitNote={benefitNote}
-        onBenefitNoteChange={setBenefitNote}
-      />
+      <OriginDestinationTabs active={tab} onChange={setTab} />
 
-      <DestinationFields
-        serviceType={serviceType}
-        destinations={destinations}
-        onUpdateDestination={updateDestination}
-        onAddDestination={addDestination}
-        onRemoveDestination={removeDestination}
-      />
+      {tab === 'origin' ? (
+        <OriginFields
+          position={position}
+          onPositionChange={handlePositionChange}
+          serviceType={serviceType}
+          onServiceTypeChange={handleServiceTypeChange}
+          originProvince={originProvince}
+          onOriginProvinceChange={handleOriginProvinceChange}
+          originDistrict={originDistrict}
+          onOriginDistrictChange={setOriginDistrict}
+          originZone={originZone}
+          onOriginZoneChange={setOriginZone}
+          currentSchool={currentSchool}
+          onCurrentSchoolChange={setCurrentSchool}
+          teachingGroup={teachingGroup}
+          onTeachingGroupChange={setTeachingGroup}
+          subject={subject}
+          onSubjectChange={setSubject}
+          transferRound={transferRound}
+          onTransferRoundChange={setTransferRound}
+          transferYearOptions={transferYearOptions}
+          benefitNote={benefitNote}
+          onBenefitNoteChange={setBenefitNote}
+        />
+      ) : (
+        <DestinationFields
+          serviceType={serviceType}
+          destinations={destinations}
+          onUpdateDestination={updateDestination}
+          onAddDestination={addDestination}
+          onRemoveDestination={removeDestination}
+        />
+      )}
 
       {error && <p className="text-terracotta text-sm">{error}</p>}
 
       <button type="button" onClick={handleSave} disabled={saving} className="btn-primary">
         {saving ? 'กำลังบันทึก...' : 'บันทึก'}
       </button>
+      <p className="text-xs text-zinc-500 text-center">หลังบันทึก ระบบจะรีเฟรชผลการจับคู่ให้ทันที</p>
     </div>
   )
 }

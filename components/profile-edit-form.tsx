@@ -1,9 +1,7 @@
 'use client'
 
-import Image from 'next/image'
-import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { getLiffProfile, liffLogout } from '@/lib/liff'
+import { useState } from 'react'
+import { BackHeader } from './back-header'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
 function splitDisplayName(displayName: string): [string, string] {
@@ -11,44 +9,19 @@ function splitDisplayName(displayName: string): [string, string] {
   return [first ?? '', rest.join(' ')]
 }
 
-interface LineProfile {
-  displayName: string
-  pictureUrl?: string
-}
-
-interface ProfileSettingsFormProps {
+interface ProfileEditFormProps {
   teacher: Teacher
-  initialDestinations: Destination[]
+  destinations: Destination[]
   onSave: (payload: ProfilePayload) => Promise<void>
-  onLoggedOut: () => void
 }
 
-export function ProfileSettingsForm({
-  teacher,
-  initialDestinations,
-  onSave,
-  onLoggedOut,
-}: ProfileSettingsFormProps) {
+// Editing name only — everything else on the profile is passed through
+// unchanged, since PUT /api/teachers replaces the whole record.
+export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFormProps) {
   const [firstName, setFirstName] = useState(() => splitDisplayName(teacher.display_name)[0])
   const [lastName, setLastName] = useState(() => splitDisplayName(teacher.display_name)[1])
-  const [lineProfile, setLineProfile] = useState<LineProfile | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [saved, setSaved] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    getLiffProfile()
-      .then((profile) => {
-        if (!cancelled) setLineProfile(profile)
-      })
-      .catch(() => {
-        // Non-critical — the page still works without the LINE profile card.
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   async function handleSave() {
     if (!firstName.trim() || !lastName.trim()) {
@@ -56,7 +29,6 @@ export function ProfileSettingsForm({
       return
     }
     setError(null)
-    setSaved(false)
     setSaving(true)
     try {
       await onSave({
@@ -71,13 +43,12 @@ export function ProfileSettingsForm({
         subject: teacher.subject,
         benefitNote: teacher.benefit_note,
         transferRound: teacher.transfer_round,
-        destinations: initialDestinations.map((d) => ({
+        destinations: destinations.map((d) => ({
           province: d.province,
           district: d.district,
           zone: d.zone,
         })),
       })
-      setSaved(true)
     } catch (err) {
       setError((err as Error).message)
     } finally {
@@ -85,33 +56,9 @@ export function ProfileSettingsForm({
     }
   }
 
-  function handleLogout() {
-    liffLogout()
-    onLoggedOut()
-  }
-
   return (
     <div className="flex flex-col gap-5 max-w-lg mx-auto p-4">
-      <h1 className="text-xl font-semibold">โปรไฟล์</h1>
-
-      {lineProfile && (
-        <div className="flex items-center gap-3 card-surface">
-          {lineProfile.pictureUrl && (
-            <Image
-              src={lineProfile.pictureUrl}
-              alt=""
-              width={48}
-              height={48}
-              className="rounded-full"
-              unoptimized
-            />
-          )}
-          <div>
-            <p className="text-xs text-zinc-500">บัญชี LINE</p>
-            <p className="text-sm font-medium">{lineProfile.displayName}</p>
-          </div>
-        </div>
-      )}
+      <BackHeader title="โปรไฟล์" href="/profile" />
 
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">ชื่อ</span>
@@ -132,20 +79,9 @@ export function ProfileSettingsForm({
       </label>
 
       {error && <p className="text-terracotta text-sm">{error}</p>}
-      {saved && <p className="text-sm text-sage-dark">บันทึกแล้ว</p>}
 
       <button type="button" onClick={handleSave} disabled={saving} className="btn-primary">
         {saving ? 'กำลังบันทึก...' : 'บันทึก'}
-      </button>
-
-      <hr className="border-sage" />
-
-      <Link href="/terms" className="text-sm link-accent">
-        ข้อกำหนดและเงื่อนไข
-      </Link>
-
-      <button type="button" onClick={handleLogout} className="btn-danger-outline">
-        ออกจากระบบ
       </button>
     </div>
   )

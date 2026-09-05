@@ -2,23 +2,26 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { fetchProfile } from '@/lib/api'
+import { fetchProfile, saveProfile } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
-import { ProfileMenu } from '@/components/profile-menu'
-import type { Teacher } from '@/lib/types'
+import { ProfileEditForm } from '@/components/profile-edit-form'
+import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
 type View = 'loading' | 'ready' | 'error'
 
-export default function ProfilePage() {
+export default function ProfileEditPage() {
   const router = useRouter()
   const [view, setView] = useState<View>('loading')
+  const [idToken, setIdToken] = useState<string | null>(null)
   const [teacher, setTeacher] = useState<Teacher | null>(null)
+  const [destinations, setDestinations] = useState<Destination[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     async function bootstrap() {
       try {
-        const { result: profile } = await withAuthRetry((t) => fetchProfile(t))
+        const { token, result: profile } = await withAuthRetry((t) => fetchProfile(t))
+        setIdToken(token)
 
         if (!profile.teacher) {
           router.replace('/')
@@ -26,6 +29,7 @@ export default function ProfilePage() {
         }
 
         setTeacher(profile.teacher)
+        setDestinations(profile.destinations ?? [])
         setView('ready')
       } catch (err) {
         setErrorMessage((err as Error).message)
@@ -35,8 +39,10 @@ export default function ProfilePage() {
     bootstrap()
   }, [router])
 
-  function handleLoggedOut() {
-    router.replace('/logged-out')
+  async function handleSave(payload: ProfilePayload) {
+    if (!idToken) throw new Error('Not logged in')
+    await withAuthRetry((t) => saveProfile(t, payload))
+    router.push('/profile')
   }
 
   if (view === 'loading') {
@@ -49,5 +55,5 @@ export default function ProfilePage() {
 
   if (!teacher) return null
 
-  return <ProfileMenu teacher={teacher} onLoggedOut={handleLoggedOut} />
+  return <ProfileEditForm teacher={teacher} destinations={destinations} onSave={handleSave} />
 }
