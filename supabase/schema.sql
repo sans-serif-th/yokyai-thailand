@@ -26,6 +26,38 @@ on conflict (code) do nothing;
 -- no policies is fine, same rationale as teachers/destinations below.
 alter table teaching_groups enable row level security;
 
+-- The 3 service types (administrative systems) relevant to teacher
+-- transfers. A teacher can only swap with someone in the same service
+-- type — see lib/service-types.ts (must stay in sync).
+create table service_types (
+  code text primary key,
+  name_th text not null,
+  abbr_th text not null
+);
+
+insert into service_types (code, name_th, abbr_th) values
+  ('primary',    'สำนักงานเขตพื้นที่การศึกษาประถมศึกษา', 'สพป.'),
+  ('secondary',  'สำนักงานเขตพื้นที่การศึกษามัธยมศึกษา',  'สพม.'),
+  ('vocational', 'สำนักงานคณะกรรมการการอาชีวศึกษา',        'สอศ.')
+on conflict (code) do nothing;
+
+alter table service_types enable row level security;
+
+-- The 2 positions (ตำแหน่ง) eligible for mutual transfer via this system.
+-- Only 'teacher' has a Teaching Group / Subject — see lib/positions.ts
+-- (must stay in sync).
+create table positions (
+  code text primary key,
+  name_th text not null
+);
+
+insert into positions (code, name_th) values
+  ('teacher',       'ครูผู้สอน'),
+  ('general_admin', 'นักจัดการงานทั่วไป')
+on conflict (code) do nothing;
+
+alter table positions enable row level security;
+
 -- A teacher's profile: who they are, where they are now, and what they teach.
 -- Origin is a single required province; a teacher's acceptable destinations
 -- live in the `destinations` table (one teacher -> many destination provinces).
@@ -34,14 +66,22 @@ create table teachers (
   line_user_id text not null unique,
   display_name text not null,
 
+  position text not null references positions(code),
+  service_type text not null references service_types(code),
+
   origin_province text not null,
   origin_district text,       -- optional, informational only (not used for matching)
+  origin_zone text,           -- optional, informational only (e.g. "เขต 1") — not standardized across provinces, so free text
   current_school text,        -- optional, free text, informational only
 
-  teaching_group text not null references teaching_groups(code),
+  -- Only required when position = 'teacher' (enforced in application code,
+  -- not a DB constraint, since 'general_admin' rows must leave this null).
+  teaching_group text references teaching_groups(code),
   subject text,                -- optional exact subject (เอก) within the teaching group, used for filtering only
 
-  service_start_date date,     -- used to warn (not block) on the 24-month eligibility rule
+  benefit_note text check (char_length(benefit_note) <= 500), -- optional, free text (e.g. "มีบ้านพักครู") — informational only, not used for matching
+
+  transfer_round integer,      -- optional, the year (e.g. 2027) the applicant wants to move in — informational only, not used for matching
 
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -49,14 +89,18 @@ create table teachers (
 
 create index idx_teachers_origin_province on teachers (origin_province);
 create index idx_teachers_teaching_group on teachers (teaching_group);
+create index idx_teachers_service_type on teachers (service_type);
+create index idx_teachers_position on teachers (position);
 
--- A teacher's acceptable destination provinces. Optional district narrows
--- display/filtering only; matching itself only ever compares provinces.
+-- A teacher's acceptable destination provinces. Optional district/zone
+-- narrow display/filtering only; matching itself only ever compares
+-- provinces (plus service_type, checked on the teacher row).
 create table destinations (
   id uuid primary key default gen_random_uuid(),
   teacher_id uuid not null references teachers(id) on delete cascade,
   province text not null,
   district text,
+  zone text,
   created_at timestamptz not null default now(),
   unique (teacher_id, province)
 );

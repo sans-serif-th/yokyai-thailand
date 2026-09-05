@@ -1,3 +1,5 @@
+import type { PositionCode } from './positions'
+import type { ServiceTypeCode } from './service-types'
 import type { TeachingGroupCode } from './teaching-groups'
 
 export interface Destination {
@@ -5,31 +7,40 @@ export interface Destination {
   teacher_id: string
   province: string
   district: string | null
+  zone: string | null
 }
 
 export interface Teacher {
   id: string
   line_user_id: string
   display_name: string
+  position: PositionCode
+  service_type: ServiceTypeCode
   origin_province: string
   origin_district: string | null
+  origin_zone: string | null
   current_school: string | null
-  teaching_group: TeachingGroupCode
+  teaching_group: TeachingGroupCode | null
   subject: string | null
-  service_start_date: string | null
+  benefit_note: string | null
+  transfer_round: number | null
 }
 
 export type MatchTier = 'perfect' | 'high' | 'partial'
 
 export interface ProfilePayload {
   displayName: string
+  position: string
+  serviceType: string
   originProvince: string
   originDistrict: string | null
+  originZone: string | null
   currentSchool: string | null
-  teachingGroup: string
+  teachingGroup: string | null
   subject: string | null
-  serviceStartDate: string | null
-  destinations: { province: string; district: string | null }[]
+  benefitNote: string | null
+  transferRound: number | null
+  destinations: { province: string; district: string | null; zone: string | null }[]
 }
 
 export interface MatchResult {

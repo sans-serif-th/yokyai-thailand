@@ -34,7 +34,8 @@ export async function verifyLineIdToken(idToken: string): Promise<LineVerifyResp
   })
 
   if (!res.ok) {
-    throw new LineAuthError(`LINE token verification failed: ${res.status}`)
+    const body = await res.text()
+    throw new LineAuthError(`LINE token verification failed: ${res.status} ${body}`)
   }
 
   return (await res.json()) as LineVerifyResponse

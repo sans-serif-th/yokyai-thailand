@@ -1,16 +1,23 @@
+import { requiresTeachingGroup } from './positions'
 import { createServiceClient } from './supabase-server'
 import type { Destination, MatchResult, MatchTier, Teacher } from './types'
 
 // A candidate C is a valid Match for requester R iff:
-//   1. same teaching_group
-//   2. C.origin_province is one of R's destination provinces
-//   3. R.origin_province is one of C's destination provinces
+//   1. same position (ครูผู้สอน and นักจัดการงานทั่วไป are different
+//      classifications and can't swap with each other)
+//   2. same service_type (สพป./สพม./สอศ. — different administrative systems
+//      can't swap with each other)
+//   3. if position requires it (ครูผู้สอน only), same teaching_group
+//   4. C.origin_province is one of R's destination provinces
+//   5. R.origin_province is one of C's destination provinces
 //
 // Ranked into tiers (see docs/CONTEXT.md "Match / Mutual Match"):
 //   perfect: exact subject matches AND both sides' district preferences
 //            (where specified) are satisfied
 //   high:    exact subject matches, district unconstrained or unmet
-//   partial: teaching-group match only
+//   partial: base match only — the only tier reachable when the position has
+//            no subject (e.g. นักจัดการงานทั่วไป), since subjectMatch is then
+//            always false
 function districtSatisfied(preferredDistrict: string | null, actualDistrict: string | null) {
   // No preference stated -> any district in the province is acceptable.
   if (!preferredDistrict) return true
@@ -58,14 +65,22 @@ export async function findMatchesFor(lineUserId: string): Promise<MatchResult[]>
 
   const destinationProvinces = requesterDestinations.map((d) => d.province)
 
-  // Candidates: same teaching group, currently in one of the requester's
-  // desired provinces, not the requester themself.
-  const { data: candidates, error: candidatesError } = await supabase
+  // Candidates: same position, same service type, (if applicable) same
+  // teaching group, currently in one of the requester's desired provinces,
+  // not the requester themself.
+  let candidatesQuery = supabase
     .from('teachers')
     .select('*')
-    .eq('teaching_group', requester.teaching_group)
+    .eq('position', requester.position)
+    .eq('service_type', requester.service_type)
     .in('origin_province', destinationProvinces)
     .neq('id', requester.id)
+
+  if (requiresTeachingGroup(requester.position)) {
+    candidatesQuery = candidatesQuery.eq('teaching_group', requester.teaching_group)
+  }
+
+  const { data: candidates, error: candidatesError } = await candidatesQuery
 
   if (candidatesError) throw candidatesError
   if (!candidates?.length) return []
