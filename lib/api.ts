@@ -1,5 +1,16 @@
 import type { Destination, MatchResult, ProfilePayload, Teacher } from './types'
 
+// Carries the HTTP status so callers can distinguish "the LINE ID token
+// expired" (401 — recoverable by re-authenticating, see lib/session.ts)
+// from any other failure.
+export class ApiError extends Error {
+  status: number
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
+}
+
 export async function authedFetch(path: string, idToken: string, init?: RequestInit) {
   const res = await fetch(path, {
     ...init,
@@ -10,7 +21,7 @@ export async function authedFetch(path: string, idToken: string, init?: RequestI
     },
   })
   const body = await res.json()
-  if (!res.ok) throw new Error(body.error ?? `Request failed (${res.status})`)
+  if (!res.ok) throw new ApiError(res.status, body.error ?? `Request failed (${res.status})`)
   return body
 }
 

@@ -27,6 +27,15 @@ export function initLiff(): Promise<void> {
   return initPromise
 }
 
+// The LINE ID token has its own short expiry, separate from the LIFF login
+// session — liff.init() does not refresh it on its own once cached here.
+// Called when the backend reports the token expired (see lib/session.ts's
+// withAuthRetry), so the next initLiff() re-establishes the session and
+// mints a fresh token.
+export function resetLiffInit(): void {
+  initPromise = null
+}
+
 // For the logged-out screen only: initializes the SDK WITHOUT forcing
 // liff.login() — needed so the page can render its own "log back in" button
 // instead of being immediately redirected away.

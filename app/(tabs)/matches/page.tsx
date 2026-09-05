@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { fetchMatches, fetchProfile } from '@/lib/api'
-import { getLiffIdToken, initLiff } from '@/lib/liff'
+import { withAuthRetry } from '@/lib/session'
 import { MatchList } from '@/components/match-list'
 import type { MatchResult } from '@/lib/types'
 
@@ -18,17 +18,19 @@ export default function MatchesPage() {
   useEffect(() => {
     async function bootstrap() {
       try {
-        await initLiff()
-        const token = getLiffIdToken()
+        const { result } = await withAuthRetry(async (token) => {
+          const profile = await fetchProfile(token)
+          if (!profile.teacher) return { hasProfile: false as const }
+          const { matches } = await fetchMatches(token)
+          return { hasProfile: true as const, matches }
+        })
 
-        const profile = await fetchProfile(token)
-        if (!profile.teacher) {
+        if (!result.hasProfile) {
           router.replace('/')
           return
         }
 
-        const { matches } = await fetchMatches(token)
-        setMatches(matches)
+        setMatches(result.matches)
         setView('ready')
       } catch (err) {
         setErrorMessage((err as Error).message)

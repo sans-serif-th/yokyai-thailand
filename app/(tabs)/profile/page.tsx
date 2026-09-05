@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { fetchProfile, saveProfile } from '@/lib/api'
-import { getLiffIdToken, initLiff } from '@/lib/liff'
+import { withAuthRetry } from '@/lib/session'
 import { ProfileSettingsForm } from '@/components/profile-settings-form'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
@@ -20,11 +20,9 @@ export default function ProfilePage() {
   useEffect(() => {
     async function bootstrap() {
       try {
-        await initLiff()
-        const token = getLiffIdToken()
+        const { token, result: profile } = await withAuthRetry((t) => fetchProfile(t))
         setIdToken(token)
 
-        const profile = await fetchProfile(token)
         if (!profile.teacher) {
           router.replace('/')
           return
@@ -43,8 +41,9 @@ export default function ProfilePage() {
 
   async function handleSave(payload: ProfilePayload) {
     if (!idToken) throw new Error('Not logged in')
-    const { teacher: saved } = await saveProfile(idToken, payload)
-    setTeacher(saved)
+    const { token, result } = await withAuthRetry((t) => saveProfile(t, payload))
+    setIdToken(token)
+    setTeacher(result.teacher)
   }
 
   function handleLoggedOut() {
