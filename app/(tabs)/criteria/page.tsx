@@ -51,7 +51,7 @@ export default function CriteriaPage() {
   }
 
   if (view === 'error') {
-    return <p className="text-center p-8 text-red-600">{errorMessage}</p>
+    return <p className="text-center p-8 text-terracotta">{errorMessage}</p>
   }
 
   if (!teacher) return null

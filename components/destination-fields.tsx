@@ -34,7 +34,7 @@ export function DestinationFields({
       {destinations.map((d, i) => (
         <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2">
           <select
-            className="border rounded px-3 py-2"
+            className="input-field"
             value={d.province}
             onChange={(e) => onUpdateDestination(i, 'province', e.target.value)}
           >
@@ -46,7 +46,7 @@ export function DestinationFields({
             ))}
           </select>
           <select
-            className="border rounded px-3 py-2"
+            className="input-field"
             value={d.district}
             onChange={(e) => onUpdateDestination(i, 'district', e.target.value)}
             disabled={!d.province}
@@ -59,7 +59,7 @@ export function DestinationFields({
             ))}
           </select>
           <select
-            className="border rounded px-3 py-2"
+            className="input-field"
             value={d.zone}
             onChange={(e) => onUpdateDestination(i, 'zone', e.target.value)}
             disabled={!serviceType || !hasZoneOptions(serviceType) || !d.province}
@@ -80,7 +80,7 @@ export function DestinationFields({
           <button
             type="button"
             onClick={() => onRemoveDestination(i)}
-            className="text-red-600 px-2"
+            className="text-terracotta px-2"
             aria-label="ลบปลายทางนี้"
           >
             ✕
@@ -90,7 +90,7 @@ export function DestinationFields({
       <button
         type="button"
         onClick={onAddDestination}
-        className="self-start text-sm text-blue-600 underline"
+        className="self-start text-sm link-accent"
       >
         + เพิ่มปลายทาง
       </button>

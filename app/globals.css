@@ -1,26 +1,62 @@
 @import "tailwindcss";
 
+/* Palette matches the Figma file's design (originally the "Aura" style
+   guide colors, reused for this app's restyle — see docs/CONTEXT.md-adjacent
+   components for where each token is used). */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf6f0; /* Off-White Surface */
+  --foreground: #19191b; /* near Deep Night */
+  --color-cream: #faf6f0;
+  --color-terracotta: #df8c7c;
+  --color-sage: #bcd6cd;
+  --color-lavender: #c2caf6;
+  --color-sungold: #ead575;
+  --color-link: #5c6bc0;
+  --color-sage-dark: #6f9483; /* success/confirmation text — darker sage for contrast on cream */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-cream: var(--color-cream);
+  --color-terracotta: var(--color-terracotta);
+  --color-sage: var(--color-sage);
+  --color-lavender: var(--color-lavender);
+  --color-sungold: var(--color-sungold);
+  --color-link: var(--color-link);
+  --color-sage-dark: var(--color-sage-dark);
+  --font-sans: var(--font-sarabun);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), sans-serif;
+}
+
+/* Shared form/UI primitives — the Figma design uses heavy pill shapes for
+   every interactive control, and rounded-3xl cards. Centralized here since
+   the same classes repeat across every form component. */
+@layer components {
+  .input-field {
+    @apply w-full rounded-full border border-sage bg-white px-4 py-2 text-foreground disabled:opacity-50 disabled:bg-zinc-100;
+  }
+  .textarea-field {
+    @apply w-full rounded-2xl border border-sage bg-white px-4 py-2 text-foreground;
+  }
+  .btn-primary {
+    @apply rounded-full bg-terracotta px-5 py-2.5 text-white disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply rounded-full border border-sage bg-white px-5 py-2.5 text-foreground;
+  }
+  .btn-danger-outline {
+    @apply rounded-full border border-terracotta px-5 py-2.5 text-terracotta;
+  }
+  .card-surface {
+    @apply rounded-3xl border border-sage bg-white p-4;
+  }
+  .link-accent {
+    @apply text-link underline;
+  }
 }

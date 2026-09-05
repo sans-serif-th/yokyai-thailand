@@ -95,7 +95,7 @@ export function ProfileSettingsForm({
       <h1 className="text-xl font-semibold">โปรไฟล์</h1>
 
       {lineProfile && (
-        <div className="flex items-center gap-3 border rounded p-3">
+        <div className="flex items-center gap-3 card-surface">
           {lineProfile.pictureUrl && (
             <Image
               src={lineProfile.pictureUrl}
@@ -116,7 +116,7 @@ export function ProfileSettingsForm({
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">ชื่อ</span>
         <input
-          className="border rounded px-3 py-2"
+          className="input-field"
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
         />
@@ -125,35 +125,26 @@ export function ProfileSettingsForm({
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">นามสกุล</span>
         <input
-          className="border rounded px-3 py-2"
+          className="input-field"
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
         />
       </label>
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-      {saved && <p className="text-green-600 text-sm">บันทึกแล้ว</p>}
+      {error && <p className="text-terracotta text-sm">{error}</p>}
+      {saved && <p className="text-sm text-sage-dark">บันทึกแล้ว</p>}
 
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={saving}
-        className="bg-black text-white rounded px-4 py-2 disabled:opacity-50"
-      >
+      <button type="button" onClick={handleSave} disabled={saving} className="btn-primary">
         {saving ? 'กำลังบันทึก...' : 'บันทึก'}
       </button>
 
-      <hr className="border-zinc-200" />
+      <hr className="border-sage" />
 
-      <Link href="/terms" className="text-sm text-blue-600 underline">
+      <Link href="/terms" className="text-sm link-accent">
         ข้อกำหนดและเงื่อนไข
       </Link>
 
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="border border-red-600 text-red-600 rounded px-4 py-2"
-      >
+      <button type="button" onClick={handleLogout} className="btn-danger-outline">
         ออกจากระบบ
       </button>
     </div>

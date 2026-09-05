@@ -51,11 +51,11 @@ export default function Home() {
   }
 
   if (view === 'error') {
-    return <p className="text-center p-8 text-red-600">{errorMessage}</p>
+    return <p className="text-center p-8 text-terracotta">{errorMessage}</p>
   }
 
   return (
-    <div className="flex-1 bg-zinc-50 py-8">
+    <div className="flex-1 py-8">
       <ProfileForm
         initialTeacher={teacher}
         initialDestinations={destinations}

@@ -177,14 +177,9 @@ export function CriteriaForm({ teacher, initialDestinations, onSave }: CriteriaF
         onRemoveDestination={removeDestination}
       />
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {error && <p className="text-terracotta text-sm">{error}</p>}
 
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={saving}
-        className="bg-black text-white rounded px-4 py-2 disabled:opacity-50"
-      >
+      <button type="button" onClick={handleSave} disabled={saving} className="btn-primary">
         {saving ? 'กำลังบันทึก...' : 'บันทึก'}
       </button>
     </div>

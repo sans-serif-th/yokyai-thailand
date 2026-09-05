@@ -48,13 +48,13 @@ export function MatchList({ matches }: MatchListProps) {
 
       <div className="grid grid-cols-2 gap-2">
         <input
-          className="border rounded px-3 py-2 text-sm"
+          className="input-field text-sm"
           placeholder="กรองตามวิชาเอก"
           value={subjectFilter}
           onChange={(e) => setSubjectFilter(e.target.value)}
         />
         <input
-          className="border rounded px-3 py-2 text-sm"
+          className="input-field text-sm"
           placeholder="กรองตามจังหวัดปลายทาง"
           value={destinationFilter}
           onChange={(e) => setDestinationFilter(e.target.value)}
@@ -66,7 +66,7 @@ export function MatchList({ matches }: MatchListProps) {
       ) : (
         <ul className="flex flex-col gap-3">
           {filtered.map((m) => (
-            <li key={m.teacher.id} className="border rounded p-3">
+            <li key={m.teacher.id} className="card-surface">
               <div className="flex items-center justify-between">
                 <span className="font-medium">{m.teacher.display_name}</span>
                 <span className="text-xs">{TIER_LABEL[m.tier]}</span>

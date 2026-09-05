@@ -19,6 +19,10 @@ const STEP_TITLES: Record<Exclude<Step, 0>, string> = {
   3: 'ข้อมูลติดต่อ',
 }
 
+// Cycled by index for the career-category cards — adding a 3rd/4th career
+// later just continues the cycle, no new design decision needed.
+const CATEGORY_CARD_COLORS = ['bg-lavender', 'bg-sungold']
+
 // Impure (reads wall-clock time), so it must only ever be called from a
 // useState lazy initializer (runs once, at mount) or an event handler —
 // never directly in the render body (react-hooks/purity forbids that).
@@ -212,7 +216,10 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
       {step > 0 && (
         <div className="flex justify-between text-sm">
           {([1, 2, 3] as const).map((s) => (
-            <span key={s} className={s === step ? 'font-semibold text-black' : 'text-zinc-400'}>
+            <span
+              key={s}
+              className={s === step ? 'font-semibold text-terracotta' : 'text-zinc-400'}
+            >
               {s}. {STEP_TITLES[s]}
             </span>
           ))}
@@ -222,12 +229,12 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
       {step === 0 && (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-zinc-600">เลือกสายงานของคุณเพื่อเริ่มกรอกข้อมูล</p>
-          {POSITIONS.map((p) => (
+          {POSITIONS.map((p, i) => (
             <button
               key={p.code}
               type="button"
               onClick={() => handleSelectCategory(p.code)}
-              className="border rounded px-4 py-3 text-left hover:border-black"
+              className={`rounded-3xl border border-sage px-4 py-3 text-left font-medium ${CATEGORY_CARD_COLORS[i % CATEGORY_CARD_COLORS.length]}`}
             >
               {p.nameTh}
             </button>
@@ -276,7 +283,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">ชื่อ</span>
             <input
-              className="border rounded px-3 py-2"
+              className="input-field"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
             />
@@ -285,7 +292,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">นามสกุล</span>
             <input
-              className="border rounded px-3 py-2"
+              className="input-field"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
             />
@@ -304,7 +311,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
             />
             <span>
               ฉันยอมรับ{' '}
-              <Link href="/terms" target="_blank" className="text-blue-600 underline">
+              <Link href="/terms" target="_blank" className="link-accent">
                 ข้อกำหนดและเงื่อนไข
               </Link>
             </span>
@@ -312,24 +319,16 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
         </>
       )}
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {error && <p className="text-terracotta text-sm">{error}</p>}
 
       {step > 0 && (
         <div className="flex justify-between gap-3">
-          <button
-            type="button"
-            onClick={goBack}
-            className="border rounded px-4 py-2"
-          >
+          <button type="button" onClick={goBack} className="btn-secondary">
             ย้อนกลับ
           </button>
 
           {step < 3 ? (
-            <button
-              type="button"
-              onClick={goNext}
-              className="bg-black text-white rounded px-4 py-2"
-            >
+            <button type="button" onClick={goNext} className="btn-primary">
               ถัดไป
             </button>
           ) : (
@@ -337,7 +336,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
               type="button"
               onClick={handleSave}
               disabled={saving || !termsAccepted}
-              className="bg-black text-white rounded px-4 py-2 disabled:opacity-50"
+              className="btn-primary"
             >
               {saving ? 'กำลังบันทึก...' : 'บันทึกโปรไฟล์'}
             </button>
