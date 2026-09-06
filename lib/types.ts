@@ -47,4 +47,5 @@ export interface MatchResult {
   teacher: Teacher
   destinations: Destination[]
   tier: MatchTier
+  favorited: boolean
 }

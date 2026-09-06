@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { HeartIcon } from './icons'
 import { positionLabel } from '@/lib/positions'
 import { serviceTypeAbbr } from '@/lib/service-types'
 import { teachingGroupLabel } from '@/lib/teaching-groups'
@@ -14,9 +15,10 @@ const TIER_LABEL: Record<MatchResult['tier'], string> = {
 
 interface MatchListProps {
   matches: MatchResult[]
+  onToggleFavorite: (teacherId: string, currentlyFavorited: boolean) => void
 }
 
-export function MatchList({ matches }: MatchListProps) {
+export function MatchList({ matches, onToggleFavorite }: MatchListProps) {
   const [subjectFilter, setSubjectFilter] = useState('')
   const [destinationFilter, setDestinationFilter] = useState('')
 
@@ -69,7 +71,17 @@ export function MatchList({ matches }: MatchListProps) {
             <li key={m.teacher.id} className="card-surface">
               <div className="flex items-center justify-between">
                 <span className="font-medium">{m.teacher.display_name}</span>
-                <span className="text-xs">{TIER_LABEL[m.tier]}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs">{TIER_LABEL[m.tier]}</span>
+                  <button
+                    type="button"
+                    onClick={() => onToggleFavorite(m.teacher.id, m.favorited)}
+                    aria-label={m.favorited ? 'เอาออกจากรายการโปรด' : 'เพิ่มในรายการโปรด'}
+                    className={m.favorited ? 'text-terracotta' : 'text-zinc-400'}
+                  >
+                    <HeartIcon filled={m.favorited} />
+                  </button>
+                </div>
               </div>
               <p className="text-sm text-zinc-600">
                 {positionLabel(m.teacher.position)} · {serviceTypeAbbr(m.teacher.service_type)}

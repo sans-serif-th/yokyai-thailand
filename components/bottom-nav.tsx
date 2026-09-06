@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { SearchIcon, SlidersIcon, UserIcon } from './icons'
+import { HeartIcon, SearchIcon, SlidersIcon, UserIcon } from './icons'
 
 const TABS = [
   { href: '/matches', label: 'ค้นหา', Icon: SearchIcon },
+  { href: '/favorites', label: 'รายการโปรด', Icon: HeartIcon },
   { href: '/criteria', label: 'ตั้งค่า', Icon: SlidersIcon },
   { href: '/profile', label: 'โปรไฟล์', Icon: UserIcon },
 ] as const

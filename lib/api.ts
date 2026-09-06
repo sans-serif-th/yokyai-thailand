@@ -44,3 +44,21 @@ export async function saveProfile(
 export async function fetchMatches(idToken: string): Promise<{ matches: MatchResult[] }> {
   return authedFetch('/api/matches', idToken)
 }
+
+export async function fetchFavorites(idToken: string): Promise<{ matches: MatchResult[] }> {
+  return authedFetch('/api/favorites', idToken)
+}
+
+export async function addFavorite(idToken: string, teacherId: string): Promise<void> {
+  await authedFetch('/api/favorites', idToken, {
+    method: 'POST',
+    body: JSON.stringify({ teacherId }),
+  })
+}
+
+export async function removeFavorite(idToken: string, teacherId: string): Promise<void> {
+  await authedFetch('/api/favorites', idToken, {
+    method: 'DELETE',
+    body: JSON.stringify({ teacherId }),
+  })
+}

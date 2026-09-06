@@ -108,6 +108,19 @@ create table destinations (
 create index idx_destinations_teacher on destinations (teacher_id);
 create index idx_destinations_province on destinations (province);
 
+-- A teacher saving another teacher's match card for later. Direction matters
+-- (teacher_id favorited favorited_teacher_id) — favoriting is not mutual.
+create table favorites (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null references teachers(id) on delete cascade,
+  favorited_teacher_id uuid not null references teachers(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (teacher_id, favorited_teacher_id),
+  check (teacher_id != favorited_teacher_id)
+);
+
+create index idx_favorites_teacher on favorites (teacher_id);
+
 create or replace function set_updated_at()
 returns trigger as $$
 begin
@@ -129,3 +142,4 @@ create trigger teachers_set_updated_at
 -- not the primary access control.
 alter table teachers enable row level security;
 alter table destinations enable row level security;
+alter table favorites enable row level security;

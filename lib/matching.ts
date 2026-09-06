@@ -120,7 +120,7 @@ export async function findMatchesFor(lineUserId: string): Promise<MatchResult[]>
       candidateDestForRequesterProvince
     )
 
-    results.push({ teacher: candidate, destinations: candidateDests, tier })
+    results.push({ teacher: candidate, destinations: candidateDests, tier, favorited: false })
   }
 
   const tierOrder: Record<MatchTier, number> = { perfect: 0, high: 1, partial: 2 }
