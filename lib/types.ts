@@ -26,6 +26,7 @@ export interface Teacher {
   transfer_round: number | null
   facebook_url: string | null
   source: 'app' | 'facebook_import'
+  invite_code: string | null
 }
 
 export type MatchTier = 'perfect' | 'high' | 'partial'

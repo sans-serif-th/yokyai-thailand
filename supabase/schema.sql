@@ -91,6 +91,12 @@ create table teachers (
   -- match cards tag these so a real user knows the data wasn't self-entered.
   source text not null default 'app' check (source in ('app', 'facebook_import')),
 
+  -- Set only for facebook_import rows: a single-use code at /join/<code>
+  -- that lets the real person behind a seed record claim it (converts
+  -- line_user_id + source to a real account, same id so favorites pointing
+  -- at them stay valid). Cleared once claimed — see lib/invites.ts.
+  invite_code text unique,
+
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

@@ -18,12 +18,20 @@ import type { Destination, MatchResult, MatchTier, Teacher } from './types'
 //   partial: base match only — the only tier reachable when the position has
 //            no subject (e.g. นักจัดการงานทั่วไป), since subjectMatch is then
 //            always false
-// PDPA: a facebook_import row was never entered by the person it names, so
-// its display_name is masked before it ever leaves the server — anyone
-// viewing it as a match candidate sees only the masked form.
-function maskIfImported(teacher: Teacher): Teacher {
-  if (teacher.source !== 'facebook_import') return teacher
-  return { ...teacher, display_name: `${teacher.display_name.slice(0, 2)}***` }
+// PDPA + invite-flow safety: a facebook_import row was never entered by the
+// person it names, so its display_name is masked and its Facebook link is
+// hidden before this ever leaves the server — contact happens only via an
+// admin-delivered invite link (see lib/invites.ts), never shown here.
+// invite_code is stripped unconditionally (not just for imports) since no
+// match result should ever carry another teacher's claim code.
+function sanitizeForMatch(teacher: Teacher): Teacher {
+  const imported = teacher.source === 'facebook_import'
+  return {
+    ...teacher,
+    display_name: imported ? `${teacher.display_name.slice(0, 2)}***` : teacher.display_name,
+    facebook_url: imported ? null : teacher.facebook_url,
+    invite_code: null,
+  }
 }
 
 function districtSatisfied(preferredDistrict: string | null, actualDistrict: string | null) {
@@ -129,7 +137,7 @@ export async function findMatchesFor(lineUserId: string): Promise<MatchResult[]>
     )
 
     results.push({
-      teacher: maskIfImported(candidate),
+      teacher: sanitizeForMatch(candidate),
       destinations: candidateDests,
       tier,
       favorited: false,

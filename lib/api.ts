@@ -1,5 +1,10 @@
 import type { Destination, MatchResult, ProfilePayload, SubscriptionStatus, Teacher } from './types'
 
+export interface InviteLookup {
+  teacher: Teacher
+  destinations: Destination[]
+}
+
 // Carries the HTTP status so callers can distinguish "the LINE ID token
 // expired" (401 — recoverable by re-authenticating, see lib/session.ts)
 // from any other failure.
@@ -71,5 +76,22 @@ export async function uploadPaymentSlip(idToken: string, slipDataUrl: string): P
   await authedFetch('/api/subscription', idToken, {
     method: 'POST',
     body: JSON.stringify({ slip: slipDataUrl }),
+  })
+}
+
+// Both require login — never callable as an unverified visitor (see
+// app/api/join/[code]/route.ts).
+export async function fetchInvite(idToken: string, code: string): Promise<InviteLookup> {
+  return authedFetch(`/api/join/${code}`, idToken)
+}
+
+export async function claimInvite(
+  idToken: string,
+  code: string,
+  payload: ProfilePayload
+): Promise<{ teacher: Teacher }> {
+  return authedFetch(`/api/join/${code}`, idToken, {
+    method: 'POST',
+    body: JSON.stringify(payload),
   })
 }
