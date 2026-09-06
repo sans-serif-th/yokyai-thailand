@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { THAI_PROVINCES } from '@/lib/provinces'
 import type { ServiceTypeCode } from '@/lib/service-types'
 import { districtsForProvince } from '@/lib/districts'
@@ -31,6 +32,11 @@ interface DestinationFieldsProps {
   onUpdateDestination: (index: number, field: keyof DestinationDraft, value: string) => void
   onAddDestination: () => void
   onRemoveDestination: (index: number) => void
+  maxDestinations: number
+  // The /upgrade link needs an existing profile to check status against —
+  // suppress it during onboarding, where hitting the limit would otherwise
+  // bounce a mid-wizard user back to "/" and lose their unsaved progress.
+  showUpgradeLink?: boolean
 }
 
 // Shared by the onboarding wizard's ปลายทาง step and the standalone ตั้งค่า
@@ -41,7 +47,10 @@ export function DestinationFields({
   onUpdateDestination,
   onAddDestination,
   onRemoveDestination,
+  maxDestinations,
+  showUpgradeLink = true,
 }: DestinationFieldsProps) {
+  const atLimit = destinations.length >= maxDestinations
   return (
     <div className="flex flex-col gap-2">
       <span className="text-sm font-medium">ปลายทาง — จังหวัดที่ต้องการย้ายไป</span>
@@ -101,13 +110,27 @@ export function DestinationFields({
           </button>
         </div>
       ))}
-      <button
-        type="button"
-        onClick={onAddDestination}
-        className="self-start text-sm link-accent"
-      >
-        + เพิ่มปลายทาง
-      </button>
+      {atLimit ? (
+        <p className="text-xs text-zinc-500">
+          แพ็กเกจปัจจุบันเพิ่มปลายทางได้สูงสุด {maxDestinations} แห่ง
+          {showUpgradeLink && (
+            <>
+              {' '}
+              <Link href="/upgrade" className="link-accent">
+                อัปเกรดเพื่อเพิ่มได้มากขึ้น
+              </Link>
+            </>
+          )}
+        </p>
+      ) : (
+        <button
+          type="button"
+          onClick={onAddDestination}
+          className="self-start text-sm link-accent"
+        >
+          + เพิ่มปลายทาง
+        </button>
+      )}
     </div>
   )
 }

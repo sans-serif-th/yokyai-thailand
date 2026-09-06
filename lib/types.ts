@@ -52,3 +52,19 @@ export interface MatchResult {
   tier: MatchTier
   favorited: boolean
 }
+
+export interface Round {
+  id: string
+  label: string
+  is_active: boolean
+}
+
+export type PackageCode = 'free' | 'paid'
+
+export interface SubscriptionStatus {
+  round: Round | null
+  package: PackageCode
+  verified: boolean
+  maxDestinations: number
+  slipUploaded: boolean
+}

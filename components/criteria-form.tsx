@@ -17,6 +17,7 @@ function upcomingTransferYears(): number[] {
 interface CriteriaFormProps {
   teacher: Teacher
   initialDestinations: Destination[]
+  maxDestinations: number
   onSave: (payload: ProfilePayload) => Promise<void>
 }
 
@@ -25,7 +26,12 @@ interface CriteriaFormProps {
 // destinations. Contact name lives on the separate โปรไฟล์ page, but PUT
 // /api/teachers replaces the whole profile, so it's passed through
 // unchanged here.
-export function CriteriaForm({ teacher, initialDestinations, onSave }: CriteriaFormProps) {
+export function CriteriaForm({
+  teacher,
+  initialDestinations,
+  maxDestinations,
+  onSave,
+}: CriteriaFormProps) {
   const [position, setPosition] = useState<PositionCode | ''>(teacher.position)
   const [serviceType, setServiceType] = useState<ServiceTypeCode | ''>(teacher.service_type)
   const [originProvince, setOriginProvince] = useState(teacher.origin_province)
@@ -97,7 +103,9 @@ export function CriteriaForm({ teacher, initialDestinations, onSave }: CriteriaF
   }
 
   function addDestination() {
-    setDestinations((prev) => [...prev, { province: '', district: '', zone: '' }])
+    setDestinations((prev) =>
+      prev.length >= maxDestinations ? prev : [...prev, { province: '', district: '', zone: '' }]
+    )
   }
 
   function removeDestination(index: number) {
@@ -197,6 +205,7 @@ export function CriteriaForm({ teacher, initialDestinations, onSave }: CriteriaF
           onUpdateDestination={updateDestination}
           onAddDestination={addDestination}
           onRemoveDestination={removeDestination}
+          maxDestinations={maxDestinations}
         />
       )}
 

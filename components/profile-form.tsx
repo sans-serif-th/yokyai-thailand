@@ -6,6 +6,7 @@ import { POSITIONS, requiresTeachingGroup, type PositionCode } from '@/lib/posit
 import type { ServiceTypeCode } from '@/lib/service-types'
 import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
 import { DestinationFields, findDuplicateProvince, type DestinationDraft } from './destination-fields'
+import { FREE_DESTINATION_LIMIT } from '@/lib/package-limits'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
 // 0 is the career-category picker — a gate before the numbered steps, so
@@ -143,7 +144,9 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
   }
 
   function addDestination() {
-    setDestinations((prev) => [...prev, { province: '', district: '', zone: '' }])
+    setDestinations((prev) =>
+      prev.length >= FREE_DESTINATION_LIMIT ? prev : [...prev, { province: '', district: '', zone: '' }]
+    )
   }
 
   function removeDestination(index: number) {
@@ -297,6 +300,8 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
           onUpdateDestination={updateDestination}
           onAddDestination={addDestination}
           onRemoveDestination={removeDestination}
+          maxDestinations={FREE_DESTINATION_LIMIT}
+          showUpgradeLink={false}
         />
       )}
 

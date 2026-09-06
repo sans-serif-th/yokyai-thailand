@@ -1,4 +1,4 @@
-import type { Destination, MatchResult, ProfilePayload, Teacher } from './types'
+import type { Destination, MatchResult, ProfilePayload, SubscriptionStatus, Teacher } from './types'
 
 // Carries the HTTP status so callers can distinguish "the LINE ID token
 // expired" (401 — recoverable by re-authenticating, see lib/session.ts)
@@ -60,5 +60,16 @@ export async function removeFavorite(idToken: string, teacherId: string): Promis
   await authedFetch('/api/favorites', idToken, {
     method: 'DELETE',
     body: JSON.stringify({ teacherId }),
+  })
+}
+
+export async function fetchSubscriptionStatus(idToken: string): Promise<SubscriptionStatus> {
+  return authedFetch('/api/subscription', idToken)
+}
+
+export async function uploadPaymentSlip(idToken: string, slipDataUrl: string): Promise<void> {
+  await authedFetch('/api/subscription', idToken, {
+    method: 'POST',
+    body: JSON.stringify({ slip: slipDataUrl }),
   })
 }

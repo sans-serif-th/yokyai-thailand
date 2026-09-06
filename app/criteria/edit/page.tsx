@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { fetchProfile, saveProfile } from '@/lib/api'
+import { fetchProfile, fetchSubscriptionStatus, saveProfile } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { CriteriaForm } from '@/components/criteria-form'
+import { PAID_DESTINATION_LIMIT } from '@/lib/package-limits'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
 type View = 'loading' | 'ready' | 'error'
@@ -15,6 +16,7 @@ export default function CriteriaEditPage() {
   const [idToken, setIdToken] = useState<string | null>(null)
   const [teacher, setTeacher] = useState<Teacher | null>(null)
   const [destinations, setDestinations] = useState<Destination[]>([])
+  const [maxDestinations, setMaxDestinations] = useState(PAID_DESTINATION_LIMIT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
@@ -30,6 +32,10 @@ export default function CriteriaEditPage() {
 
         setTeacher(profile.teacher)
         setDestinations(profile.destinations ?? [])
+
+        const status = await withAuthRetry((t) => fetchSubscriptionStatus(t))
+        setMaxDestinations(status.result.maxDestinations)
+
         setView('ready')
       } catch (err) {
         setErrorMessage((err as Error).message)
@@ -57,6 +63,11 @@ export default function CriteriaEditPage() {
   if (!teacher) return null
 
   return (
-    <CriteriaForm teacher={teacher} initialDestinations={destinations} onSave={handleSave} />
+    <CriteriaForm
+      teacher={teacher}
+      initialDestinations={destinations}
+      maxDestinations={maxDestinations}
+      onSave={handleSave}
+    />
   )
 }

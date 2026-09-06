@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { LineAuthError, verifyRequestAuth } from '@/lib/line-auth'
 import { POSITIONS, requiresTeachingGroup } from '@/lib/positions'
+import { getSubscriptionStatusFor } from '@/lib/rounds'
 import { SERVICE_TYPES } from '@/lib/service-types'
 import { createServiceClient } from '@/lib/supabase-server'
 import { TEACHING_GROUPS } from '@/lib/teaching-groups'
@@ -96,6 +97,16 @@ export async function PUT(request: Request) {
 
     if (!validatePayload(body)) {
       return NextResponse.json({ error: 'Invalid profile payload' }, { status: 400 })
+    }
+
+    const { maxDestinations } = await getSubscriptionStatusFor(auth.sub)
+    if (body.destinations.length > maxDestinations) {
+      return NextResponse.json(
+        {
+          error: `แพ็กเกจปัจจุบันของคุณเพิ่มปลายทางได้สูงสุด ${maxDestinations} แห่ง กรุณาลบปลายทางส่วนเกิน หรืออัปเกรดแพ็กเกจ`,
+        },
+        { status: 400 }
+      )
     }
 
     const supabase = createServiceClient()
