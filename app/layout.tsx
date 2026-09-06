@@ -14,7 +14,7 @@ const sarabun = Sarabun({
 });
 
 export const metadata: Metadata = {
-  title: "ยกย้าย — Teacher Position Swap",
+  title: "โยกย้าย — Teacher Position Swap",
   description: "Find a teacher who wants to mutually swap positions with you.",
 };
 
