@@ -24,6 +24,7 @@ export interface Teacher {
   subject: string | null
   benefit_note: string | null
   transfer_round: number | null
+  facebook_url: string | null
 }
 
 export type MatchTier = 'perfect' | 'high' | 'partial'
@@ -40,6 +41,7 @@ export interface ProfilePayload {
   subject: string | null
   benefitNote: string | null
   transferRound: number | null
+  facebookUrl: string | null
   destinations: { province: string; district: string | null; zone: string | null }[]
 }
 

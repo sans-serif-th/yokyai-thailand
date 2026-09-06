@@ -17,10 +17,12 @@ interface ProfilePayload {
   subject?: string | null
   benefitNote?: string | null
   transferRound?: number | null
+  facebookUrl?: string | null
   destinations: { province: string; district?: string | null; zone?: string | null }[]
 }
 
 const BENEFIT_NOTE_MAX_LENGTH = 500
+const FACEBOOK_URL_MAX_LENGTH = 300
 
 function validatePayload(body: unknown): body is ProfilePayload {
   if (!body || typeof body !== 'object') return false
@@ -44,6 +46,11 @@ function validatePayload(body: unknown): body is ProfilePayload {
   }
   if (b.transferRound !== null && b.transferRound !== undefined) {
     if (typeof b.transferRound !== 'number' || !Number.isInteger(b.transferRound)) return false
+  }
+  if (b.facebookUrl !== null && b.facebookUrl !== undefined) {
+    if (typeof b.facebookUrl !== 'string' || b.facebookUrl.length > FACEBOOK_URL_MAX_LENGTH) {
+      return false
+    }
   }
   if (!Array.isArray(b.destinations) || b.destinations.length === 0) return false
   return b.destinations.every(
@@ -109,6 +116,7 @@ export async function PUT(request: Request) {
           subject: requiresTeachingGroup(body.position) ? (body.subject ?? null) : null,
           benefit_note: body.benefitNote ?? null,
           transfer_round: body.transferRound ?? null,
+          facebook_url: body.facebookUrl?.trim() || null,
         },
         { onConflict: 'line_user_id' }
       )

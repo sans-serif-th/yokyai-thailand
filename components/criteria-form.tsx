@@ -134,6 +134,7 @@ export function CriteriaForm({ teacher, initialDestinations, onSave }: CriteriaF
     try {
       await onSave({
         displayName: teacher.display_name,
+        facebookUrl: teacher.facebook_url,
         position,
         serviceType,
         originProvince,

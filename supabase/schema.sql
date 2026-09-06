@@ -83,6 +83,8 @@ create table teachers (
 
   transfer_round integer,      -- optional, the year (e.g. 2027) the applicant wants to move in — informational only, not used for matching
 
+  facebook_url text,           -- optional, an alternate contact route shown on match cards alongside LINE — informational only, not used for matching
+
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

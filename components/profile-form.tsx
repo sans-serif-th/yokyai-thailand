@@ -83,6 +83,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
   const [lastName, setLastName] = useState(
     () => splitDisplayName(initialTeacher?.display_name)[1]
   )
+  const [facebookUrl, setFacebookUrl] = useState(initialTeacher?.facebook_url ?? '')
   const [termsAccepted, setTermsAccepted] = useState(false)
 
   const [saving, setSaving] = useState(false)
@@ -214,6 +215,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
         subject: isTeacher ? joinSubjects(subjects) : null,
         benefitNote: benefitNote.trim() || null,
         transferRound: transferRound || null,
+        facebookUrl: facebookUrl.trim() || null,
         destinations: validDestinations.map((d) => ({
           province: d.province,
           district: d.district.trim() || null,
@@ -315,6 +317,16 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
               className="input-field"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">ลิงก์ Facebook (ไม่บังคับ)</span>
+            <input
+              className="input-field"
+              value={facebookUrl}
+              onChange={(e) => setFacebookUrl(e.target.value)}
+              placeholder="https://facebook.com/..."
             />
           </label>
 

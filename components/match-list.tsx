@@ -102,6 +102,16 @@ export function MatchList({ matches, onToggleFavorite }: MatchListProps) {
               {m.teacher.benefit_note && (
                 <p className="text-sm text-zinc-500 mt-1">💡 {m.teacher.benefit_note}</p>
               )}
+              {m.teacher.facebook_url && (
+                <a
+                  href={m.teacher.facebook_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm link-accent mt-1 inline-block"
+                >
+                  ติดต่อผ่าน Facebook
+                </a>
+              )}
             </li>
           ))}
         </ul>
