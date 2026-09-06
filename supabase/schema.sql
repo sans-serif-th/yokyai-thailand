@@ -129,6 +129,49 @@ create table favorites (
 
 create index idx_favorites_teacher on favorites (teacher_id);
 
+-- A transfer cycle (e.g. "2569/1", "2569/2"). Payment and package limits
+-- are scoped to whichever round is currently active — a teacher's profile
+-- and destinations persist across rounds regardless (see
+-- round_subscriptions below for what actually resets).
+create table rounds (
+  id uuid primary key default gen_random_uuid(),
+  label text not null unique,
+  is_active boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+-- At most one round can be active at a time — a partial unique index on a
+-- boolean column that's only indexed where true works because every
+-- indexed row then shares the same value, so a second true row collides.
+create unique index only_one_active_round on rounds (is_active) where is_active;
+
+-- A teacher's package for one specific round. Free = 1 destination allowed
+-- that round; paid = 3, but only once verified_at is set (uploading a slip
+-- alone doesn't unlock anything — see slip_url). Admin verification is
+-- manual for the MVP: check the uploaded slip in Storage, then set
+-- verified_at directly via SQL — no in-app admin UI yet.
+create table round_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null references teachers(id) on delete cascade,
+  round_id uuid not null references rounds(id) on delete cascade,
+  package text not null default 'free' check (package in ('free', 'paid')),
+  slip_url text,                  -- Storage object path for the uploaded PromptPay slip
+  verified_at timestamptz,        -- null = pending/unverified; set by admin after manual check
+  created_at timestamptz not null default now(),
+  unique (teacher_id, round_id)
+);
+
+create index idx_round_subscriptions_teacher on round_subscriptions (teacher_id);
+create index idx_round_subscriptions_round on round_subscriptions (round_id);
+
+-- Storage bucket for uploaded payment slips. Private (not public) — the
+-- app only ever writes to it server-side with the service role key, and
+-- the admin views slips directly in the Supabase dashboard's Storage
+-- browser, so no client-facing read policy is needed either.
+insert into storage.buckets (id, name, public)
+values ('payment-slips', 'payment-slips', false)
+on conflict (id) do nothing;
+
 create or replace function set_updated_at()
 returns trigger as $$
 begin
@@ -151,3 +194,5 @@ create trigger teachers_set_updated_at
 alter table teachers enable row level security;
 alter table destinations enable row level security;
 alter table favorites enable row level security;
+alter table rounds enable row level security;
+alter table round_subscriptions enable row level security;
