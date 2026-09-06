@@ -25,6 +25,7 @@ export interface Teacher {
   benefit_note: string | null
   transfer_round: number | null
   facebook_url: string | null
+  source: 'app' | 'facebook_import'
 }
 
 export type MatchTier = 'perfect' | 'high' | 'partial'

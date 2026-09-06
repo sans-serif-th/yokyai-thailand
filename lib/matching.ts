@@ -18,6 +18,14 @@ import type { Destination, MatchResult, MatchTier, Teacher } from './types'
 //   partial: base match only — the only tier reachable when the position has
 //            no subject (e.g. นักจัดการงานทั่วไป), since subjectMatch is then
 //            always false
+// PDPA: a facebook_import row was never entered by the person it names, so
+// its display_name is masked before it ever leaves the server — anyone
+// viewing it as a match candidate sees only the masked form.
+function maskIfImported(teacher: Teacher): Teacher {
+  if (teacher.source !== 'facebook_import') return teacher
+  return { ...teacher, display_name: `${teacher.display_name.slice(0, 2)}***` }
+}
+
 function districtSatisfied(preferredDistrict: string | null, actualDistrict: string | null) {
   // No preference stated -> any district in the province is acceptable.
   if (!preferredDistrict) return true
@@ -120,7 +128,12 @@ export async function findMatchesFor(lineUserId: string): Promise<MatchResult[]>
       candidateDestForRequesterProvince
     )
 
-    results.push({ teacher: candidate, destinations: candidateDests, tier, favorited: false })
+    results.push({
+      teacher: maskIfImported(candidate),
+      destinations: candidateDests,
+      tier,
+      favorited: false,
+    })
   }
 
   const tierOrder: Record<MatchTier, number> = { perfect: 0, high: 1, partial: 2 }

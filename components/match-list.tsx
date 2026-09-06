@@ -83,6 +83,11 @@ export function MatchList({ matches, onToggleFavorite }: MatchListProps) {
                   </button>
                 </div>
               </div>
+              {m.teacher.source === 'facebook_import' && (
+                <span className="inline-block text-xs text-zinc-500 bg-zinc-100 rounded-full px-2 py-0.5 mt-1">
+                  ข้อมูลนำเข้า
+                </span>
+              )}
               <p className="text-sm text-zinc-600">
                 {positionLabel(m.teacher.position)} · {serviceTypeAbbr(m.teacher.service_type)}
                 {m.teacher.teaching_group ? ` · ${teachingGroupLabel(m.teacher.teaching_group)}` : ''}

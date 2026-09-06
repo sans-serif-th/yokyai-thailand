@@ -85,6 +85,12 @@ create table teachers (
 
   facebook_url text,           -- optional, an alternate contact route shown on match cards alongside LINE — informational only, not used for matching
 
+  -- 'app': signed up via LINE themselves. 'facebook_import': seeded from a
+  -- public Facebook post/comment, never logged into — display_name is
+  -- masked (PDPA) whenever shown to anyone other than the row itself, and
+  -- match cards tag these so a real user knows the data wasn't self-entered.
+  source text not null default 'app' check (source in ('app', 'facebook_import')),
+
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
