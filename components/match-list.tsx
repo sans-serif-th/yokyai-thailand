@@ -22,13 +22,21 @@ export function MatchList({ matches, onToggleFavorite }: MatchListProps) {
   const [subjectFilter, setSubjectFilter] = useState('')
   const [destinationFilter, setDestinationFilter] = useState('')
 
+  const subjectOptions = useMemo(() => {
+    const values = new Set(matches.map((m) => m.teacher.subject).filter((s): s is string => !!s))
+    return [...values].sort()
+  }, [matches])
+
+  const destinationOptions = useMemo(() => {
+    const values = new Set(matches.flatMap((m) => m.destinations.map((d) => d.province)))
+    return [...values].sort()
+  }, [matches])
+
   const filtered = useMemo(() => {
     return matches.filter((m) => {
-      const subjectOk =
-        !subjectFilter || (m.teacher.subject ?? '').toLowerCase().includes(subjectFilter.toLowerCase())
+      const subjectOk = !subjectFilter || m.teacher.subject === subjectFilter
       const destinationOk =
-        !destinationFilter ||
-        m.destinations.some((d) => d.province.includes(destinationFilter))
+        !destinationFilter || m.destinations.some((d) => d.province === destinationFilter)
       return subjectOk && destinationOk
     })
   }, [matches, subjectFilter, destinationFilter])
@@ -49,18 +57,30 @@ export function MatchList({ matches, onToggleFavorite }: MatchListProps) {
       <h1 className="text-xl font-semibold">ผลการจับคู่</h1>
 
       <div className="grid grid-cols-2 gap-2">
-        <input
+        <select
           className="input-field text-sm"
-          placeholder="กรองตามวิชาเอก"
           value={subjectFilter}
           onChange={(e) => setSubjectFilter(e.target.value)}
-        />
-        <input
+        >
+          <option value="">วิชาเอกทั้งหมด</option>
+          {subjectOptions.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        <select
           className="input-field text-sm"
-          placeholder="กรองตามจังหวัดปลายทาง"
           value={destinationFilter}
           onChange={(e) => setDestinationFilter(e.target.value)}
-        />
+        >
+          <option value="">จังหวัดปลายทางทั้งหมด</option>
+          {destinationOptions.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
       </div>
 
       {filtered.length === 0 ? (
