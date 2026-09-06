@@ -18,6 +18,27 @@ interface LineVerifyResponse {
 
 export class LineAuthError extends Error {}
 
+// A page load fires off several API calls (teachers, matches, subscription,
+// favorites) that each carry the same ID token — without this, every one of
+// them independently round-trips to LINE's verify endpoint before any of our
+// own data loads, which is the main source of "the app feels slow to load".
+// Keyed by the raw token string, so a refreshed token (new value) always
+// gets re-verified for real.
+//
+// In-memory only: on Vercel this cache lives per warm serverless instance,
+// so it helps the common case (several requests from one page load hitting
+// the same warm instance back-to-back) without needing an external store.
+// Capped well under the token's own expiry so we never trust a cached
+// result past when LINE itself would've rejected the token.
+const VERIFY_CACHE_TTL_MS = 60_000
+const verifyCache = new Map<string, { result: LineVerifyResponse; cachedUntil: number }>()
+
+function pruneExpiredCacheEntries(now: number) {
+  for (const [token, entry] of verifyCache) {
+    if (entry.cachedUntil <= now) verifyCache.delete(token)
+  }
+}
+
 export async function verifyLineIdToken(idToken: string): Promise<LineVerifyResponse> {
   const channelId = process.env.LINE_CHANNEL_ID ?? process.env.CHANNEL_ID
   if (!channelId) {
@@ -25,6 +46,12 @@ export async function verifyLineIdToken(idToken: string): Promise<LineVerifyResp
   }
   if (!idToken) {
     throw new LineAuthError('Missing ID token')
+  }
+
+  const now = Date.now()
+  const cached = verifyCache.get(idToken)
+  if (cached && cached.cachedUntil > now) {
+    return cached.result
   }
 
   const res = await fetch('https://api.line.me/oauth2/v2.1/verify', {
@@ -35,10 +62,16 @@ export async function verifyLineIdToken(idToken: string): Promise<LineVerifyResp
 
   if (!res.ok) {
     const body = await res.text()
+    verifyCache.delete(idToken)
     throw new LineAuthError(`LINE token verification failed: ${res.status} ${body}`)
   }
 
-  return (await res.json()) as LineVerifyResponse
+  const result = (await res.json()) as LineVerifyResponse
+  // Never cache past the token's own expiry (exp is in seconds; Date.now() in ms).
+  const cachedUntil = Math.min(now + VERIFY_CACHE_TTL_MS, result.exp * 1000)
+  pruneExpiredCacheEntries(now)
+  verifyCache.set(idToken, { result, cachedUntil })
+  return result
 }
 
 // Extracts and verifies the ID token from an Authorization: Bearer header.

@@ -58,17 +58,27 @@ function rankTier(
   return 'partial'
 }
 
-export async function findMatchesFor(lineUserId: string): Promise<MatchResult[]> {
+// `preloadedRequester` lets a caller that already fetched this teacher's row
+// (e.g. getFavoritedMatchesFor, which needs it anyway to resolve favorite
+// ids) skip a second identical lookup here.
+export async function findMatchesFor(
+  lineUserId: string,
+  preloadedRequester?: Teacher
+): Promise<MatchResult[]> {
   const supabase = createServiceClient()
 
-  const { data: requester, error: requesterError } = await supabase
-    .from('teachers')
-    .select('*')
-    .eq('line_user_id', lineUserId)
-    .single()
+  let requester = preloadedRequester
+  if (!requester) {
+    const { data, error: requesterError } = await supabase
+      .from('teachers')
+      .select('*')
+      .eq('line_user_id', lineUserId)
+      .single()
 
-  if (requesterError || !requester) {
-    throw new Error('Teacher profile not found — complete your profile first')
+    if (requesterError || !data) {
+      throw new Error('Teacher profile not found — complete your profile first')
+    }
+    requester = data as Teacher
   }
 
   const { data: requesterDestinations, error: destError } = await supabase

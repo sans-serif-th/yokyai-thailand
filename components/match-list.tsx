@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Link from 'next/link'
 import { HeartIcon } from './icons'
 import { positionLabel } from '@/lib/positions'
 import { serviceTypeAbbr } from '@/lib/service-types'
@@ -16,9 +17,16 @@ const TIER_LABEL: Record<MatchResult['tier'], string> = {
 interface MatchListProps {
   matches: MatchResult[]
   onToggleFavorite: (teacherId: string, currentlyFavorited: boolean) => void
+  title?: string
+  showSettingsLink?: boolean
 }
 
-export function MatchList({ matches, onToggleFavorite }: MatchListProps) {
+export function MatchList({
+  matches,
+  onToggleFavorite,
+  title = 'ผลการจับคู่',
+  showSettingsLink = false,
+}: MatchListProps) {
   const [subjectFilter, setSubjectFilter] = useState('')
   const [destinationFilter, setDestinationFilter] = useState('')
 
@@ -66,7 +74,14 @@ export function MatchList({ matches, onToggleFavorite }: MatchListProps) {
 
   return (
     <div className="max-w-lg mx-auto p-4 flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">ผลการจับคู่</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">{title}</h1>
+        {showSettingsLink && (
+          <Link href="/criteria" className="text-sm link-accent">
+            ตั้งค่า
+          </Link>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 gap-2">
         <select

@@ -123,6 +123,7 @@ export default function MatchesPage() {
         <MatchList
           matches={devMode ? (devMatches ?? []) : matches}
           onToggleFavorite={handleToggleFavorite}
+          showSettingsLink
         />
       )}
     </div>

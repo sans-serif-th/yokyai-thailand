@@ -68,5 +68,5 @@ export default function FavoritesPage() {
     )
   }
 
-  return <MatchList matches={matches} onToggleFavorite={handleToggleFavorite} />
+  return <MatchList matches={matches} onToggleFavorite={handleToggleFavorite} title="รายการโปรด" />
 }

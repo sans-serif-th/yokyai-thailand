@@ -1,19 +1,23 @@
 import { findMatchesFor } from './matching'
 import { createServiceClient } from './supabase-server'
-import type { MatchResult } from './types'
+import type { MatchResult, Teacher } from './types'
 
-async function getTeacherId(lineUserId: string): Promise<string> {
+async function getTeacher(lineUserId: string): Promise<Teacher> {
   const supabase = createServiceClient()
   const { data: teacher, error } = await supabase
     .from('teachers')
-    .select('id')
+    .select('*')
     .eq('line_user_id', lineUserId)
     .single()
 
   if (error || !teacher) {
     throw new Error('Teacher profile not found — complete your profile first')
   }
-  return teacher.id
+  return teacher
+}
+
+async function getTeacherId(lineUserId: string): Promise<string> {
+  return (await getTeacher(lineUserId)).id
 }
 
 export async function getFavoriteIdsFor(lineUserId: string): Promise<Set<string>> {
@@ -33,10 +37,20 @@ export async function getFavoriteIdsFor(lineUserId: string): Promise<Set<string>
 // match (e.g. they changed their destinations), they simply drop out of
 // this list, same as they would from the main matches page.
 export async function getFavoritedMatchesFor(lineUserId: string): Promise<MatchResult[]> {
-  const favoriteIds = await getFavoriteIdsFor(lineUserId)
+  // Fetch the teacher row once and reuse it for both the favorites lookup
+  // and findMatchesFor, instead of each resolving it separately.
+  const teacher = await getTeacher(lineUserId)
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from('favorites')
+    .select('favorited_teacher_id')
+    .eq('teacher_id', teacher.id)
+
+  if (error) throw error
+  const favoriteIds = new Set((data ?? []).map((row) => row.favorited_teacher_id))
   if (favoriteIds.size === 0) return []
 
-  const matches = await findMatchesFor(lineUserId)
+  const matches = await findMatchesFor(lineUserId, teacher)
   return matches
     .filter((m) => favoriteIds.has(m.teacher.id))
     .map((m) => ({ ...m, favorited: true }))
