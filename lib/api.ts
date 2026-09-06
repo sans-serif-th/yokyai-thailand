@@ -54,6 +54,12 @@ export async function fetchFavorites(idToken: string): Promise<{ matches: MatchR
   return authedFetch('/api/favorites', idToken)
 }
 
+// Dev-only — see app/api/matches/dev/route.ts. 404s unless
+// NEXT_PUBLIC_DEV_TOOLS=1 is set.
+export async function fetchAllImportedForDev(idToken: string): Promise<{ matches: MatchResult[] }> {
+  return authedFetch('/api/matches/dev', idToken)
+}
+
 export async function addFavorite(idToken: string, teacherId: string): Promise<void> {
   await authedFetch('/api/favorites', idToken, {
     method: 'POST',

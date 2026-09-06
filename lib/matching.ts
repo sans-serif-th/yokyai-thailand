@@ -24,7 +24,7 @@ import type { Destination, MatchResult, MatchTier, Teacher } from './types'
 // admin-delivered invite link (see lib/invites.ts), never shown here.
 // invite_code is stripped unconditionally (not just for imports) since no
 // match result should ever carry another teacher's claim code.
-function sanitizeForMatch(teacher: Teacher): Teacher {
+export function sanitizeForMatch(teacher: Teacher): Teacher {
   const imported = teacher.source === 'facebook_import'
   return {
     ...teacher,
@@ -148,4 +148,46 @@ export async function findMatchesFor(lineUserId: string): Promise<MatchResult[]>
   results.sort((a, b) => tierOrder[a.tier] - tierOrder[b.tier])
 
   return results
+}
+
+// Dev-only: every facebook_import row, unfiltered by the real matching
+// criteria (position/service_type/subject/reciprocity) — for eyeballing
+// scraped data after an import, not shown to real users. Gated by
+// NEXT_PUBLIC_DEV_TOOLS at the route level (see app/api/matches/dev/route.ts);
+// still runs every result through the same PDPA sanitization as a real match
+// (masked display_name, hidden facebook_url, stripped invite_code) since this
+// can be reached on a live deployment.
+export async function getImportedTeachersForDev(): Promise<MatchResult[]> {
+  const supabase = createServiceClient()
+
+  const { data: teachers, error } = await supabase
+    .from('teachers')
+    .select('*')
+    .eq('source', 'facebook_import')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  if (!teachers?.length) return []
+
+  const teacherIds = teachers.map((t) => t.id)
+  const { data: destinations, error: destError } = await supabase
+    .from('destinations')
+    .select('*')
+    .in('teacher_id', teacherIds)
+
+  if (destError) throw destError
+
+  const destinationsByTeacher = new Map<string, Destination[]>()
+  for (const d of destinations ?? []) {
+    const list = destinationsByTeacher.get(d.teacher_id) ?? []
+    list.push(d)
+    destinationsByTeacher.set(d.teacher_id, list)
+  }
+
+  return (teachers as Teacher[]).map((teacher) => ({
+    teacher: sanitizeForMatch(teacher),
+    destinations: destinationsByTeacher.get(teacher.id) ?? [],
+    tier: 'partial' as const,
+    favorited: false,
+  }))
 }
