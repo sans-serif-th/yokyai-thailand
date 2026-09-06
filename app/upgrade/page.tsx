@@ -114,9 +114,8 @@ export default function UpgradePage() {
         <>
           <div className="card-surface flex flex-col gap-3 items-center">
             <p className="text-sm font-medium self-start">สแกน PromptPay เพื่อชำระเงิน</p>
-            {/* TODO: replace with the real PromptPay QR image at public/promptpay-qr.png */}
             <img
-              src="/promptpay-qr.png"
+              src="/promptpay-qr.jpg"
               alt="PromptPay QR"
               className="w-48 h-48 object-contain border border-sage rounded-lg"
             />
