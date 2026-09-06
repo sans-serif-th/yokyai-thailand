@@ -137,11 +137,6 @@ export function MatchList({ matches, onToggleFavorite }: MatchListProps) {
                   ติดต่อผ่าน Facebook
                 </a>
               )}
-              {m.teacher.source === 'facebook_import' && (
-                <p className="text-xs text-zinc-500 mt-1">
-                  ข้อมูลนี้มาจาก Facebook — ทีมงานจะติดต่อเจ้าของข้อมูลให้หากมีการจับคู่
-                </p>
-              )}
             </li>
           ))}
         </ul>
