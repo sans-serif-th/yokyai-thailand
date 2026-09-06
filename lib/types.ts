@@ -24,6 +24,7 @@ export interface Teacher {
   subject: string | null
   benefit_note: string | null
   transfer_round: string | null
+  transfer_year: number | null
   facebook_url: string | null
   source: 'app' | 'facebook_import'
   invite_code: string | null
@@ -43,6 +44,7 @@ export interface ProfilePayload {
   subject: string | null
   benefitNote: string | null
   transferRound: string | null
+  transferYear: number | null
   facebookUrl: string | null
   destinations: { province: string; district: string | null; zone: string | null }[]
 }

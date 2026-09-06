@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
-import { upcomingTransferRoundOptions } from '@/lib/transfer-rounds'
+import { upcomingTransferYears } from '@/lib/transfer-rounds'
 import { BackHeader } from './back-header'
 import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
 import { DestinationFields, findDuplicateProvince, type DestinationDraft } from './destination-fields'
@@ -39,8 +39,11 @@ export function CriteriaForm({
   const [teachingGroup, setTeachingGroup] = useState(teacher.teaching_group ?? '')
   const [subjects, setSubjects] = useState<string[]>(() => splitSubjects(teacher.subject))
   const [transferRound, setTransferRound] = useState(teacher.transfer_round ?? '')
+  const [transferYear, setTransferYear] = useState(
+    teacher.transfer_year ? String(teacher.transfer_year) : ''
+  )
   const [benefitNote, setBenefitNote] = useState(teacher.benefit_note ?? '')
-  const [transferRoundOptions] = useState(() => upcomingTransferRoundOptions())
+  const [transferYearOptions] = useState(() => upcomingTransferYears())
 
   const [destinations, setDestinations] = useState<DestinationDraft[]>(
     initialDestinations.length
@@ -116,6 +119,7 @@ export function CriteriaForm({
     if (!originProvince) return 'กรุณาเลือกจังหวัดต้นทาง'
     if (requiresTeachingGroup(position) && !teachingGroup) return 'กรุณาเลือกกลุ่มสาระการเรียนรู้'
     if (!transferRound) return 'กรุณาเลือกรอบที่ต้องการย้าย'
+    if (!transferYear) return 'กรุณาเลือกปีที่ต้องการย้าย'
     if (!destinations.some((d) => d.province.trim())) {
       return 'กรุณาเพิ่มปลายทางอย่างน้อย 1 แห่ง'
     }
@@ -152,6 +156,7 @@ export function CriteriaForm({
         subject: isTeacher ? joinSubjects(subjects) : null,
         benefitNote: benefitNote.trim() || null,
         transferRound: transferRound || null,
+        transferYear: transferYear ? Number(transferYear) : null,
         destinations: validDestinations.map((d) => ({
           province: d.province,
           district: d.district.trim() || null,
@@ -193,7 +198,9 @@ export function CriteriaForm({
           onRemoveSubject={removeSubject}
           transferRound={transferRound}
           onTransferRoundChange={setTransferRound}
-          transferRoundOptions={transferRoundOptions}
+          transferYear={transferYear}
+          onTransferYearChange={setTransferYear}
+          transferYearOptions={transferYearOptions}
           benefitNote={benefitNote}
           onBenefitNoteChange={setBenefitNote}
         />

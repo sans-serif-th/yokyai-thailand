@@ -44,6 +44,7 @@ export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFo
         subject: teacher.subject,
         benefitNote: teacher.benefit_note,
         transferRound: teacher.transfer_round,
+        transferYear: teacher.transfer_year,
         facebookUrl: facebookUrl.trim() || null,
         destinations: destinations.map((d) => ({
           province: d.province,

@@ -34,6 +34,14 @@ export function validateProfilePayload(body: unknown): body is ProfilePayload {
   if (typeof b.transferRound !== 'string' || !TRANSFER_ROUND_PATTERN.test(b.transferRound)) {
     return false
   }
+  if (
+    typeof b.transferYear !== 'number' ||
+    !Number.isInteger(b.transferYear) ||
+    b.transferYear < 2000 ||
+    b.transferYear > 2100
+  ) {
+    return false
+  }
   if (b.facebookUrl !== null && b.facebookUrl !== undefined) {
     if (typeof b.facebookUrl !== 'string' || b.facebookUrl.length > FACEBOOK_URL_MAX_LENGTH) {
       return false
@@ -60,6 +68,7 @@ export function profilePayloadToTeacherRow(payload: ProfilePayload) {
     subject: isTeacher ? (payload.subject ?? null) : null,
     benefit_note: payload.benefitNote ?? null,
     transfer_round: payload.transferRound ?? null,
+    transfer_year: payload.transferYear ?? null,
     facebook_url: payload.facebookUrl?.trim() || null,
   }
 }

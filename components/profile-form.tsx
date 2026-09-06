@@ -7,7 +7,7 @@ import type { ServiceTypeCode } from '@/lib/service-types'
 import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
 import { DestinationFields, findDuplicateProvince, type DestinationDraft } from './destination-fields'
 import { FREE_DESTINATION_LIMIT } from '@/lib/package-limits'
-import { upcomingTransferRoundOptions } from '@/lib/transfer-rounds'
+import { upcomingTransferYears } from '@/lib/transfer-rounds'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
 // 0 is the career-category picker — a gate before the numbered steps, so
@@ -54,8 +54,11 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
     splitSubjects(initialTeacher?.subject ?? null)
   )
   const [transferRound, setTransferRound] = useState(initialTeacher?.transfer_round ?? '')
+  const [transferYear, setTransferYear] = useState(
+    initialTeacher?.transfer_year ? String(initialTeacher.transfer_year) : ''
+  )
   const [benefitNote, setBenefitNote] = useState(initialTeacher?.benefit_note ?? '')
-  const [transferRoundOptions] = useState(() => upcomingTransferRoundOptions())
+  const [transferYearOptions] = useState(() => upcomingTransferYears())
 
   // Step 2 — ปลายทาง
   const [destinations, setDestinations] = useState<DestinationDraft[]>(
@@ -150,6 +153,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
     if (!originProvince) return 'กรุณาเลือกจังหวัดต้นทาง'
     if (requiresTeachingGroup(position) && !teachingGroup) return 'กรุณาเลือกกลุ่มสาระการเรียนรู้'
     if (!transferRound) return 'กรุณาเลือกรอบที่ต้องการย้าย'
+    if (!transferYear) return 'กรุณาเลือกปีที่ต้องการย้าย'
     return null
   }
 
@@ -210,6 +214,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
         subject: isTeacher ? joinSubjects(subjects) : null,
         benefitNote: benefitNote.trim() || null,
         transferRound: transferRound || null,
+        transferYear: transferYear ? Number(transferYear) : null,
         facebookUrl: facebookUrl.trim() || null,
         destinations: validDestinations.map((d) => ({
           province: d.province,
@@ -279,7 +284,9 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
           onRemoveSubject={removeSubject}
           transferRound={transferRound}
           onTransferRoundChange={setTransferRound}
-          transferRoundOptions={transferRoundOptions}
+          transferYear={transferYear}
+          onTransferYearChange={setTransferYear}
+          transferYearOptions={transferYearOptions}
           benefitNote={benefitNote}
           onBenefitNoteChange={setBenefitNote}
         />

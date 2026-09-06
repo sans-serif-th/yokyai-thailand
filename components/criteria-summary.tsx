@@ -55,8 +55,11 @@ export function CriteriaSummary({ teacher, destinations }: CriteriaSummaryProps)
               }
             />
           )}
-          {teacher.transfer_round && (
-            <Row label="รอบที่ต้องการย้าย" value={formatTransferRound(teacher.transfer_round)!} />
+          {(teacher.transfer_round || teacher.transfer_year) && (
+            <Row
+              label="รอบที่ต้องการย้าย"
+              value={formatTransferRound(teacher.transfer_round, teacher.transfer_year)!}
+            />
           )}
           {teacher.benefit_note && (
             <Row label="ข้อมูลสวัสดิการเพิ่มเติม (ไม่บังคับ)" value={teacher.benefit_note} />

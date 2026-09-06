@@ -1,30 +1,34 @@
-// รอบที่ต้องการย้าย is stored as "<round>/<year>" (e.g. "1/2027"), matching
-// how ครู actually refer to it — สพฐ. runs two transfer rounds per (Gregorian)
-// year. Informational only, not used for matching (see schema.sql).
-export const TRANSFER_ROUND_PATTERN = /^[12]\/\d{4}$/
+// รอบที่ต้องการย้าย is two separate values — round (1 or 2; สพฐ. runs two
+// transfer rounds per Gregorian year) and year — kept apart rather than
+// combined into one field, since a teacher picks each independently.
+export const TRANSFER_ROUND_PATTERN = /^[12]$/
 
-export interface TransferRoundOption {
+export interface SelectOption {
   value: string
   label: string
 }
 
+// Static (not time-dependent), so this can be imported and used directly —
+// unlike the year options below, it doesn't need a useState lazy initializer.
+export const TRANSFER_ROUND_OPTIONS: SelectOption[] = [
+  { value: '1', label: 'รอบที่ 1' },
+  { value: '2', label: 'รอบที่ 2' },
+]
+
 // Impure (reads wall-clock time), so it must only ever be called from a
 // useState lazy initializer (runs once, at mount) or an event handler —
 // never directly in the render body (react-hooks/purity forbids that).
-export function upcomingTransferRoundOptions(): TransferRoundOption[] {
+export function upcomingTransferYears(): number[] {
   const currentYear = new Date().getFullYear()
-  const years = [currentYear + 1, currentYear + 2, currentYear + 3]
-  return years.flatMap((year) =>
-    ([1, 2] as const).map((round) => ({
-      value: `${round}/${year}`,
-      label: `รอบที่ ${round}/${year}`,
-    }))
-  )
+  return [currentYear + 1, currentYear + 2, currentYear + 3]
 }
 
-// Legacy rows created before this field carried a round (a plain year, e.g.
-// "2027") fall back to "ปี <value>" rather than the misleading "รอบที่ 2027".
-export function formatTransferRound(value: string | null): string | null {
-  if (!value) return null
-  return TRANSFER_ROUND_PATTERN.test(value) ? `รอบที่ ${value}` : `ปี ${value}`
+// Rows saved before the round/year split (or before this field existed at
+// all) may carry only a year — displayed as "ปี <year>" rather than the
+// misleading "รอบที่ <year>".
+export function formatTransferRound(round: string | null, year: number | null): string | null {
+  if (round && year) return `รอบที่ ${round}/${year}`
+  if (year) return `ปี ${year}`
+  if (round) return `รอบที่ ${round}`
+  return null
 }
