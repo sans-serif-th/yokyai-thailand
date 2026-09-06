@@ -1,17 +1,25 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { fetchProfile, fetchSubscriptionStatus, saveProfile } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { CriteriaForm } from '@/components/criteria-form'
+import type { OriginDestinationTab } from '@/components/origin-destination-tabs'
 import { PAID_DESTINATION_LIMIT } from '@/lib/package-limits'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
 type View = 'loading' | 'ready' | 'error'
 
-export default function CriteriaEditPage() {
+// useSearchParams() bails a statically-rendered page out to client-only
+// rendering unless it's wrapped in Suspense — so the actual page content
+// lives in this inner component, and the default export below just supplies
+// the boundary.
+function CriteriaEditPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialTab: OriginDestinationTab =
+    searchParams.get('tab') === 'destination' ? 'destination' : 'origin'
   const [view, setView] = useState<View>('loading')
   const [idToken, setIdToken] = useState<string | null>(null)
   const [teacher, setTeacher] = useState<Teacher | null>(null)
@@ -67,7 +75,16 @@ export default function CriteriaEditPage() {
       teacher={teacher}
       initialDestinations={destinations}
       maxDestinations={maxDestinations}
+      initialTab={initialTab}
       onSave={handleSave}
     />
+  )
+}
+
+export default function CriteriaEditPage() {
+  return (
+    <Suspense fallback={<p className="text-center p-8 text-zinc-600">กำลังโหลด...</p>}>
+      <CriteriaEditPageContent />
+    </Suspense>
   )
 }

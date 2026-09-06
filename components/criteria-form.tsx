@@ -3,21 +3,18 @@
 import { useState } from 'react'
 import { requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
+import { upcomingTransferRoundOptions } from '@/lib/transfer-rounds'
 import { BackHeader } from './back-header'
 import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
 import { DestinationFields, findDuplicateProvince, type DestinationDraft } from './destination-fields'
 import { OriginDestinationTabs, type OriginDestinationTab } from './origin-destination-tabs'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
-function upcomingTransferYears(): number[] {
-  const currentYear = new Date().getFullYear()
-  return [currentYear + 1, currentYear + 2, currentYear + 3]
-}
-
 interface CriteriaFormProps {
   teacher: Teacher
   initialDestinations: Destination[]
   maxDestinations: number
+  initialTab?: OriginDestinationTab
   onSave: (payload: ProfilePayload) => Promise<void>
 }
 
@@ -30,6 +27,7 @@ export function CriteriaForm({
   teacher,
   initialDestinations,
   maxDestinations,
+  initialTab,
   onSave,
 }: CriteriaFormProps) {
   const [position, setPosition] = useState<PositionCode | ''>(teacher.position)
@@ -40,9 +38,9 @@ export function CriteriaForm({
   const [currentSchool, setCurrentSchool] = useState(teacher.current_school ?? '')
   const [teachingGroup, setTeachingGroup] = useState(teacher.teaching_group ?? '')
   const [subjects, setSubjects] = useState<string[]>(() => splitSubjects(teacher.subject))
-  const [transferRound, setTransferRound] = useState<number | ''>(teacher.transfer_round ?? '')
+  const [transferRound, setTransferRound] = useState(teacher.transfer_round ?? '')
   const [benefitNote, setBenefitNote] = useState(teacher.benefit_note ?? '')
-  const [transferYearOptions] = useState<number[]>(() => upcomingTransferYears())
+  const [transferRoundOptions] = useState(() => upcomingTransferRoundOptions())
 
   const [destinations, setDestinations] = useState<DestinationDraft[]>(
     initialDestinations.length
@@ -56,7 +54,7 @@ export function CriteriaForm({
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [tab, setTab] = useState<OriginDestinationTab>('origin')
+  const [tab, setTab] = useState<OriginDestinationTab>(initialTab ?? 'origin')
 
   function handlePositionChange(value: string) {
     setPosition(value as PositionCode | '')
@@ -117,6 +115,7 @@ export function CriteriaForm({
     if (!serviceType) return 'กรุณาเลือกหน่วยงานต้นสังกัด'
     if (!originProvince) return 'กรุณาเลือกจังหวัดต้นทาง'
     if (requiresTeachingGroup(position) && !teachingGroup) return 'กรุณาเลือกกลุ่มสาระการเรียนรู้'
+    if (!transferRound) return 'กรุณาเลือกรอบที่ต้องการย้าย'
     if (!destinations.some((d) => d.province.trim())) {
       return 'กรุณาเพิ่มปลายทางอย่างน้อย 1 แห่ง'
     }
@@ -194,7 +193,7 @@ export function CriteriaForm({
           onRemoveSubject={removeSubject}
           transferRound={transferRound}
           onTransferRoundChange={setTransferRound}
-          transferYearOptions={transferYearOptions}
+          transferRoundOptions={transferRoundOptions}
           benefitNote={benefitNote}
           onBenefitNoteChange={setBenefitNote}
         />

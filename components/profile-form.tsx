@@ -7,6 +7,7 @@ import type { ServiceTypeCode } from '@/lib/service-types'
 import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
 import { DestinationFields, findDuplicateProvince, type DestinationDraft } from './destination-fields'
 import { FREE_DESTINATION_LIMIT } from '@/lib/package-limits'
+import { upcomingTransferRoundOptions } from '@/lib/transfer-rounds'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
 // 0 is the career-category picker — a gate before the numbered steps, so
@@ -23,14 +24,6 @@ const STEP_TITLES: Record<Exclude<Step, 0>, string> = {
 // Cycled by index for the career-category cards — adding a 3rd/4th career
 // later just continues the cycle, no new design decision needed.
 const CATEGORY_CARD_COLORS = ['bg-lavender', 'bg-sungold']
-
-// Impure (reads wall-clock time), so it must only ever be called from a
-// useState lazy initializer (runs once, at mount) or an event handler —
-// never directly in the render body (react-hooks/purity forbids that).
-function upcomingTransferYears(): number[] {
-  const currentYear = new Date().getFullYear()
-  return [currentYear + 1, currentYear + 2, currentYear + 3]
-}
 
 function splitDisplayName(displayName: string | undefined): [string, string] {
   if (!displayName) return ['', '']
@@ -60,11 +53,9 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
   const [subjects, setSubjects] = useState<string[]>(() =>
     splitSubjects(initialTeacher?.subject ?? null)
   )
-  const [transferRound, setTransferRound] = useState<number | ''>(
-    initialTeacher?.transfer_round ?? ''
-  )
+  const [transferRound, setTransferRound] = useState(initialTeacher?.transfer_round ?? '')
   const [benefitNote, setBenefitNote] = useState(initialTeacher?.benefit_note ?? '')
-  const [transferYearOptions] = useState<number[]>(() => upcomingTransferYears())
+  const [transferRoundOptions] = useState(() => upcomingTransferRoundOptions())
 
   // Step 2 — ปลายทาง
   const [destinations, setDestinations] = useState<DestinationDraft[]>(
@@ -158,6 +149,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
     if (!serviceType) return 'กรุณาเลือกหน่วยงานต้นสังกัด'
     if (!originProvince) return 'กรุณาเลือกจังหวัดต้นทาง'
     if (requiresTeachingGroup(position) && !teachingGroup) return 'กรุณาเลือกกลุ่มสาระการเรียนรู้'
+    if (!transferRound) return 'กรุณาเลือกรอบที่ต้องการย้าย'
     return null
   }
 
@@ -287,7 +279,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
           onRemoveSubject={removeSubject}
           transferRound={transferRound}
           onTransferRoundChange={setTransferRound}
-          transferYearOptions={transferYearOptions}
+          transferRoundOptions={transferRoundOptions}
           benefitNote={benefitNote}
           onBenefitNoteChange={setBenefitNote}
         />

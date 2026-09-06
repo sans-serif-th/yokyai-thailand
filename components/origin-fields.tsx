@@ -6,6 +6,7 @@ import { SERVICE_TYPES, type ServiceTypeCode } from '@/lib/service-types'
 import { POSITIONS, requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import { districtsForProvince } from '@/lib/districts'
 import { hasZoneOptions, zonesFor } from '@/lib/education-zones'
+import type { TransferRoundOption } from '@/lib/transfer-rounds'
 
 export const BENEFIT_NOTE_MAX_LENGTH = 500
 
@@ -40,9 +41,9 @@ interface OriginFieldsProps {
   onUpdateSubject: (index: number, value: string) => void
   onAddSubject: () => void
   onRemoveSubject: (index: number) => void
-  transferRound: number | ''
-  onTransferRoundChange: (value: number | '') => void
-  transferYearOptions: number[]
+  transferRound: string
+  onTransferRoundChange: (value: string) => void
+  transferRoundOptions: TransferRoundOption[]
   benefitNote: string
   onBenefitNoteChange: (value: string) => void
 }
@@ -71,7 +72,7 @@ export function OriginFields({
   onRemoveSubject,
   transferRound,
   onTransferRoundChange,
-  transferYearOptions,
+  transferRoundOptions,
   benefitNote,
   onBenefitNoteChange,
 }: OriginFieldsProps) {
@@ -224,16 +225,16 @@ export function OriginFields({
       )}
 
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">รอบที่ต้องการย้าย (ไม่บังคับ)</span>
+        <span className="text-sm font-medium">รอบที่ต้องการย้าย</span>
         <select
           className="input-field"
           value={transferRound}
-          onChange={(e) => onTransferRoundChange(e.target.value ? Number(e.target.value) : '')}
+          onChange={(e) => onTransferRoundChange(e.target.value)}
         >
-          <option value="">ไม่ระบุ</option>
-          {transferYearOptions.map((year) => (
-            <option key={year} value={year}>
-              ปี {year}
+          <option value="">เลือกรอบที่ต้องการย้าย</option>
+          {transferRoundOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
             </option>
           ))}
         </select>

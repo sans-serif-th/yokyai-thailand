@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { positionLabel } from '@/lib/positions'
 import { serviceTypeAbbr } from '@/lib/service-types'
 import { teachingGroupLabel } from '@/lib/teaching-groups'
+import { formatTransferRound } from '@/lib/transfer-rounds'
 import { OriginDestinationTabs, type OriginDestinationTab } from './origin-destination-tabs'
 import type { Destination, Teacher } from '@/lib/types'
 
@@ -55,7 +56,7 @@ export function CriteriaSummary({ teacher, destinations }: CriteriaSummaryProps)
             />
           )}
           {teacher.transfer_round && (
-            <Row label="รอบที่ต้องการย้าย (ไม่บังคับ)" value={`ปี ${teacher.transfer_round}`} />
+            <Row label="รอบที่ต้องการย้าย" value={formatTransferRound(teacher.transfer_round)!} />
           )}
           {teacher.benefit_note && (
             <Row label="ข้อมูลสวัสดิการเพิ่มเติม (ไม่บังคับ)" value={teacher.benefit_note} />
@@ -77,7 +78,7 @@ export function CriteriaSummary({ teacher, destinations }: CriteriaSummaryProps)
         </div>
       )}
 
-      <Link href="/criteria/edit" className="btn-primary text-center">
+      <Link href={`/criteria/edit?tab=${tab}`} className="btn-primary text-center">
         แก้ไขข้อมูล
       </Link>
     </div>

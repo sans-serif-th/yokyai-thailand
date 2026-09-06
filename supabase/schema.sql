@@ -81,7 +81,7 @@ create table teachers (
 
   benefit_note text check (char_length(benefit_note) <= 500), -- optional, free text (e.g. "มีบ้านพักครู") — informational only, not used for matching
 
-  transfer_round integer,      -- optional, the year (e.g. 2027) the applicant wants to move in — informational only, not used for matching
+  transfer_round text,         -- required, "<round>/<year>" e.g. "1/2027" — informational only, not used for matching
 
   facebook_url text,           -- optional, an alternate contact route shown on match cards alongside LINE — informational only, not used for matching
 

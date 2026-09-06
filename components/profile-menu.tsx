@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getLiffProfile, liffLogout } from '@/lib/liff'
-import { ChevronRightIcon, FileTextIcon, LogOutIcon, PencilIcon } from './icons'
+import { ChevronRightIcon, FileTextIcon, LogOutIcon, PencilIcon, StarIcon } from './icons'
 import type { Teacher } from '@/lib/types'
 
 interface LineProfile {
@@ -114,6 +114,7 @@ export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
       </div>
 
       <div className="card-surface p-0 overflow-hidden">
+        <MenuRow icon={<StarIcon />} label="อัพเกรด" href="/upgrade" />
         <MenuRow icon={<FileTextIcon />} label="เกี่ยวกับเรา" href="/about" />
         <MenuRow icon={<FileTextIcon />} label="ข้อกำหนดและเงื่อนไข" href="/terms" />
         <MenuRow icon={<LogOutIcon />} label="ออกจากระบบ" onClick={handleLogout} tone="danger" />

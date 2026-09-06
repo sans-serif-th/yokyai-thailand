@@ -23,7 +23,7 @@ export interface Teacher {
   teaching_group: TeachingGroupCode | null
   subject: string | null
   benefit_note: string | null
-  transfer_round: number | null
+  transfer_round: string | null
   facebook_url: string | null
   source: 'app' | 'facebook_import'
   invite_code: string | null
@@ -42,7 +42,7 @@ export interface ProfilePayload {
   teachingGroup: string | null
   subject: string | null
   benefitNote: string | null
-  transferRound: number | null
+  transferRound: string | null
   facebookUrl: string | null
   destinations: { province: string; district: string | null; zone: string | null }[]
 }

@@ -22,14 +22,26 @@ export function MatchList({ matches, onToggleFavorite }: MatchListProps) {
   const [subjectFilter, setSubjectFilter] = useState('')
   const [destinationFilter, setDestinationFilter] = useState('')
 
+  // Each option is tagged with how many current results match it, e.g.
+  // "ภาษาไทย (20)" — counted against the full unfiltered list, not against
+  // whatever the other filter currently narrows it to.
   const subjectOptions = useMemo(() => {
-    const values = new Set(matches.map((m) => m.teacher.subject).filter((s): s is string => !!s))
-    return [...values].sort()
+    const counts = new Map<string, number>()
+    for (const m of matches) {
+      if (!m.teacher.subject) continue
+      counts.set(m.teacher.subject, (counts.get(m.teacher.subject) ?? 0) + 1)
+    }
+    return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b))
   }, [matches])
 
   const destinationOptions = useMemo(() => {
-    const values = new Set(matches.flatMap((m) => m.destinations.map((d) => d.province)))
-    return [...values].sort()
+    const counts = new Map<string, number>()
+    for (const m of matches) {
+      for (const d of m.destinations) {
+        counts.set(d.province, (counts.get(d.province) ?? 0) + 1)
+      }
+    }
+    return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b))
   }, [matches])
 
   const filtered = useMemo(() => {
@@ -63,9 +75,9 @@ export function MatchList({ matches, onToggleFavorite }: MatchListProps) {
           onChange={(e) => setSubjectFilter(e.target.value)}
         >
           <option value="">วิชาเอกทั้งหมด</option>
-          {subjectOptions.map((s) => (
+          {subjectOptions.map(([s, count]) => (
             <option key={s} value={s}>
-              {s}
+              {s} ({count})
             </option>
           ))}
         </select>
@@ -75,9 +87,9 @@ export function MatchList({ matches, onToggleFavorite }: MatchListProps) {
           onChange={(e) => setDestinationFilter(e.target.value)}
         >
           <option value="">จังหวัดปลายทางทั้งหมด</option>
-          {destinationOptions.map((p) => (
+          {destinationOptions.map(([p, count]) => (
             <option key={p} value={p}>
-              {p}
+              {p} ({count})
             </option>
           ))}
         </select>

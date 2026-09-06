@@ -1,6 +1,7 @@
 import { POSITIONS, requiresTeachingGroup } from './positions'
 import { SERVICE_TYPES } from './service-types'
 import { TEACHING_GROUPS } from './teaching-groups'
+import { TRANSFER_ROUND_PATTERN } from './transfer-rounds'
 import type { ProfilePayload } from './types'
 
 // Shared by PUT /api/teachers and POST /api/join/[code] — both accept the
@@ -30,8 +31,8 @@ export function validateProfilePayload(body: unknown): body is ProfilePayload {
       return false
     }
   }
-  if (b.transferRound !== null && b.transferRound !== undefined) {
-    if (typeof b.transferRound !== 'number' || !Number.isInteger(b.transferRound)) return false
+  if (typeof b.transferRound !== 'string' || !TRANSFER_ROUND_PATTERN.test(b.transferRound)) {
+    return false
   }
   if (b.facebookUrl !== null && b.facebookUrl !== undefined) {
     if (typeof b.facebookUrl !== 'string' || b.facebookUrl.length > FACEBOOK_URL_MAX_LENGTH) {
