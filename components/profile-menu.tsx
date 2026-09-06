@@ -104,9 +104,12 @@ export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
           <p className="text-xs text-zinc-500">บัญชี LINE</p>
           <p className="text-sm font-medium">{lineProfile?.displayName ?? teacher.display_name}</p>
         </div>
-        <Link href="/profile/edit" className="flex items-center gap-1 text-sm text-terracotta">
+        <Link
+          href="/profile/edit"
+          aria-label="แก้ไข"
+          className="flex items-center justify-center w-9 h-9 rounded-full text-terracotta shrink-0"
+        >
           <PencilIcon />
-          แก้ไข
         </Link>
       </div>
 
