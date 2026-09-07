@@ -5,7 +5,16 @@ export async function GET(request: Request) {
   const token = url.searchParams.get('token')
 
   // Simple token validation (check if it's a valid admin token)
-  if (!token || !token.startsWith('admin:')) {
+  if (!token) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const decoded = Buffer.from(token, 'base64').toString('utf-8')
+    if (!decoded.startsWith('admin:')) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+  } catch {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
