@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { HeartIcon } from './icons'
 import { positionLabel } from '@/lib/positions'
@@ -13,6 +13,8 @@ const TIER_LABEL: Record<MatchResult['tier'], string> = {
   high: '🟡 ตรงวิชาเอก',
   partial: '⚪ ตรงตำแหน่ง',
 }
+
+const PAGE_SIZE = 15
 
 interface MatchListProps {
   matches: MatchResult[]
@@ -60,6 +62,37 @@ export function MatchList({
       return subjectOk && destinationOk
     })
   }, [matches, subjectFilter, destinationFilter])
+
+  // Show PAGE_SIZE cards at a time; the sentinel below the list reveals more
+  // as the user scrolls to it. Reset back to one page whenever the result
+  // set itself changes (new filter, refreshed matches) — adjusted during
+  // render rather than in an effect, per https://react.dev/learn/you-might-not-need-an-effect.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [prevFiltered, setPrevFiltered] = useState(filtered)
+  if (filtered !== prevFiltered) {
+    setPrevFiltered(filtered)
+    setVisibleCount(PAGE_SIZE)
+  }
+
+  const visible = filtered.slice(0, visibleCount)
+  const hasMore = visibleCount < filtered.length
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (!hasMore) return
+    const node = sentinelRef.current
+    if (!node) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((prev) => prev + PAGE_SIZE)
+        }
+      },
+      { rootMargin: '200px' }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [hasMore])
 
   if (matches.length === 0) {
     return (
@@ -114,7 +147,7 @@ export function MatchList({
         <p className="text-zinc-600 text-sm">ไม่พบผลลัพธ์ที่ตรงกับตัวกรอง ลองปรับตัวกรองให้กว้างขึ้น</p>
       ) : (
         <ul className="flex flex-col gap-3">
-          {filtered.map((m) => (
+          {visible.map((m) => (
             <li key={m.teacher.id} className="card-surface">
               <div className="flex items-center justify-between">
                 <span className="font-medium">{m.teacher.display_name}</span>
@@ -167,6 +200,12 @@ export function MatchList({
             </li>
           ))}
         </ul>
+      )}
+
+      {hasMore && (
+        <div ref={sentinelRef} className="flex justify-center py-2">
+          <span className="text-xs text-zinc-400">กำลังโหลดเพิ่มเติม...</span>
+        </div>
       )}
     </div>
   )
