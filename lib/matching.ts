@@ -2,6 +2,32 @@ import { requiresTeachingGroup } from './positions'
 import { createServiceClient, fetchAllRows } from './supabase-server'
 import type { Destination, MatchResult, MatchTier, Teacher } from './types'
 
+// PostgREST encodes `.in()` filters straight into the request URL, so a
+// large enough id list (hundreds+) can produce a URL long enough for the
+// underlying fetch to refuse to send it at all — this is exactly what broke
+// dev mode's teacher list once facebook_import rows passed ~1,000. Batch
+// instead of passing the whole list to one .in() call.
+const IN_CHUNK_SIZE = 200
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = []
+  for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size))
+  return chunks
+}
+
+async function fetchDestinationsForTeacherIds(
+  supabase: ReturnType<typeof createServiceClient>,
+  teacherIds: string[]
+): Promise<Destination[]> {
+  const all: Destination[] = []
+  for (const idsChunk of chunk(teacherIds, IN_CHUNK_SIZE)) {
+    const { data, error } = await supabase.from('destinations').select('*').in('teacher_id', idsChunk)
+    if (error) throw error
+    all.push(...((data as Destination[]) ?? []))
+  }
+  return all
+}
+
 // A candidate C is a valid Match for requester R iff:
 //   1. same position (ครูผู้สอน and นักจัดการงานทั่วไป are different
 //      classifications and can't swap with each other)
@@ -127,15 +153,10 @@ export async function findMatchesFor(
   if (!candidates?.length) return []
 
   const candidateIds = candidates.map((c) => c.id)
-  const { data: candidateDestinations, error: candidateDestError } = await supabase
-    .from('destinations')
-    .select('*')
-    .in('teacher_id', candidateIds)
-
-  if (candidateDestError) throw candidateDestError
+  const candidateDestinations = await fetchDestinationsForTeacherIds(supabase, candidateIds)
 
   const destinationsByTeacher = new Map<string, Destination[]>()
-  for (const d of candidateDestinations ?? []) {
+  for (const d of candidateDestinations) {
     const list = destinationsByTeacher.get(d.teacher_id) ?? []
     list.push(d)
     destinationsByTeacher.set(d.teacher_id, list)
@@ -201,15 +222,10 @@ export async function getImportedTeachersForDev(): Promise<MatchResult[]> {
   if (!teachers?.length) return []
 
   const teacherIds = teachers.map((t) => t.id)
-  const { data: destinations, error: destError } = await supabase
-    .from('destinations')
-    .select('*')
-    .in('teacher_id', teacherIds)
-
-  if (destError) throw destError
+  const destinations = await fetchDestinationsForTeacherIds(supabase, teacherIds)
 
   const destinationsByTeacher = new Map<string, Destination[]>()
-  for (const d of destinations ?? []) {
+  for (const d of destinations) {
     const list = destinationsByTeacher.get(d.teacher_id) ?? []
     list.push(d)
     destinationsByTeacher.set(d.teacher_id, list)
