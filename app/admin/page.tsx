@@ -2,13 +2,19 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import type { Teacher, Destination } from '@/lib/types'
-import { serviceTypeAbbr } from '@/lib/service-types'
+import { serviceTypeAbbr, SERVICE_TYPES } from '@/lib/service-types'
 
 type TabType = 'teachers' | 'matches' | 'coverage'
 
+type AdminTeacher = Teacher & {
+  destinations: Destination[]
+  created_at: string
+  updated_at: string
+}
+
 interface PotentialMatch {
-  seed: Teacher & { destinations: Destination[] }
-  realUser: Teacher & { destinations: Destination[] }
+  seed: AdminTeacher
+  realUser: AdminTeacher
 }
 
 interface MatchCoverage {
@@ -16,9 +22,21 @@ interface MatchCoverage {
   teachersWithDestinations: number
   matchCount: number
   pairs: {
-    a: Teacher & { destinations: Destination[] }
-    b: Teacher & { destinations: Destination[] }
+    a: AdminTeacher
+    b: AdminTeacher
   }[]
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-CA') // YYYY-MM-DD, locale-independent
+}
+
+function destinationLabel(d: Destination) {
+  return d.zone ? `${d.province} (${d.zone})` : d.province
+}
+
+function invitationUrl(inviteCode: string) {
+  return `${window.location.origin}/join/${inviteCode}`
 }
 
 export default function AdminDashboard() {
@@ -26,17 +44,26 @@ export default function AdminDashboard() {
   const [token, setToken] = useState<string | null>(null)
   const [password, setPassword] = useState('')
   const [passwordError, setPasswordError] = useState('')
-  const [teachers, setTeachers] = useState<(Teacher & { destinations: Destination[] })[]>([])
+  const [teachers, setTeachers] = useState<AdminTeacher[]>([])
   const [matches, setMatches] = useState<PotentialMatch[]>([])
   const [coverage, setCoverage] = useState<MatchCoverage | null>(null)
   const [loading, setLoading] = useState(false)
   const [tab, setTab] = useState<TabType>('teachers')
+  const [editingTeacher, setEditingTeacher] = useState<AdminTeacher | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   // Filters
   const [sourceFilter, setSourceFilter] = useState('')
   const [subjectFilter, setSubjectFilter] = useState('')
   const [originFilter, setOriginFilter] = useState('')
   const [destinationFilter, setDestinationFilter] = useState('')
+  const [serviceTypeFilter, setServiceTypeFilter] = useState('')
+  const [roundFilter, setRoundFilter] = useState('')
+
+  function roundKey(t: AdminTeacher) {
+    if (!t.transfer_round && !t.transfer_year) return ''
+    return `${t.transfer_round ?? '–'}/${t.transfer_year ?? '–'}`
+  }
 
   const filteredTeachers = useMemo(() => {
     return teachers.filter((t) => {
@@ -44,9 +71,11 @@ export default function AdminDashboard() {
       if (subjectFilter && t.subject !== subjectFilter) return false
       if (originFilter && t.origin_province !== originFilter) return false
       if (destinationFilter && !t.destinations?.some((d) => d.province === destinationFilter)) return false
+      if (serviceTypeFilter && t.service_type !== serviceTypeFilter) return false
+      if (roundFilter && roundKey(t) !== roundFilter) return false
       return true
     })
-  }, [teachers, sourceFilter, subjectFilter, originFilter, destinationFilter])
+  }, [teachers, sourceFilter, subjectFilter, originFilter, destinationFilter, serviceTypeFilter, roundFilter])
 
   const sourceCounts = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -72,6 +101,21 @@ export default function AdminDashboard() {
       for (const d of t.destinations ?? []) {
         if (d.province) counts[d.province] = (counts[d.province] ?? 0) + 1
       }
+    }
+    return counts
+  }, [teachers])
+
+  const serviceTypeCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const t of teachers) counts[t.service_type] = (counts[t.service_type] ?? 0) + 1
+    return counts
+  }, [teachers])
+
+  const roundCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const t of teachers) {
+      const key = roundKey(t)
+      if (key) counts[key] = (counts[key] ?? 0) + 1
     }
     return counts
   }, [teachers])
@@ -158,6 +202,53 @@ export default function AdminDashboard() {
     setCoverage(null)
   }
 
+  const handleDelete = async (teacherId: string) => {
+    if (!token) return
+    if (!window.confirm('Delete this teacher permanently? This cannot be undone.')) return
+
+    setActionError(null)
+    try {
+      const res = await fetch(
+        `/api/admin/teachers/${teacherId}?token=${encodeURIComponent(token)}`,
+        { method: 'DELETE' }
+      )
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setActionError(body.error || 'Failed to delete teacher')
+        return
+      }
+      setTeachers((prev) => prev.filter((t) => t.id !== teacherId))
+    } catch (err) {
+      setActionError((err as Error).message)
+    }
+  }
+
+  const handleSaveEdit = async (updated: Partial<AdminTeacher>) => {
+    if (!token || !editingTeacher) return
+
+    setActionError(null)
+    try {
+      const res = await fetch(
+        `/api/admin/teachers/${editingTeacher.id}?token=${encodeURIComponent(token)}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated),
+        }
+      )
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setActionError(body.error || 'Failed to save changes')
+        return
+      }
+      const saved = await res.json()
+      setTeachers((prev) => prev.map((t) => (t.id === saved.id ? saved : t)))
+      setEditingTeacher(null)
+    } catch (err) {
+      setActionError((err as Error).message)
+    }
+  }
+
   if (!authed) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -235,11 +326,43 @@ export default function AdminDashboard() {
           </button>
         </div>
 
+        {actionError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 mb-4 text-sm">
+            {actionError}
+          </div>
+        )}
+
         {tab === 'teachers' && (
           <div>
             {/* Filters */}
             <div className="bg-white rounded-lg shadow p-4 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <select
+                  value={serviceTypeFilter}
+                  onChange={(e) => setServiceTypeFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All สพฐ</option>
+                  {SERVICE_TYPES.map((s) => (
+                    <option key={s.code} value={s.code}>
+                      {s.abbrTh} ({serviceTypeCounts[s.code] ?? 0})
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={roundFilter}
+                  onChange={(e) => setRoundFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All Rounds</option>
+                  {Object.keys(roundCounts)
+                    .sort()
+                    .map((r) => (
+                      <option key={r} value={r}>
+                        {r} ({roundCounts[r]})
+                      </option>
+                    ))}
+                </select>
                 <select
                   value={sourceFilter}
                   onChange={(e) => setSourceFilter(e.target.value)}
@@ -297,7 +420,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Teachers List */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="bg-white rounded-lg shadow overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-100 border-b border-gray-300">
                   <tr>
@@ -312,6 +435,8 @@ export default function AdminDashboard() {
                     <th className="px-4 py-3 text-left font-medium">Destinations</th>
                     <th className="px-4 py-3 text-left font-medium">Facebook</th>
                     <th className="px-4 py-3 text-left font-medium">Invitation Link</th>
+                    <th className="px-4 py-3 text-left font-medium">Created</th>
+                    <th className="px-4 py-3 text-left font-medium">Modified</th>
                     <th className="px-4 py-3 text-left font-medium">Actions</th>
                   </tr>
                 </thead>
@@ -354,7 +479,7 @@ export default function AdminDashboard() {
                       <td className="px-4 py-3">{t.origin_province}</td>
                       <td className="px-4 py-3">{t.origin_zone || '–'}</td>
                       <td className="px-4 py-3 text-xs">
-                        {t.destinations?.map((d) => d.province).join(', ') || '–'}
+                        {t.destinations?.map(destinationLabel).join(', ') || '–'}
                       </td>
                       <td className="px-4 py-3 text-xs">
                         {t.facebook_url ? (
@@ -387,11 +512,19 @@ export default function AdminDashboard() {
                           '–'
                         )}
                       </td>
-                      <td className="px-4 py-3 space-x-2">
-                        <button className="text-blue-600 hover:underline text-xs font-medium">
+                      <td className="px-4 py-3 text-xs whitespace-nowrap">{formatDate(t.created_at)}</td>
+                      <td className="px-4 py-3 text-xs whitespace-nowrap">{formatDate(t.updated_at)}</td>
+                      <td className="px-4 py-3 space-x-2 whitespace-nowrap">
+                        <button
+                          onClick={() => setEditingTeacher(t)}
+                          className="text-blue-600 hover:underline text-xs font-medium"
+                        >
                           Edit
                         </button>
-                        <button className="text-red-600 hover:underline text-xs font-medium">
+                        <button
+                          onClick={() => handleDelete(t.id)}
+                          className="text-red-600 hover:underline text-xs font-medium"
+                        >
                           Delete
                         </button>
                       </td>
@@ -506,26 +639,156 @@ export default function AdminDashboard() {
               <div className="space-y-3">
                 {coverage.pairs.map((p, idx) => (
                   <div key={idx} className="bg-white rounded-lg shadow p-4 grid md:grid-cols-2 gap-4">
-                    <div className="border-l-4 border-indigo-500 pl-3">
-                      <p className="font-medium">{p.a.display_name}</p>
-                      <p className="text-xs text-gray-600">
-                        {p.a.source === 'app' && p.a.claimed_at ? '✓ Verified' : 'Unclaimed'} ·{' '}
-                        {p.a.origin_province} → {p.a.destinations.map((d) => d.province).join(', ')}
-                      </p>
-                    </div>
-                    <div className="border-l-4 border-indigo-500 pl-3">
-                      <p className="font-medium">{p.b.display_name}</p>
-                      <p className="text-xs text-gray-600">
-                        {p.b.source === 'app' && p.b.claimed_at ? '✓ Verified' : 'Unclaimed'} ·{' '}
-                        {p.b.origin_province} → {p.b.destinations.map((d) => d.province).join(', ')}
-                      </p>
-                    </div>
+                    <CoverageSide teacher={p.a} />
+                    <CoverageSide teacher={p.b} />
                   </div>
                 ))}
               </div>
             )}
           </div>
         )}
+      </div>
+
+      {editingTeacher && (
+        <EditTeacherModal
+          teacher={editingTeacher}
+          onCancel={() => setEditingTeacher(null)}
+          onSave={handleSaveEdit}
+        />
+      )}
+    </div>
+  )
+}
+
+function CoverageSide({ teacher: t }: { teacher: AdminTeacher }) {
+  return (
+    <div className="border-l-4 border-indigo-500 pl-3 space-y-1">
+      <p className="font-medium">{t.display_name}</p>
+      <p className="text-xs text-gray-600">
+        {t.source === 'app' && t.claimed_at ? '✓ Verified' : 'Unclaimed'} · {t.subject || 'ไม่ระบุวิชา'}
+      </p>
+      <p className="text-xs text-gray-600">
+        {t.origin_province}
+        {t.origin_zone ? ` (${t.origin_zone})` : ''} →{' '}
+        {t.destinations.map(destinationLabel).join(', ')}
+      </p>
+      <div className="flex gap-3 text-xs">
+        {t.facebook_url ? (
+          <a
+            href={t.facebook_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline font-medium"
+          >
+            Profile
+          </a>
+        ) : (
+          <span className="text-gray-400">No profile</span>
+        )}
+        {!t.claimed_at && t.invite_code && (
+          <button
+            onClick={() => navigator.clipboard.writeText(invitationUrl(t.invite_code!))}
+            className="text-blue-600 hover:underline font-medium"
+            title={invitationUrl(t.invite_code)}
+          >
+            Copy Invite Link
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function EditTeacherModal({
+  teacher,
+  onCancel,
+  onSave,
+}: {
+  teacher: AdminTeacher
+  onCancel: () => void
+  onSave: (updated: Partial<AdminTeacher>) => void
+}) {
+  const [form, setForm] = useState({
+    display_name: teacher.display_name,
+    category: teacher.category,
+    position: teacher.position,
+    service_type: teacher.service_type,
+    origin_province: teacher.origin_province,
+    origin_district: teacher.origin_district ?? '',
+    origin_zone: teacher.origin_zone ?? '',
+    subject: teacher.subject ?? '',
+    transfer_round: teacher.transfer_round ?? '',
+    transfer_year: teacher.transfer_year?.toString() ?? '',
+    facebook_url: teacher.facebook_url ?? '',
+  })
+
+  function field(name: keyof typeof form, label: string) {
+    return (
+      <label className="block text-sm">
+        <span className="block font-medium mb-1">{label}</span>
+        <input
+          value={form[name]}
+          onChange={(e) => setForm((f) => ({ ...f, [name]: e.target.value }))}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </label>
+    )
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    onSave({
+      ...form,
+      transfer_year: form.transfer_year ? Number(form.transfer_year) : null,
+      origin_district: form.origin_district || null,
+      origin_zone: form.origin_zone || null,
+      subject: form.subject || null,
+      transfer_round: form.transfer_round || null,
+      facebook_url: form.facebook_url || null,
+    } as Partial<AdminTeacher>)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
+        <h2 className="text-lg font-bold mb-4">Edit {teacher.display_name}</h2>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {field('display_name', 'Name')}
+          <div className="grid grid-cols-2 gap-3">
+            {field('category', 'Category')}
+            {field('position', 'Position')}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {field('service_type', 'สพฐ (service type code)')}
+            {field('subject', 'Subject')}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {field('origin_province', 'Origin Province')}
+            {field('origin_zone', 'เขต (zone)')}
+          </div>
+          {field('origin_district', 'District')}
+          <div className="grid grid-cols-2 gap-3">
+            {field('transfer_round', 'Round')}
+            {field('transfer_year', 'Year')}
+          </div>
+          {field('facebook_url', 'Facebook URL')}
+
+          <div className="flex gap-2 pt-2">
+            <button
+              type="submit"
+              className="flex-1 bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 bg-gray-200 font-medium py-2 rounded-lg hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
