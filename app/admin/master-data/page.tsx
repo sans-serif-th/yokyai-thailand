@@ -16,7 +16,13 @@ interface ServiceType {
   abbr_th: string
 }
 
-type MasterTab = 'subjects' | 'service_types'
+interface TeachingGroupRow {
+  code: string
+  name_th: string
+  name_en: string
+}
+
+type MasterTab = 'subjects' | 'service_types' | 'teaching_groups'
 
 export default function MasterDataPage() {
   const [authed, setAuthed] = useState(false)
@@ -25,10 +31,15 @@ export default function MasterDataPage() {
 
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([])
+  const [teachingGroups, setTeachingGroups] = useState<TeachingGroupRow[]>([])
   const [error, setError] = useState<string | null>(null)
 
   const [newSubjectGroup, setNewSubjectGroup] = useState<string>(TEACHING_GROUPS[0].code)
   const [newSubjectName, setNewSubjectName] = useState('')
+
+  const [newGroupCode, setNewGroupCode] = useState('')
+  const [newGroupNameTh, setNewGroupNameTh] = useState('')
+  const [newGroupNameEn, setNewGroupNameEn] = useState('')
 
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null)
   const [editingServiceType, setEditingServiceType] = useState<ServiceType | null>(null)
@@ -45,12 +56,46 @@ export default function MasterDataPage() {
   async function loadData(authToken: string) {
     setError(null)
     try {
-      const [subjectsRes, serviceTypesRes] = await Promise.all([
+      const [subjectsRes, serviceTypesRes, teachingGroupsRes] = await Promise.all([
         fetch(`/api/admin/master-data/subjects?token=${encodeURIComponent(authToken)}`),
         fetch(`/api/admin/master-data/service-types?token=${encodeURIComponent(authToken)}`),
+        fetch(`/api/admin/master-data/teaching-groups?token=${encodeURIComponent(authToken)}`),
       ])
       if (subjectsRes.ok) setSubjects(await subjectsRes.json())
       if (serviceTypesRes.ok) setServiceTypes(await serviceTypesRes.json())
+      if (teachingGroupsRes.ok) setTeachingGroups(await teachingGroupsRes.json())
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+
+  async function handleAddTeachingGroup(e: React.FormEvent) {
+    e.preventDefault()
+    if (!token || !newGroupCode.trim() || !newGroupNameTh.trim() || !newGroupNameEn.trim()) return
+    setError(null)
+    try {
+      const res = await fetch(
+        `/api/admin/master-data/teaching-groups?token=${encodeURIComponent(token)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: newGroupCode.trim(),
+            name_th: newGroupNameTh.trim(),
+            name_en: newGroupNameEn.trim(),
+          }),
+        }
+      )
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setError(body.error || 'Failed to add teaching group')
+        return
+      }
+      const created = await res.json()
+      setTeachingGroups((prev) => [...prev, created].sort((a, b) => a.code.localeCompare(b.code)))
+      setNewGroupCode('')
+      setNewGroupNameTh('')
+      setNewGroupNameEn('')
     } catch (err) {
       setError((err as Error).message)
     }
@@ -205,6 +250,16 @@ export default function MasterDataPage() {
             }`}
           >
             สพฐ (Service Types)
+          </button>
+          <button
+            onClick={() => setTab('teaching_groups')}
+            className={`px-4 py-2 font-medium border-b-2 ${
+              tab === 'teaching_groups'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Teaching Groups ({teachingGroups.length})
           </button>
         </div>
 
@@ -401,6 +456,66 @@ export default function MasterDataPage() {
                       </tr>
                     )
                   )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {tab === 'teaching_groups' && (
+          <div className="space-y-4">
+            <p className="text-xs text-gray-500">
+              Adding a group here only creates it in the reference table — it won&apos;t appear
+              as an option in the real profile/criteria forms until the app&apos;s hardcoded
+              teaching-group list is also updated and redeployed to match.
+            </p>
+            <form
+              onSubmit={handleAddTeachingGroup}
+              className="bg-white rounded-lg shadow p-4 flex flex-col md:flex-row gap-3"
+            >
+              <input
+                value={newGroupCode}
+                onChange={(e) => setNewGroupCode(e.target.value)}
+                placeholder="code เช่น music"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 md:w-32"
+              />
+              <input
+                value={newGroupNameTh}
+                onChange={(e) => setNewGroupNameTh(e.target.value)}
+                placeholder="ชื่อไทย เช่น ดนตรีและนาฏศิลป์"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                value={newGroupNameEn}
+                onChange={(e) => setNewGroupNameEn(e.target.value)}
+                placeholder="English name"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700"
+              >
+                Add Group
+              </button>
+            </form>
+
+            <div className="bg-white rounded-lg shadow overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-100 border-b border-gray-300">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium">Code</th>
+                    <th className="px-4 py-3 text-left font-medium">ชื่อไทย</th>
+                    <th className="px-4 py-3 text-left font-medium">English</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {teachingGroups.map((g) => (
+                    <tr key={g.code} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-mono text-xs">{g.code}</td>
+                      <td className="px-4 py-3">{g.name_th}</td>
+                      <td className="px-4 py-3">{g.name_en}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
