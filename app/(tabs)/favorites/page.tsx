@@ -2,34 +2,43 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { fetchFavorites, fetchProfile, fetchQueueStatus, removeFavorite } from '@/lib/api'
+import {
+  fetchFavorites,
+  fetchProfile,
+  fetchRegistrationBreakdown,
+  fetchRoundPhase,
+  removeFavorite,
+} from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { MatchList } from '@/components/match-list'
-import { QueueWaiting } from '@/components/queue-waiting'
-import type { MatchResult } from '@/lib/types'
+import { RegistrationBreakdownView } from '@/components/registration-breakdown'
+import type { MatchResult, RegistrationBreakdown } from '@/lib/types'
 
-type View = 'loading' | 'waiting' | 'ready' | 'error'
+type View = 'loading' | 'registration' | 'ready' | 'error'
 
 export default function FavoritesPage() {
   const router = useRouter()
   const [view, setView] = useState<View>('loading')
   const [matches, setMatches] = useState<MatchResult[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [queuePosition, setQueuePosition] = useState<number | null>(null)
-  const [queueTotal, setQueueTotal] = useState<number | null>(null)
+  const [breakdown, setBreakdown] = useState<RegistrationBreakdown | null>(null)
+  const [roundLabel, setRoundLabel] = useState<string | null>(null)
 
   useEffect(() => {
     async function bootstrap() {
       try {
-        // Sequential, not parallel with fetchFavorites: a still-queued user
-        // should never trigger the real (more expensive) findMatchesFor
-        // query at all — that's the whole point of the queue.
+        // Sequential, not parallel with fetchFavorites: while the active
+        // round is still in its registration phase, this should never
+        // trigger the real (more expensive) findMatchesFor query at all —
+        // that query already returns [] itself during registration phase,
+        // but skipping the call entirely avoids the wasted round-trip.
         const { result } = await withAuthRetry(async (token) => {
           const profile = await fetchProfile(token)
           if (!profile.teacher) return { state: 'onboarding' as const }
-          if (!profile.teacher.queue_released_at) {
-            const queue = await fetchQueueStatus(token)
-            return { state: 'waiting' as const, position: queue.position, totalWaiting: queue.totalWaiting }
+          const phase = await fetchRoundPhase(token)
+          if (!phase.inMatchingPhase) {
+            const breakdown = await fetchRegistrationBreakdown(token)
+            return { state: 'registration' as const, breakdown, roundLabel: phase.roundLabel }
           }
           const { matches } = await fetchFavorites(token)
           return { state: 'ready' as const, matches }
@@ -40,10 +49,10 @@ export default function FavoritesPage() {
           return
         }
 
-        if (result.state === 'waiting') {
-          setQueuePosition(result.position)
-          setQueueTotal(result.totalWaiting)
-          setView('waiting')
+        if (result.state === 'registration') {
+          setBreakdown(result.breakdown)
+          setRoundLabel(result.roundLabel)
+          setView('registration')
           return
         }
 
@@ -76,8 +85,10 @@ export default function FavoritesPage() {
     return <p className="text-center p-8 text-terracotta">{errorMessage}</p>
   }
 
-  if (view === 'waiting') {
-    return <QueueWaiting position={queuePosition} totalWaiting={queueTotal} />
+  if (view === 'registration') {
+    return breakdown ? (
+      <RegistrationBreakdownView breakdown={breakdown} roundLabel={roundLabel} />
+    ) : null
   }
 
   if (matches.length === 0) {

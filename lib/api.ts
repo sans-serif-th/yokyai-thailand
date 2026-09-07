@@ -3,7 +3,7 @@ import type {
   MatchResult,
   PlatformStats,
   ProfilePayload,
-  QueueStatus,
+  RegistrationBreakdown,
   SubscriptionStatus,
   Teacher,
 } from './types'
@@ -62,8 +62,14 @@ export async function fetchStats(idToken: string): Promise<PlatformStats> {
   return authedFetch('/api/stats', idToken)
 }
 
-export async function fetchQueueStatus(idToken: string): Promise<QueueStatus> {
-  return authedFetch('/api/queue', idToken)
+export async function fetchRoundPhase(
+  idToken: string
+): Promise<{ inMatchingPhase: boolean; roundLabel: string | null }> {
+  return authedFetch('/api/round-phase', idToken)
+}
+
+export async function fetchRegistrationBreakdown(idToken: string): Promise<RegistrationBreakdown> {
+  return authedFetch('/api/registration-breakdown', idToken)
 }
 
 export async function fetchFavorites(idToken: string): Promise<{ matches: MatchResult[] }> {

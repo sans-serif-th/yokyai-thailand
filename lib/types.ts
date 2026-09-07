@@ -33,7 +33,6 @@ export interface Teacher {
   source: 'app' | 'facebook_import'
   invite_code: string | null
   claimed_at: string | null
-  queue_released_at: string | null
   category: string
   admin_status: AdminStatus
 }
@@ -68,6 +67,7 @@ export interface Round {
   id: string
   label: string
   is_active: boolean
+  matching_opens_at: string | null
 }
 
 export type PackageCode = 'free' | 'paid'
@@ -91,10 +91,12 @@ export interface PlatformStats {
   subjectCount: number
 }
 
-// Batched-rollout queue status for the calling user (see lib/queue.ts).
-// position/totalWaiting are only meaningful when released is false.
-export interface QueueStatus {
-  released: boolean
-  position: number | null
-  totalWaiting: number | null
+// Per-value counts (province/subject), sorted descending, for the
+// registration-period dashboard shown in place of match results before a
+// round reaches its matching phase (see components/registration-breakdown.tsx).
+export interface RegistrationBreakdown {
+  totalRegistered: number
+  byOriginProvince: { province: string; count: number }[]
+  byDestinationProvince: { province: string; count: number }[]
+  bySubject: { subject: string; count: number }[]
 }

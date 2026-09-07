@@ -11,6 +11,19 @@ export async function getActiveRound(): Promise<Round | null> {
   return data
 }
 
+// A round is in its matching phase once matching_opens_at is set and has
+// passed. NULL (not yet scheduled) or a future timestamp means the round
+// is still in its registration/dashboard-only phase — see
+// components/registration-breakdown.tsx. No active round at all -> false
+// (fail closed: never show live results without a real round context —
+// the opposite of getSubscriptionStatusFor's fail-open below, since that
+// protects a paying user's destination limit, this protects match-result
+// integrity). Pure/no I/O — takes an already-fetched Round so callers that
+// already have one never need a second round-trip.
+export function isRoundInMatchingPhase(round: Round | null): boolean {
+  return !!round?.matching_opens_at && new Date(round.matching_opens_at) <= new Date()
+}
+
 // No active round configured is a misconfiguration, not something a real
 // user should be blocked by — fail open at the paid limit (matches the
 // ceiling this app already used informally before packages existed).

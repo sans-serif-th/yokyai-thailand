@@ -120,13 +120,6 @@ create table teachers (
   -- show verified profiles (claimed_at IS NOT NULL) as candidates to others.
   claimed_at timestamptz,
 
-  -- Queue/usage gate for batched beta rollout: null means this user's own
-  -- visits to matches/favorites show a "waiting" view instead of real
-  -- results (see lib/queue.ts). Independent of claimed_at — a queued user
-  -- is still a visible candidate for others, just can't see their own
-  -- results yet. Never blocks registration/profile/criteria editing.
-  queue_released_at timestamptz,
-
   -- User category/role: teacher, nurse, physician, etc. One per user for now.
   -- Future-proof for multiple categories via junction table if needed.
   category text not null default 'teacher' references categories(code),
@@ -182,6 +175,14 @@ create table rounds (
   id uuid primary key default gen_random_uuid(),
   label text not null unique,
   is_active boolean not null default false,
+
+  -- NULL = registration/dashboard-only phase, indefinitely (or "not yet
+  -- scheduled"). A timestamp <= now() = matching phase is open; a future
+  -- timestamp = scheduled to open then — the same field serves both a
+  -- schedule and an immediate manual open. See lib/rounds.ts
+  -- (isRoundInMatchingPhase) and lib/matching.ts (findMatchesFor).
+  matching_opens_at timestamptz,
+
   created_at timestamptz not null default now()
 );
 

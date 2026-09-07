@@ -7,15 +7,16 @@ import {
   fetchAllImportedForDev,
   fetchMatches,
   fetchProfile,
-  fetchQueueStatus,
+  fetchRegistrationBreakdown,
+  fetchRoundPhase,
   removeFavorite,
 } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { MatchList } from '@/components/match-list'
-import { QueueWaiting } from '@/components/queue-waiting'
-import type { MatchResult } from '@/lib/types'
+import { RegistrationBreakdownView } from '@/components/registration-breakdown'
+import type { MatchResult, RegistrationBreakdown } from '@/lib/types'
 
-type View = 'loading' | 'waiting' | 'ready' | 'error'
+type View = 'loading' | 'registration' | 'ready' | 'error'
 
 // Client-side gate for showing the button at all — the API route enforces
 // the same flag server-side (returns 404 when unset), so this is purely
@@ -30,21 +31,24 @@ export default function MatchesPage() {
   const [devMode, setDevMode] = useState(false)
   const [devMatches, setDevMatches] = useState<MatchResult[] | null>(null)
   const [devLoading, setDevLoading] = useState(false)
-  const [queuePosition, setQueuePosition] = useState<number | null>(null)
-  const [queueTotal, setQueueTotal] = useState<number | null>(null)
+  const [breakdown, setBreakdown] = useState<RegistrationBreakdown | null>(null)
+  const [roundLabel, setRoundLabel] = useState<string | null>(null)
 
   useEffect(() => {
     async function bootstrap() {
       try {
-        // Sequential, not parallel with fetchMatches: a still-queued user
-        // should never trigger the real (more expensive) findMatchesFor
-        // query at all — that's the whole point of the queue.
+        // Sequential, not parallel with fetchMatches: while the active
+        // round is still in its registration phase, this should never
+        // trigger the real (more expensive) findMatchesFor query at all —
+        // that query already returns [] itself during registration phase,
+        // but skipping the call entirely avoids the wasted round-trip.
         const { result } = await withAuthRetry(async (token) => {
           const profile = await fetchProfile(token)
           if (!profile.teacher) return { state: 'onboarding' as const }
-          if (!profile.teacher.queue_released_at) {
-            const queue = await fetchQueueStatus(token)
-            return { state: 'waiting' as const, position: queue.position, totalWaiting: queue.totalWaiting }
+          const phase = await fetchRoundPhase(token)
+          if (!phase.inMatchingPhase) {
+            const breakdown = await fetchRegistrationBreakdown(token)
+            return { state: 'registration' as const, breakdown, roundLabel: phase.roundLabel }
           }
           const { matches } = await fetchMatches(token)
           return { state: 'ready' as const, matches }
@@ -55,10 +59,10 @@ export default function MatchesPage() {
           return
         }
 
-        if (result.state === 'waiting') {
-          setQueuePosition(result.position)
-          setQueueTotal(result.totalWaiting)
-          setView('waiting')
+        if (result.state === 'registration') {
+          setBreakdown(result.breakdown)
+          setRoundLabel(result.roundLabel)
+          setView('registration')
           return
         }
 
@@ -117,8 +121,10 @@ export default function MatchesPage() {
     return <p className="text-center p-8 text-terracotta">{errorMessage}</p>
   }
 
-  if (view === 'waiting') {
-    return <QueueWaiting position={queuePosition} totalWaiting={queueTotal} />
+  if (view === 'registration') {
+    return breakdown ? (
+      <RegistrationBreakdownView breakdown={breakdown} roundLabel={roundLabel} />
+    ) : null
   }
 
   return (

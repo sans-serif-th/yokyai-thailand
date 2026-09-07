@@ -1,4 +1,5 @@
 import { requiresTeachingGroup } from './positions'
+import { getActiveRound, isRoundInMatchingPhase } from './rounds'
 import { createServiceClient, fetchAllRows } from './supabase-server'
 import type { Destination, MatchResult, MatchTier, Teacher } from './types'
 
@@ -104,6 +105,14 @@ export async function findMatchesFor(
   lineUserId: string,
   preloadedRequester?: Teacher
 ): Promise<MatchResult[]> {
+  // Global registration-period / matching-phase gate (see lib/rounds.ts):
+  // nobody's search resolves into a real result until the active round
+  // reaches its matching phase, regardless of how this function is called
+  // (page component or a direct API request) — this is the authoritative
+  // check, not just a UI-level one.
+  const activeRound = await getActiveRound()
+  if (!isRoundInMatchingPhase(activeRound)) return []
+
   const supabase = createServiceClient()
 
   let requester = preloadedRequester

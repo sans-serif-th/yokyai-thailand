@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import type { AdminStatus, Teacher, Destination } from '@/lib/types'
+import type { AdminStatus, Round, Teacher, Destination } from '@/lib/types'
 import { serviceTypeAbbr, SERVICE_TYPES } from '@/lib/service-types'
 
-type TabType = 'teachers' | 'matches' | 'coverage'
+type TabType = 'teachers' | 'matches' | 'coverage' | 'round'
 
 type AdminTeacher = Teacher & {
   destinations: Destination[]
@@ -50,6 +50,18 @@ function invitationUrl(inviteCode: string) {
   return `${window.location.origin}/join/${inviteCode}`
 }
 
+// ISO timestamp -> the local "YYYY-MM-DDTHH:mm" string <input
+// type="datetime-local"> expects, in the browser's own timezone.
+function toDatetimeLocal(iso: string) {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function isRoundInMatchingPhase(round: Round | null) {
+  return !!round?.matching_opens_at && new Date(round.matching_opens_at) <= new Date()
+}
+
 export default function AdminDashboard() {
   const [authed, setAuthed] = useState(false)
   const [token, setToken] = useState<string | null>(null)
@@ -70,10 +82,10 @@ export default function AdminDashboard() {
   const [destinationFilter, setDestinationFilter] = useState('')
   const [serviceTypeFilter, setServiceTypeFilter] = useState('')
   const [roundFilter, setRoundFilter] = useState('')
-  const [queueFilter, setQueueFilter] = useState('')
 
-  const [releaseCount, setReleaseCount] = useState(50)
-  const [releasing, setReleasing] = useState(false)
+  const [activeRound, setActiveRound] = useState<Round | null>(null)
+  const [matchingOpensAtInput, setMatchingOpensAtInput] = useState('')
+  const [savingRound, setSavingRound] = useState(false)
 
   const [page, setPage] = useState(1)
   const pageSize = 25
@@ -91,8 +103,6 @@ export default function AdminDashboard() {
       if (destinationFilter && !t.destinations?.some((d) => d.province === destinationFilter)) return false
       if (serviceTypeFilter && t.service_type !== serviceTypeFilter) return false
       if (roundFilter && roundKey(t) !== roundFilter) return false
-      if (queueFilter === 'waiting' && t.queue_released_at) return false
-      if (queueFilter === 'released' && !t.queue_released_at) return false
       return true
     })
   }, [
@@ -103,13 +113,12 @@ export default function AdminDashboard() {
     destinationFilter,
     serviceTypeFilter,
     roundFilter,
-    queueFilter,
   ])
 
   // Reset to page 1 whenever the filtered set changes underneath the current page.
   useEffect(() => {
     setPage(1)
-  }, [sourceFilter, subjectFilter, originFilter, destinationFilter, serviceTypeFilter, roundFilter, queueFilter])
+  }, [sourceFilter, subjectFilter, originFilter, destinationFilter, serviceTypeFilter, roundFilter])
 
   const totalPages = Math.max(1, Math.ceil(filteredTeachers.length / pageSize))
   const paginatedTeachers = useMemo(
@@ -160,11 +169,6 @@ export default function AdminDashboard() {
     return counts
   }, [teachers])
 
-  const queueWaitingCount = useMemo(
-    () => teachers.filter((t) => !t.queue_released_at).length,
-    [teachers]
-  )
-
   // Check for existing token on mount
   useEffect(() => {
     const storedToken = localStorage.getItem('admin_token')
@@ -205,10 +209,11 @@ export default function AdminDashboard() {
   const loadData = async (authToken: string) => {
     setLoading(true)
     try {
-      const [teachersRes, matchesRes, coverageRes] = await Promise.all([
+      const [teachersRes, matchesRes, coverageRes, roundRes] = await Promise.all([
         fetch(`/api/admin/teachers?token=${encodeURIComponent(authToken)}`),
         fetch(`/api/admin/potential-matches?token=${encodeURIComponent(authToken)}`),
         fetch(`/api/admin/all-matches?token=${encodeURIComponent(authToken)}`),
+        fetch(`/api/admin/round?token=${encodeURIComponent(authToken)}`),
       ])
 
       if (!teachersRes.ok) {
@@ -230,6 +235,16 @@ export default function AdminDashboard() {
       setTeachers(teachers)
       setMatches(matches)
       setCoverage(coverage)
+
+      // A 404 here just means no round is configured yet — not a hard
+      // error, since round management is a separate, optional concern.
+      if (roundRes.ok) {
+        const round = await roundRes.json()
+        setActiveRound(round)
+        setMatchingOpensAtInput(round.matching_opens_at ? toDatetimeLocal(round.matching_opens_at) : '')
+      } else {
+        console.error('Round API error:', roundRes.status)
+      }
     } catch (err) {
       console.error('Error loading data:', err)
     } finally {
@@ -340,32 +355,32 @@ export default function AdminDashboard() {
     }
   }
 
-  // Batched-rollout queue: releases the next `count` earliest-registered
-  // still-queued teachers (see app/api/admin/queue/release/route.ts), then
-  // patches those rows into the already-fetched teachers list in place.
-  const handleReleaseNext = async (count: number) => {
+  // Registration-period / matching-phase gate on the active round (see
+  // lib/rounds.ts, app/api/admin/round/route.ts). value is null to revert
+  // to the registration phase, or an ISO string to schedule/open matching.
+  const handleSaveRoundPhase = async (value: string | null) => {
     if (!token) return
 
     setActionError(null)
-    setReleasing(true)
+    setSavingRound(true)
     try {
-      const res = await fetch(`/api/admin/queue/release?token=${encodeURIComponent(token)}`, {
-        method: 'POST',
+      const res = await fetch(`/api/admin/round?token=${encodeURIComponent(token)}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ count }),
+        body: JSON.stringify({ matching_opens_at: value }),
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        setActionError(body.error || 'Failed to release queue')
+        setActionError(body.error || 'Failed to update round')
         return
       }
-      const { released } = (await res.json()) as { released: AdminTeacher[] }
-      const releasedById = new Map(released.map((t) => [t.id, t]))
-      setTeachers((prev) => prev.map((t) => releasedById.get(t.id) ?? t))
+      const round = (await res.json()) as Round
+      setActiveRound(round)
+      setMatchingOpensAtInput(round.matching_opens_at ? toDatetimeLocal(round.matching_opens_at) : '')
     } catch (err) {
       setActionError((err as Error).message)
     } finally {
-      setReleasing(false)
+      setSavingRound(false)
     }
   }
 
@@ -451,6 +466,16 @@ export default function AdminDashboard() {
             }`}
           >
             Match Coverage ({coverage?.matchCount ?? 0})
+          </button>
+          <button
+            onClick={() => setTab('round')}
+            className={`px-4 py-2 font-medium border-b-2 ${
+              tab === 'round'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Round {isRoundInMatchingPhase(activeRound) ? '🟢 Matching' : '🟡 Registration'}
           </button>
         </div>
 
@@ -550,38 +575,6 @@ export default function AdminDashboard() {
                     </option>
                   ))}
                 </select>
-                <select
-                  value={queueFilter}
-                  onChange={(e) => setQueueFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">All Queue Status</option>
-                  <option value="waiting">รอคิว ({queueWaitingCount})</option>
-                  <option value="released">ปล่อยแล้ว ({teachers.length - queueWaitingCount})</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Batched-rollout queue release */}
-            <div className="bg-white rounded-lg shadow p-4 mb-6 flex items-center gap-3 flex-wrap">
-              <p className="text-sm text-gray-600">
-                <span className="font-semibold">{queueWaitingCount}</span> คนกำลังรอคิว
-              </p>
-              <div className="flex items-center gap-2 ml-auto">
-                <input
-                  type="number"
-                  min={1}
-                  value={releaseCount}
-                  onChange={(e) => setReleaseCount(Math.max(1, Number(e.target.value) || 1))}
-                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  onClick={() => handleReleaseNext(releaseCount)}
-                  disabled={releasing || queueWaitingCount === 0}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {releasing ? 'กำลังปล่อยคิว...' : 'ปล่อยคิวถัดไป'}
-                </button>
               </div>
             </div>
 
@@ -595,7 +588,6 @@ export default function AdminDashboard() {
                     <th className="px-4 py-3 text-left font-medium">สพฐ</th>
                     <th className="px-4 py-3 text-left font-medium">Source</th>
                     <th className="px-4 py-3 text-left font-medium">Status</th>
-                    <th className="px-4 py-3 text-left font-medium">Queue</th>
                     <th className="px-4 py-3 text-left font-medium">Subject</th>
                     <th className="px-4 py-3 text-left font-medium">Origin</th>
                     <th className="px-4 py-3 text-left font-medium">เขต</th>
@@ -640,17 +632,6 @@ export default function AdminDashboard() {
                         ) : (
                           <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                             Unclaimed
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {t.queue_released_at ? (
-                          <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            ปล่อยแล้ว
-                          </span>
-                        ) : (
-                          <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            รอคิว
                           </span>
                         )}
                       </td>
@@ -850,6 +831,62 @@ export default function AdminDashboard() {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        )}
+
+        {tab === 'round' && (
+          <div className="bg-white rounded-lg shadow p-6 max-w-lg">
+            <h2 className="text-lg font-bold mb-1">
+              {activeRound ? `รอบ ${activeRound.label}` : 'ไม่มีรอบที่เปิดใช้งานอยู่'}
+            </h2>
+            {activeRound && (
+              <>
+                <p className="text-sm text-gray-600 mb-4">
+                  สถานะปัจจุบัน:{' '}
+                  <span className="font-medium">
+                    {isRoundInMatchingPhase(activeRound)
+                      ? '🟢 เปิดให้ดูผลการจับคู่แล้ว'
+                      : '🟡 ยังอยู่ในช่วงลงทะเบียน'}
+                  </span>
+                </p>
+                <label className="block text-sm font-medium mb-1">
+                  เวลาที่จะเปิดให้ดูผลการจับคู่ (matching_opens_at)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={matchingOpensAtInput}
+                  onChange={(e) => setMatchingOpensAtInput(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() =>
+                      handleSaveRoundPhase(
+                        matchingOpensAtInput ? new Date(matchingOpensAtInput).toISOString() : null
+                      )
+                    }
+                    disabled={savingRound}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {savingRound ? 'กำลังบันทึก...' : 'บันทึกเวลา'}
+                  </button>
+                  <button
+                    onClick={() => handleSaveRoundPhase(new Date().toISOString())}
+                    disabled={savingRound}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    เปิดทันที
+                  </button>
+                  <button
+                    onClick={() => handleSaveRoundPhase(null)}
+                    disabled={savingRound}
+                    className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    ย้อนกลับเป็นช่วงลงทะเบียน
+                  </button>
+                </div>
+              </>
             )}
           </div>
         )}
