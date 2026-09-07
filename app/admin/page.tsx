@@ -28,7 +28,10 @@ interface MatchCoverage {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-CA') // YYYY-MM-DD, locale-independent
+  const d = new Date(iso)
+  const date = d.toLocaleDateString('en-CA') // YYYY-MM-DD, locale-independent
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) // HH:mm
+  return `${date} ${time}`
 }
 
 function destinationLabel(d: Destination) {
@@ -60,6 +63,9 @@ export default function AdminDashboard() {
   const [serviceTypeFilter, setServiceTypeFilter] = useState('')
   const [roundFilter, setRoundFilter] = useState('')
 
+  const [page, setPage] = useState(1)
+  const pageSize = 25
+
   function roundKey(t: AdminTeacher) {
     if (!t.transfer_round && !t.transfer_year) return ''
     return `${t.transfer_round ?? '–'}/${t.transfer_year ?? '–'}`
@@ -76,6 +82,17 @@ export default function AdminDashboard() {
       return true
     })
   }, [teachers, sourceFilter, subjectFilter, originFilter, destinationFilter, serviceTypeFilter, roundFilter])
+
+  // Reset to page 1 whenever the filtered set changes underneath the current page.
+  useEffect(() => {
+    setPage(1)
+  }, [sourceFilter, subjectFilter, originFilter, destinationFilter, serviceTypeFilter, roundFilter])
+
+  const totalPages = Math.max(1, Math.ceil(filteredTeachers.length / pageSize))
+  const paginatedTeachers = useMemo(
+    () => filteredTeachers.slice((page - 1) * pageSize, page * pageSize),
+    [filteredTeachers, page]
+  )
 
   const sourceCounts = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -449,7 +466,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredTeachers.map((t) => (
+                  {paginatedTeachers.map((t) => (
                     <tr key={t.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium">{t.display_name}</td>
                       <td className="px-4 py-3">
@@ -540,6 +557,32 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            <div className="flex items-center justify-between mt-4 text-sm">
+              <p className="text-gray-600">
+                Showing {filteredTeachers.length === 0 ? 0 : (page - 1) * pageSize + 1}–
+                {Math.min(page * pageSize, filteredTeachers.length)} of {filteredTeachers.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100"
+                >
+                  Previous
+                </button>
+                <span className="text-gray-600">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
         )}
