@@ -116,13 +116,13 @@ export function MatchList({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="flex gap-2">
         <select
-          className="input-field text-sm"
+          className="flex-1 min-w-0 appearance-none rounded-full border border-sage bg-cream px-3 py-3 text-center text-sm font-bold text-foreground"
           value={subjectFilter}
           onChange={(e) => setSubjectFilter(e.target.value)}
         >
-          <option value="">วิชาเอกทั้งหมด</option>
+          <option value="">กรองตามวิชาเอก</option>
           {subjectOptions.map(([s, count]) => (
             <option key={s} value={s}>
               {s} ({count})
@@ -130,11 +130,11 @@ export function MatchList({
           ))}
         </select>
         <select
-          className="input-field text-sm"
+          className="flex-1 min-w-0 appearance-none rounded-full border border-sage bg-cream px-3 py-3 text-center text-sm font-bold text-foreground"
           value={destinationFilter}
           onChange={(e) => setDestinationFilter(e.target.value)}
         >
-          <option value="">จังหวัดปลายทางทั้งหมด</option>
+          <option value="">กรองตามจังหวัดปลายทาง</option>
           {destinationOptions.map(([p, count]) => (
             <option key={p} value={p}>
               {p} ({count})
@@ -148,11 +148,14 @@ export function MatchList({
       ) : (
         <ul className="flex flex-col gap-3">
           {visible.map((m) => (
-            <li key={m.teacher.id} className="card-surface">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{m.teacher.display_name}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs">{TIER_LABEL[m.tier]}</span>
+            <li
+              key={m.teacher.id}
+              className="bg-white border border-sage rounded-2xl p-3 flex flex-col gap-1"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-[15px]">{m.teacher.display_name}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[12px] text-zinc-500">{TIER_LABEL[m.tier]}</span>
                   <button
                     type="button"
                     onClick={() => onToggleFavorite(m.teacher.id, m.favorited)}
@@ -164,35 +167,35 @@ export function MatchList({
                 </div>
               </div>
               {m.teacher.claimed_at && (
-                <span className="inline-block text-xs text-green-600 bg-green-50 rounded-full px-2 py-0.5 mt-1">
+                <span className="inline-block text-[12px] text-sage-dark bg-sage/20 rounded-full px-2 py-0.5 w-fit">
                   ✓ ยืนยันตัวตน
                 </span>
               )}
-              <p className="text-sm text-zinc-600">
+              <p className="text-[13px] text-zinc-500">
                 {positionLabel(m.teacher.position)} · {serviceTypeAbbr(m.teacher.service_type)}
                 {m.teacher.teaching_group ? ` · ${teachingGroupLabel(m.teacher.teaching_group)}` : ''}
                 {m.teacher.subject ? ` · ${m.teacher.subject}` : ''}
               </p>
-              <p className="text-sm mt-1">
+              <p className="text-[13px]">
                 ต้นทาง: {m.teacher.origin_province}
                 {m.teacher.origin_zone ? ` ${m.teacher.origin_zone}` : ''}
                 {m.teacher.origin_district ? ` (${m.teacher.origin_district})` : ''}
               </p>
-              <p className="text-sm">
+              <p className="text-[13px]">
                 ปลายทาง:{' '}
                 {m.destinations
                   .map((d) => d.province + (d.zone ? ` ${d.zone}` : ''))
                   .join(', ')}
               </p>
               {m.teacher.benefit_note && (
-                <p className="text-sm text-zinc-500 mt-1">💡 {m.teacher.benefit_note}</p>
+                <p className="text-[13px] text-zinc-500">💡 {m.teacher.benefit_note}</p>
               )}
               {m.teacher.facebook_url && (
                 <a
                   href={m.teacher.facebook_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm link-accent mt-1 inline-block"
+                  className="text-[13px] link-accent w-fit"
                 >
                   ติดต่อผ่าน Facebook
                 </a>
