@@ -3,11 +3,21 @@
 import { useEffect, useState, useMemo } from 'react'
 import type { Teacher, Destination } from '@/lib/types'
 
-type TabType = 'teachers' | 'matches'
+type TabType = 'teachers' | 'matches' | 'coverage'
 
 interface PotentialMatch {
   seed: Teacher & { destinations: Destination[] }
   realUser: Teacher & { destinations: Destination[] }
+}
+
+interface MatchCoverage {
+  totalTeachers: number
+  teachersWithDestinations: number
+  matchCount: number
+  pairs: {
+    a: Teacher & { destinations: Destination[] }
+    b: Teacher & { destinations: Destination[] }
+  }[]
 }
 
 export default function AdminDashboard() {
@@ -17,6 +27,7 @@ export default function AdminDashboard() {
   const [passwordError, setPasswordError] = useState('')
   const [teachers, setTeachers] = useState<(Teacher & { destinations: Destination[] })[]>([])
   const [matches, setMatches] = useState<PotentialMatch[]>([])
+  const [coverage, setCoverage] = useState<MatchCoverage | null>(null)
   const [loading, setLoading] = useState(false)
   const [tab, setTab] = useState<TabType>('teachers')
 
@@ -25,6 +36,44 @@ export default function AdminDashboard() {
   const [subjectFilter, setSubjectFilter] = useState('')
   const [originFilter, setOriginFilter] = useState('')
   const [destinationFilter, setDestinationFilter] = useState('')
+
+  const filteredTeachers = useMemo(() => {
+    return teachers.filter((t) => {
+      if (sourceFilter && t.source !== sourceFilter) return false
+      if (subjectFilter && t.subject !== subjectFilter) return false
+      if (originFilter && t.origin_province !== originFilter) return false
+      if (destinationFilter && !t.destinations?.some((d) => d.province === destinationFilter)) return false
+      return true
+    })
+  }, [teachers, sourceFilter, subjectFilter, originFilter, destinationFilter])
+
+  const sourceCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const t of teachers) counts[t.source] = (counts[t.source] ?? 0) + 1
+    return counts
+  }, [teachers])
+
+  const subjectCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const t of teachers) if (t.subject) counts[t.subject] = (counts[t.subject] ?? 0) + 1
+    return counts
+  }, [teachers])
+
+  const originCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const t of teachers) if (t.origin_province) counts[t.origin_province] = (counts[t.origin_province] ?? 0) + 1
+    return counts
+  }, [teachers])
+
+  const destinationCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const t of teachers) {
+      for (const d of t.destinations ?? []) {
+        if (d.province) counts[d.province] = (counts[d.province] ?? 0) + 1
+      }
+    }
+    return counts
+  }, [teachers])
 
   // Check for existing token on mount
   useEffect(() => {
@@ -66,9 +115,10 @@ export default function AdminDashboard() {
   const loadData = async (authToken: string) => {
     setLoading(true)
     try {
-      const [teachersRes, matchesRes] = await Promise.all([
+      const [teachersRes, matchesRes, coverageRes] = await Promise.all([
         fetch(`/api/admin/teachers?token=${encodeURIComponent(authToken)}`),
         fetch(`/api/admin/potential-matches?token=${encodeURIComponent(authToken)}`),
+        fetch(`/api/admin/all-matches?token=${encodeURIComponent(authToken)}`),
       ])
 
       if (!teachersRes.ok) {
@@ -79,11 +129,17 @@ export default function AdminDashboard() {
         console.error('Matches API error:', matchesRes.status)
         return
       }
+      if (!coverageRes.ok) {
+        console.error('Coverage API error:', coverageRes.status)
+        return
+      }
 
       const teachers = await teachersRes.json()
       const matches = await matchesRes.json()
+      const coverage = await coverageRes.json()
       setTeachers(teachers)
       setMatches(matches)
+      setCoverage(coverage)
     } catch (err) {
       console.error('Error loading data:', err)
     } finally {
@@ -98,6 +154,7 @@ export default function AdminDashboard() {
     setPassword('')
     setTeachers([])
     setMatches([])
+    setCoverage(null)
   }
 
   if (!authed) {
@@ -163,7 +220,17 @@ export default function AdminDashboard() {
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
-            Potential Matches ({matches.length})
+            Invite-Ready Matches ({matches.length})
+          </button>
+          <button
+            onClick={() => setTab('coverage')}
+            className={`px-4 py-2 font-medium border-b-2 ${
+              tab === 'coverage'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Match Coverage ({coverage?.matchCount ?? 0})
           </button>
         </div>
 
@@ -178,8 +245,10 @@ export default function AdminDashboard() {
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Sources</option>
-                  <option value="app">App User</option>
-                  <option value="facebook_import">Facebook Import</option>
+                  <option value="app">App User ({sourceCounts.app ?? 0})</option>
+                  <option value="facebook_import">
+                    Facebook Import ({sourceCounts.facebook_import ?? 0})
+                  </option>
                 </select>
                 <select
                   value={subjectFilter}
@@ -189,7 +258,7 @@ export default function AdminDashboard() {
                   <option value="">All Subjects</option>
                   {[...new Set(teachers.map((t) => t.subject).filter(Boolean) as string[])].map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {s} ({subjectCounts[s] ?? 0})
                     </option>
                   ))}
                 </select>
@@ -201,7 +270,7 @@ export default function AdminDashboard() {
                   <option value="">All Origins</option>
                   {[...new Set(teachers.map((t) => t.origin_province).filter(Boolean))].map((p) => (
                     <option key={p} value={p}>
-                      {p}
+                      {p} ({originCounts[p] ?? 0})
                     </option>
                   ))}
                 </select>
@@ -219,7 +288,7 @@ export default function AdminDashboard() {
                     ),
                   ].map((p) => (
                     <option key={p} value={p}>
-                      {p}
+                      {p} ({destinationCounts[p] ?? 0})
                     </option>
                   ))}
                 </select>
@@ -238,11 +307,13 @@ export default function AdminDashboard() {
                     <th className="px-4 py-3 text-left font-medium">Subject</th>
                     <th className="px-4 py-3 text-left font-medium">Origin</th>
                     <th className="px-4 py-3 text-left font-medium">Destinations</th>
+                    <th className="px-4 py-3 text-left font-medium">Facebook</th>
+                    <th className="px-4 py-3 text-left font-medium">Invitation Link</th>
                     <th className="px-4 py-3 text-left font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {teachers.map((t) => (
+                  {filteredTeachers.map((t) => (
                     <tr key={t.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium">{t.display_name}</td>
                       <td className="px-4 py-3">
@@ -279,6 +350,37 @@ export default function AdminDashboard() {
                       <td className="px-4 py-3">{t.origin_province}</td>
                       <td className="px-4 py-3 text-xs">
                         {t.destinations?.map((d) => d.province).join(', ') || '–'}
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        {t.facebook_url ? (
+                          <a
+                            href={t.facebook_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline font-medium"
+                          >
+                            Profile
+                          </a>
+                        ) : (
+                          '–'
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        {!t.claimed_at && t.invite_code ? (
+                          <button
+                            onClick={() =>
+                              navigator.clipboard.writeText(
+                                `${window.location.origin}/join/${t.invite_code}`
+                              )
+                            }
+                            className="text-blue-600 hover:underline font-medium"
+                            title={`${window.location.origin}/join/${t.invite_code}`}
+                          >
+                            Copy Link
+                          </button>
+                        ) : (
+                          '–'
+                        )}
                       </td>
                       <td className="px-4 py-3 space-x-2">
                         <button className="text-blue-600 hover:underline text-xs font-medium">
@@ -360,6 +462,58 @@ export default function AdminDashboard() {
                       <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm">
                         Send Invite to Seed Owner
                       </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === 'coverage' && (
+          <div>
+            <div className="bg-white rounded-lg shadow p-4 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-2xl font-bold">{coverage?.totalTeachers ?? 0}</p>
+                <p className="text-sm text-gray-600">Total Teachers</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{coverage?.teachersWithDestinations ?? 0}</p>
+                <p className="text-sm text-gray-600">With Destinations Set</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{coverage?.matchCount ?? 0}</p>
+                <p className="text-sm text-gray-600">Mutual Match Pairs (all data)</p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              This counts every reciprocal pair in the full dataset — position, service type,
+              teaching group, and mutual destinations — regardless of claimed/verified status.
+              It answers &quot;do we have enough users for matching to work&quot;, unlike
+              &quot;Invite-Ready Matches&quot;, which only shows pairs where one side is
+              already a verified app user.
+            </p>
+            {!coverage || coverage.pairs.length === 0 ? (
+              <div className="bg-white rounded-lg shadow p-8 text-center text-gray-600">
+                No mutual pairs found in the current data.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {coverage.pairs.map((p, idx) => (
+                  <div key={idx} className="bg-white rounded-lg shadow p-4 grid md:grid-cols-2 gap-4">
+                    <div className="border-l-4 border-indigo-500 pl-3">
+                      <p className="font-medium">{p.a.display_name}</p>
+                      <p className="text-xs text-gray-600">
+                        {p.a.source === 'app' && p.a.claimed_at ? '✓ Verified' : 'Unclaimed'} ·{' '}
+                        {p.a.origin_province} → {p.a.destinations.map((d) => d.province).join(', ')}
+                      </p>
+                    </div>
+                    <div className="border-l-4 border-indigo-500 pl-3">
+                      <p className="font-medium">{p.b.display_name}</p>
+                      <p className="text-xs text-gray-600">
+                        {p.b.source === 'app' && p.b.claimed_at ? '✓ Verified' : 'Unclaimed'} ·{' '}
+                        {p.b.origin_province} → {p.b.destinations.map((d) => d.province).join(', ')}
+                      </p>
                     </div>
                   </div>
                 ))}
