@@ -73,3 +73,14 @@ export interface SubscriptionStatus {
   maxDestinations: number
   slipUploaded: boolean
 }
+
+// Aggregate, non-personal counts for the platform-wide summary shown above
+// the search results (see components/stats-dashboard.tsx) — never includes
+// individual teacher records.
+export interface PlatformStats {
+  totalRegistered: number
+  originProvinceCount: number
+  destinationProvinceCount: number
+  matchCount: number
+  subjectCount: number
+}

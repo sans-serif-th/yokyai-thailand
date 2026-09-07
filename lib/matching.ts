@@ -1,5 +1,5 @@
 import { requiresTeachingGroup } from './positions'
-import { createServiceClient } from './supabase-server'
+import { createServiceClient, fetchAllRows } from './supabase-server'
 import type { Destination, MatchResult, MatchTier, Teacher } from './types'
 
 // A candidate C is a valid Match for requester R iff:
@@ -7,7 +7,9 @@ import type { Destination, MatchResult, MatchTier, Teacher } from './types'
 //      classifications and can't swap with each other)
 //   2. same service_type (สพป./สพม./สอศ. — different administrative systems
 //      can't swap with each other)
-//   3. if position requires it (ครูผู้สอน only), same teaching_group
+//   3. if position requires it (ครูผู้สอน only), the exact same subject
+//      (เอก) — a teacher with no subject on file can't be matched at all,
+//      since "unspecified" is not the same as "the same subject"
 //   4. C.origin_province is one of R's destination provinces
 //   5. R.origin_province is one of C's destination provinces
 //
@@ -91,8 +93,16 @@ export async function findMatchesFor(
 
   const destinationProvinces = requesterDestinations.map((d) => d.province)
 
+  // For positions with a subject at all, the subject itself must match
+  // exactly — not just the broader teaching_group — and an unspecified
+  // subject can't be matched against anything (we don't know what to look
+  // for, and "both unspecified" is not the same as "both the same subject").
+  if (requiresTeachingGroup(requester.position) && !requester.subject) {
+    return []
+  }
+
   // Candidates: same position, same service type, (if applicable) same
-  // teaching group, currently in one of the requester's desired provinces,
+  // exact subject, currently in one of the requester's desired provinces,
   // not the requester themself.
   let candidatesQuery = supabase
     .from('teachers')
@@ -104,7 +114,7 @@ export async function findMatchesFor(
     .not('claimed_at', 'is', null) // Only show verified/claimed profiles
 
   if (requiresTeachingGroup(requester.position)) {
-    candidatesQuery = candidatesQuery.eq('teaching_group', requester.teaching_group)
+    candidatesQuery = candidatesQuery.eq('subject', requester.subject as string)
   }
 
   const { data: candidates, error: candidatesError } = await candidatesQuery
@@ -171,11 +181,17 @@ export async function findMatchesFor(
 export async function getImportedTeachersForDev(): Promise<MatchResult[]> {
   const supabase = createServiceClient()
 
-  const { data: teachers, error } = await supabase
-    .from('teachers')
-    .select('*')
-    .eq('source', 'facebook_import')
-    .order('created_at', { ascending: false })
+  // Page through with .range() — a plain select silently caps at 1000 rows
+  // once the table passes that size (see fetchAllRows), which facebook_import
+  // rows alone now do post-bulk-import.
+  const { data: teachers, error } = await fetchAllRows((from, to) =>
+    supabase
+      .from('teachers')
+      .select('*')
+      .eq('source', 'facebook_import')
+      .order('created_at', { ascending: false })
+      .range(from, to)
+  )
 
   if (error) throw error
   if (!teachers?.length) return []

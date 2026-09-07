@@ -7,11 +7,13 @@ import {
   fetchAllImportedForDev,
   fetchMatches,
   fetchProfile,
+  fetchStats,
   removeFavorite,
 } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { MatchList } from '@/components/match-list'
-import type { MatchResult } from '@/lib/types'
+import { StatsDashboard } from '@/components/stats-dashboard'
+import type { MatchResult, PlatformStats } from '@/lib/types'
 
 type View = 'loading' | 'ready' | 'error'
 
@@ -28,6 +30,7 @@ export default function MatchesPage() {
   const [devMode, setDevMode] = useState(false)
   const [devMatches, setDevMatches] = useState<MatchResult[] | null>(null)
   const [devLoading, setDevLoading] = useState(false)
+  const [stats, setStats] = useState<PlatformStats | null>(null)
 
   useEffect(() => {
     async function bootstrap() {
@@ -52,6 +55,12 @@ export default function MatchesPage() {
       }
     }
     bootstrap()
+
+    // Best-effort — the summary dashboard is a nice-to-have, so a failure
+    // here just leaves it hidden rather than blocking the search results.
+    withAuthRetry((token) => fetchStats(token))
+      .then(({ result }) => setStats(result))
+      .catch(() => setStats(null))
   }, [router])
 
   async function handleToggleFavorite(teacherId: string, currentlyFavorited: boolean) {
@@ -101,6 +110,11 @@ export default function MatchesPage() {
 
   return (
     <div className="flex flex-col gap-2">
+      {stats && (
+        <div className="max-w-lg mx-auto w-full px-4 pt-4">
+          <StatsDashboard stats={stats} />
+        </div>
+      )}
       {DEV_TOOLS_ENABLED && (
         <div className="max-w-lg mx-auto w-full px-4 pt-4 flex justify-end">
           <button

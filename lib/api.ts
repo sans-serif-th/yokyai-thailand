@@ -1,4 +1,11 @@
-import type { Destination, MatchResult, ProfilePayload, SubscriptionStatus, Teacher } from './types'
+import type {
+  Destination,
+  MatchResult,
+  PlatformStats,
+  ProfilePayload,
+  SubscriptionStatus,
+  Teacher,
+} from './types'
 
 export interface InviteLookup {
   teacher: Teacher
@@ -48,6 +55,10 @@ export async function saveProfile(
 
 export async function fetchMatches(idToken: string): Promise<{ matches: MatchResult[] }> {
   return authedFetch('/api/matches', idToken)
+}
+
+export async function fetchStats(idToken: string): Promise<PlatformStats> {
+  return authedFetch('/api/stats', idToken)
 }
 
 export async function fetchFavorites(idToken: string): Promise<{ matches: MatchResult[] }> {

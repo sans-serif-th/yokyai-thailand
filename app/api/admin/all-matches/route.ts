@@ -1,10 +1,10 @@
-import { createServiceClient } from '@/lib/supabase-server'
+import { createServiceClient, fetchAllRows } from '@/lib/supabase-server'
 import { requiresTeachingGroup } from '@/lib/positions'
 import type { Destination, Teacher } from '@/lib/types'
 
 // Admin-only view of match *density* across the entire dataset — every
 // mutual pair that satisfies the real matching criteria (position,
-// service_type, teaching_group, reciprocal destinations), regardless of
+// service_type, exact subject, reciprocal destinations), regardless of
 // claimed_at/source. This answers "do we have enough users for matching to
 // work" — a different question from /api/admin/potential-matches, which
 // only surfaces pairs an admin can actually act on today (an unclaimed seed
@@ -30,10 +30,18 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient()
 
-  const { data: teachers, error } = await supabase.from('teachers').select(`
-    *,
-    destinations (*)
-  `)
+  // Page through with .range() — a plain select silently caps at 1000 rows
+  // once the table passes that size (see fetchAllRows), which would quietly
+  // undercount coverage once the dataset grows past it.
+  const { data: teachers, error } = await fetchAllRows((from, to) =>
+    supabase
+      .from('teachers')
+      .select(`
+        *,
+        destinations (*)
+      `)
+      .range(from, to)
+  )
 
   if (error) {
     return Response.json({ error: error.message }, { status: 500 })
@@ -56,7 +64,9 @@ export async function GET(request: Request) {
 
       if (a.position !== b.position) continue
       if (a.service_type !== b.service_type) continue
-      if (requiresTeachingGroup(a.position) && a.teaching_group !== b.teaching_group) continue
+      // The exact subject must match — not just the broader teaching_group
+      // — and an unspecified subject on either side can't count as a match.
+      if (requiresTeachingGroup(a.position) && (!a.subject || a.subject !== b.subject)) continue
 
       const aWantsBOrigin = a.destinations.some((d) => d.province === b.origin_province)
       const bWantsAOrigin = b.destinations.some((d) => d.province === a.origin_province)

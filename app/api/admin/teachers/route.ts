@@ -1,4 +1,4 @@
-import { createServiceClient } from '@/lib/supabase-server'
+import { createServiceClient, fetchAllRows } from '@/lib/supabase-server'
 import { Teacher } from '@/lib/types'
 
 export async function GET(request: Request) {
@@ -25,24 +25,33 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient()
 
-  let query = supabase.from('teachers').select(`
-    *,
-    destinations (*)
-  `)
+  function buildQuery(from: number, to: number) {
+    let query = supabase
+      .from('teachers')
+      .select(`
+        *,
+        destinations (*)
+      `)
+      .range(from, to)
 
-  if (source) {
-    query = query.eq('source', source)
+    if (source) {
+      query = query.eq('source', source)
+    }
+
+    if (subject) {
+      query = query.eq('subject', subject)
+    }
+
+    if (originProvince) {
+      query = query.eq('origin_province', originProvince)
+    }
+
+    return query
   }
 
-  if (subject) {
-    query = query.eq('subject', subject)
-  }
-
-  if (originProvince) {
-    query = query.eq('origin_province', originProvince)
-  }
-
-  const { data, error } = await query
+  // Page through with .range() — a plain select silently caps at 1000 rows
+  // once the table passes that size (see fetchAllRows).
+  const { data, error } = await fetchAllRows((from, to) => buildQuery(from, to))
 
   if (error) {
     return Response.json({ error: error.message }, { status: 500 })

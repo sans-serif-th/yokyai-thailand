@@ -1,4 +1,5 @@
-import { createServiceClient } from '@/lib/supabase-server'
+import { requiresTeachingGroup } from '@/lib/positions'
+import { createServiceClient, fetchAllRows } from '@/lib/supabase-server'
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
@@ -20,63 +21,74 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient()
 
-  // Get all unclaimed seeds (facebook_import, claimed_at IS NULL)
-  const { data: unclaimed, error: unclaimedError } = await supabase
-    .from('teachers')
-    .select(`
-      id,
-      line_user_id,
-      display_name,
-      position,
-      service_type,
-      origin_province,
-      teaching_group,
-      subject,
-      transfer_round,
-      transfer_year,
-      source,
-      claimed_at,
-      destinations (*)
-    `)
-    .eq('source', 'facebook_import')
-    .is('claimed_at', null)
+  const SELECT_FIELDS = `
+    id,
+    line_user_id,
+    display_name,
+    position,
+    service_type,
+    origin_province,
+    teaching_group,
+    subject,
+    transfer_round,
+    transfer_year,
+    source,
+    claimed_at,
+    destinations (*)
+  `
 
-  if (unclaimedError) {
-    return Response.json({ error: unclaimedError.message }, { status: 500 })
+  // Get all unclaimed seeds (facebook_import, claimed_at IS NULL) and all
+  // claimed real users (source = app) in two queries total, then match them
+  // in memory. Previously this ran one "claimed real users" query per seed,
+  // which was fine at the original data scale but turned into 1,000+
+  // sequential round-trips (and an admin dashboard stuck on "Loading...")
+  // once the bulk Facebook-import batches pushed unclaimed seeds into the
+  // thousands.
+  // Page through with .range() — a plain select silently caps at 1000 rows
+  // once a side of the query passes that size (see fetchAllRows), which the
+  // unclaimed-seed side already does post-bulk-import.
+  const [unclaimedRes, realUsersRes] = await Promise.all([
+    fetchAllRows((from, to) =>
+      supabase
+        .from('teachers')
+        .select(SELECT_FIELDS)
+        .eq('source', 'facebook_import')
+        .is('claimed_at', null)
+        .range(from, to)
+    ),
+    fetchAllRows((from, to) =>
+      supabase
+        .from('teachers')
+        .select(SELECT_FIELDS)
+        .eq('source', 'app')
+        .not('claimed_at', 'is', null)
+        .range(from, to)
+    ),
+  ])
+
+  if (unclaimedRes.error) {
+    return Response.json({ error: unclaimedRes.error.message }, { status: 500 })
+  }
+  if (realUsersRes.error) {
+    return Response.json({ error: realUsersRes.error.message }, { status: 500 })
   }
 
-  // For each unclaimed seed, find potential matches (claimed real users)
+  const unclaimed = unclaimedRes.data || []
+  const realUsers = realUsersRes.data || []
+
+  // Find matches where:
+  // - Real user wants to go to seed's origin province
+  // - Seed wants to go to real user's origin province
   const potentialMatches = []
+  for (const seed of unclaimed) {
+    for (const realUser of realUsers) {
+      if (realUser.position !== seed.position) continue
+      if (realUser.service_type !== seed.service_type) continue
+      // The exact subject must match — not just the broader teaching_group
+      // — and an unspecified subject on either side can't count as a match.
+      if (requiresTeachingGroup(seed.position) && (!seed.subject || seed.subject !== realUser.subject))
+        continue
 
-  for (const seed of unclaimed || []) {
-    const { data: matches, error: matchError } = await supabase
-      .from('teachers')
-      .select(`
-        id,
-        line_user_id,
-        display_name,
-        position,
-        service_type,
-        origin_province,
-        teaching_group,
-        subject,
-        transfer_round,
-        transfer_year,
-        source,
-        claimed_at,
-        destinations (*)
-      `)
-      .eq('position', seed.position)
-      .eq('service_type', seed.service_type)
-      .eq('source', 'app')
-      .not('claimed_at', 'is', null)
-
-    if (matchError) continue
-
-    // Find matches where:
-    // - Real user wants to go to seed's origin province
-    // - Seed wants to go to real user's origin province
-    for (const realUser of matches || []) {
       const seedWantsRealUserOrigin = seed.destinations?.some(
         (d: any) => d.province === realUser.origin_province
       )
