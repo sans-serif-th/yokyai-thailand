@@ -115,9 +115,17 @@ create table teachers (
   invite_code text unique,
 
   -- Timestamp when the profile was verified/claimed. Null for unclaimed
-  -- facebook_import records; set to now() when an invite is claimed.
-  -- Used to filter matching: only show verified profiles (claimed_at IS NOT NULL).
+  -- facebook_import records; set to now() when an invite is claimed, or at
+  -- first self-registration for 'app' rows. Used to filter matching: only
+  -- show verified profiles (claimed_at IS NOT NULL) as candidates to others.
   claimed_at timestamptz,
+
+  -- Queue/usage gate for batched beta rollout: null means this user's own
+  -- visits to matches/favorites show a "waiting" view instead of real
+  -- results (see lib/queue.ts). Independent of claimed_at — a queued user
+  -- is still a visible candidate for others, just can't see their own
+  -- results yet. Never blocks registration/profile/criteria editing.
+  queue_released_at timestamptz,
 
   -- User category/role: teacher, nurse, physician, etc. One per user for now.
   -- Future-proof for multiple categories via junction table if needed.

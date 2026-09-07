@@ -3,6 +3,7 @@ import type {
   MatchResult,
   PlatformStats,
   ProfilePayload,
+  QueueStatus,
   SubscriptionStatus,
   Teacher,
 } from './types'
@@ -59,6 +60,10 @@ export async function fetchMatches(idToken: string): Promise<{ matches: MatchRes
 
 export async function fetchStats(idToken: string): Promise<PlatformStats> {
   return authedFetch('/api/stats', idToken)
+}
+
+export async function fetchQueueStatus(idToken: string): Promise<QueueStatus> {
+  return authedFetch('/api/queue', idToken)
 }
 
 export async function fetchFavorites(idToken: string): Promise<{ matches: MatchResult[] }> {

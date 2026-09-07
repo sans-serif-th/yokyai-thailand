@@ -2,39 +2,48 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { fetchFavorites, fetchProfile, removeFavorite } from '@/lib/api'
+import { fetchFavorites, fetchProfile, fetchQueueStatus, removeFavorite } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { MatchList } from '@/components/match-list'
+import { QueueWaiting } from '@/components/queue-waiting'
 import type { MatchResult } from '@/lib/types'
 
-type View = 'loading' | 'ready' | 'error'
+type View = 'loading' | 'waiting' | 'ready' | 'error'
 
 export default function FavoritesPage() {
   const router = useRouter()
   const [view, setView] = useState<View>('loading')
   const [matches, setMatches] = useState<MatchResult[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [queuePosition, setQueuePosition] = useState<number | null>(null)
+  const [queueTotal, setQueueTotal] = useState<number | null>(null)
 
   useEffect(() => {
     async function bootstrap() {
       try {
-        // Fetched together, not one-after-the-other. fetchFavorites fails if
-        // there's genuinely no profile yet (it looks the teacher up itself
-        // server-side) — allSettled so that expected failure doesn't mask
-        // the "redirect to onboarding" path below with an error screen.
+        // Sequential, not parallel with fetchFavorites: a still-queued user
+        // should never trigger the real (more expensive) findMatchesFor
+        // query at all — that's the whole point of the queue.
         const { result } = await withAuthRetry(async (token) => {
-          const [profileResult, favoritesResult] = await Promise.allSettled([
-            fetchProfile(token),
-            fetchFavorites(token),
-          ])
-          if (profileResult.status === 'rejected') throw profileResult.reason
-          if (!profileResult.value.teacher) return { hasProfile: false as const }
-          if (favoritesResult.status === 'rejected') throw favoritesResult.reason
-          return { hasProfile: true as const, matches: favoritesResult.value.matches }
+          const profile = await fetchProfile(token)
+          if (!profile.teacher) return { state: 'onboarding' as const }
+          if (!profile.teacher.queue_released_at) {
+            const queue = await fetchQueueStatus(token)
+            return { state: 'waiting' as const, position: queue.position, totalWaiting: queue.totalWaiting }
+          }
+          const { matches } = await fetchFavorites(token)
+          return { state: 'ready' as const, matches }
         })
 
-        if (!result.hasProfile) {
+        if (result.state === 'onboarding') {
           router.replace('/')
+          return
+        }
+
+        if (result.state === 'waiting') {
+          setQueuePosition(result.position)
+          setQueueTotal(result.totalWaiting)
+          setView('waiting')
           return
         }
 
@@ -65,6 +74,10 @@ export default function FavoritesPage() {
 
   if (view === 'error') {
     return <p className="text-center p-8 text-terracotta">{errorMessage}</p>
+  }
+
+  if (view === 'waiting') {
+    return <QueueWaiting position={queuePosition} totalWaiting={queueTotal} />
   }
 
   if (matches.length === 0) {

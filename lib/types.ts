@@ -33,6 +33,7 @@ export interface Teacher {
   source: 'app' | 'facebook_import'
   invite_code: string | null
   claimed_at: string | null
+  queue_released_at: string | null
   category: string
   admin_status: AdminStatus
 }
@@ -88,4 +89,12 @@ export interface PlatformStats {
   destinationProvinceCount: number
   matchCount: number
   subjectCount: number
+}
+
+// Batched-rollout queue status for the calling user (see lib/queue.ts).
+// position/totalWaiting are only meaningful when released is false.
+export interface QueueStatus {
+  released: boolean
+  position: number | null
+  totalWaiting: number | null
 }

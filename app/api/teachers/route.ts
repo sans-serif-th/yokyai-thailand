@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { LineAuthError, verifyRequestAuth } from '@/lib/line-auth'
 import { profilePayloadToTeacherRow, validateProfilePayload } from '@/lib/profile-payload'
+import { isQueueEnabled } from '@/lib/queue'
 import { getSubscriptionStatusFor } from '@/lib/rounds'
 import { createServiceClient } from '@/lib/supabase-server'
 
@@ -56,12 +57,36 @@ export async function PUT(request: Request) {
 
     const supabase = createServiceClient()
 
+    // First registration vs. an edit to an existing profile — only the
+    // former should set claimed_at/queue_released_at, since an upsert can't
+    // otherwise tell the two apart and an unconditional set would clobber
+    // the real registration timestamp (and re-queue an already-released
+    // user) on every single profile edit.
+    const { data: existing } = await supabase
+      .from('teachers')
+      .select('id')
+      .eq('line_user_id', auth.sub)
+      .maybeSingle()
+
+    const row = {
+      line_user_id: auth.sub,
+      ...profilePayloadToTeacherRow(body),
+      ...(!existing
+        ? {
+            // Fixes a bug where self-registered 'app' rows never got
+            // claimed_at set (only the invite-claim flow in lib/invites.ts
+            // did), making every organic signup permanently invisible as a
+            // match candidate to everyone else — see
+            // supabase/migrations/0016_add_queue_released_at.sql.
+            claimed_at: new Date().toISOString(),
+            queue_released_at: isQueueEnabled() ? null : new Date().toISOString(),
+          }
+        : {}),
+    }
+
     const { data: teacher, error: upsertError } = await supabase
       .from('teachers')
-      .upsert(
-        { line_user_id: auth.sub, ...profilePayloadToTeacherRow(body) },
-        { onConflict: 'line_user_id' }
-      )
+      .upsert(row, { onConflict: 'line_user_id' })
       .select()
       .single()
 

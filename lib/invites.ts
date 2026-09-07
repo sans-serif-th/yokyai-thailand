@@ -69,6 +69,10 @@ export async function claimInvite(
       source: 'app',
       invite_code: null,
       claimed_at: new Date().toISOString(),
+      // An invite is already an admin-controlled, deliberate action, so
+      // claiming one always bypasses the batched-rollout queue regardless
+      // of QUEUE_ENABLED (see lib/queue.ts).
+      queue_released_at: new Date().toISOString(),
       ...profilePayloadToTeacherRow(payload),
     })
     .eq('id', seed.id)

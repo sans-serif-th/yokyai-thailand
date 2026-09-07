@@ -7,13 +7,15 @@ import {
   fetchAllImportedForDev,
   fetchMatches,
   fetchProfile,
+  fetchQueueStatus,
   removeFavorite,
 } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { MatchList } from '@/components/match-list'
+import { QueueWaiting } from '@/components/queue-waiting'
 import type { MatchResult } from '@/lib/types'
 
-type View = 'loading' | 'ready' | 'error'
+type View = 'loading' | 'waiting' | 'ready' | 'error'
 
 // Client-side gate for showing the button at all — the API route enforces
 // the same flag server-side (returns 404 when unset), so this is purely
@@ -28,27 +30,35 @@ export default function MatchesPage() {
   const [devMode, setDevMode] = useState(false)
   const [devMatches, setDevMatches] = useState<MatchResult[] | null>(null)
   const [devLoading, setDevLoading] = useState(false)
+  const [queuePosition, setQueuePosition] = useState<number | null>(null)
+  const [queueTotal, setQueueTotal] = useState<number | null>(null)
 
   useEffect(() => {
     async function bootstrap() {
       try {
-        // Fetched together, not one-after-the-other. fetchMatches fails if
-        // there's genuinely no profile yet (findMatchesFor looks it up
-        // itself server-side) — allSettled so that expected failure doesn't
-        // mask the "redirect to onboarding" path below with an error screen.
+        // Sequential, not parallel with fetchMatches: a still-queued user
+        // should never trigger the real (more expensive) findMatchesFor
+        // query at all — that's the whole point of the queue.
         const { result } = await withAuthRetry(async (token) => {
-          const [profileResult, matchesResult] = await Promise.allSettled([
-            fetchProfile(token),
-            fetchMatches(token),
-          ])
-          if (profileResult.status === 'rejected') throw profileResult.reason
-          if (!profileResult.value.teacher) return { hasProfile: false as const }
-          if (matchesResult.status === 'rejected') throw matchesResult.reason
-          return { hasProfile: true as const, matches: matchesResult.value.matches }
+          const profile = await fetchProfile(token)
+          if (!profile.teacher) return { state: 'onboarding' as const }
+          if (!profile.teacher.queue_released_at) {
+            const queue = await fetchQueueStatus(token)
+            return { state: 'waiting' as const, position: queue.position, totalWaiting: queue.totalWaiting }
+          }
+          const { matches } = await fetchMatches(token)
+          return { state: 'ready' as const, matches }
         })
 
-        if (!result.hasProfile) {
+        if (result.state === 'onboarding') {
           router.replace('/')
+          return
+        }
+
+        if (result.state === 'waiting') {
+          setQueuePosition(result.position)
+          setQueueTotal(result.totalWaiting)
+          setView('waiting')
           return
         }
 
@@ -105,6 +115,10 @@ export default function MatchesPage() {
 
   if (view === 'error') {
     return <p className="text-center p-8 text-terracotta">{errorMessage}</p>
+  }
+
+  if (view === 'waiting') {
+    return <QueueWaiting position={queuePosition} totalWaiting={queueTotal} />
   }
 
   return (

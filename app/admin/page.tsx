@@ -70,6 +70,10 @@ export default function AdminDashboard() {
   const [destinationFilter, setDestinationFilter] = useState('')
   const [serviceTypeFilter, setServiceTypeFilter] = useState('')
   const [roundFilter, setRoundFilter] = useState('')
+  const [queueFilter, setQueueFilter] = useState('')
+
+  const [releaseCount, setReleaseCount] = useState(50)
+  const [releasing, setReleasing] = useState(false)
 
   const [page, setPage] = useState(1)
   const pageSize = 25
@@ -87,14 +91,25 @@ export default function AdminDashboard() {
       if (destinationFilter && !t.destinations?.some((d) => d.province === destinationFilter)) return false
       if (serviceTypeFilter && t.service_type !== serviceTypeFilter) return false
       if (roundFilter && roundKey(t) !== roundFilter) return false
+      if (queueFilter === 'waiting' && t.queue_released_at) return false
+      if (queueFilter === 'released' && !t.queue_released_at) return false
       return true
     })
-  }, [teachers, sourceFilter, subjectFilter, originFilter, destinationFilter, serviceTypeFilter, roundFilter])
+  }, [
+    teachers,
+    sourceFilter,
+    subjectFilter,
+    originFilter,
+    destinationFilter,
+    serviceTypeFilter,
+    roundFilter,
+    queueFilter,
+  ])
 
   // Reset to page 1 whenever the filtered set changes underneath the current page.
   useEffect(() => {
     setPage(1)
-  }, [sourceFilter, subjectFilter, originFilter, destinationFilter, serviceTypeFilter, roundFilter])
+  }, [sourceFilter, subjectFilter, originFilter, destinationFilter, serviceTypeFilter, roundFilter, queueFilter])
 
   const totalPages = Math.max(1, Math.ceil(filteredTeachers.length / pageSize))
   const paginatedTeachers = useMemo(
@@ -144,6 +159,11 @@ export default function AdminDashboard() {
     }
     return counts
   }, [teachers])
+
+  const queueWaitingCount = useMemo(
+    () => teachers.filter((t) => !t.queue_released_at).length,
+    [teachers]
+  )
 
   // Check for existing token on mount
   useEffect(() => {
@@ -317,6 +337,35 @@ export default function AdminDashboard() {
       )
     } catch (err) {
       setActionError((err as Error).message)
+    }
+  }
+
+  // Batched-rollout queue: releases the next `count` earliest-registered
+  // still-queued teachers (see app/api/admin/queue/release/route.ts), then
+  // patches those rows into the already-fetched teachers list in place.
+  const handleReleaseNext = async (count: number) => {
+    if (!token) return
+
+    setActionError(null)
+    setReleasing(true)
+    try {
+      const res = await fetch(`/api/admin/queue/release?token=${encodeURIComponent(token)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setActionError(body.error || 'Failed to release queue')
+        return
+      }
+      const { released } = (await res.json()) as { released: AdminTeacher[] }
+      const releasedById = new Map(released.map((t) => [t.id, t]))
+      setTeachers((prev) => prev.map((t) => releasedById.get(t.id) ?? t))
+    } catch (err) {
+      setActionError((err as Error).message)
+    } finally {
+      setReleasing(false)
     }
   }
 
@@ -501,6 +550,38 @@ export default function AdminDashboard() {
                     </option>
                   ))}
                 </select>
+                <select
+                  value={queueFilter}
+                  onChange={(e) => setQueueFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All Queue Status</option>
+                  <option value="waiting">รอคิว ({queueWaitingCount})</option>
+                  <option value="released">ปล่อยแล้ว ({teachers.length - queueWaitingCount})</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Batched-rollout queue release */}
+            <div className="bg-white rounded-lg shadow p-4 mb-6 flex items-center gap-3 flex-wrap">
+              <p className="text-sm text-gray-600">
+                <span className="font-semibold">{queueWaitingCount}</span> คนกำลังรอคิว
+              </p>
+              <div className="flex items-center gap-2 ml-auto">
+                <input
+                  type="number"
+                  min={1}
+                  value={releaseCount}
+                  onChange={(e) => setReleaseCount(Math.max(1, Number(e.target.value) || 1))}
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={() => handleReleaseNext(releaseCount)}
+                  disabled={releasing || queueWaitingCount === 0}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {releasing ? 'กำลังปล่อยคิว...' : 'ปล่อยคิวถัดไป'}
+                </button>
               </div>
             </div>
 
@@ -514,6 +595,7 @@ export default function AdminDashboard() {
                     <th className="px-4 py-3 text-left font-medium">สพฐ</th>
                     <th className="px-4 py-3 text-left font-medium">Source</th>
                     <th className="px-4 py-3 text-left font-medium">Status</th>
+                    <th className="px-4 py-3 text-left font-medium">Queue</th>
                     <th className="px-4 py-3 text-left font-medium">Subject</th>
                     <th className="px-4 py-3 text-left font-medium">Origin</th>
                     <th className="px-4 py-3 text-left font-medium">เขต</th>
@@ -558,6 +640,17 @@ export default function AdminDashboard() {
                         ) : (
                           <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                             Unclaimed
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {t.queue_released_at ? (
+                          <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            ปล่อยแล้ว
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            รอคิว
                           </span>
                         )}
                       </td>
