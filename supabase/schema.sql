@@ -123,6 +123,11 @@ create table teachers (
   -- Future-proof for multiple categories via junction table if needed.
   category text not null default 'teacher' references categories(code),
 
+  -- Internal admin-only outreach tracking, shown as a dropdown on the Match
+  -- Coverage page — never surfaced to end users.
+  admin_status text not null default 'new'
+    check (admin_status in ('new', 'contacted', 'follow_up', 'closed')),
+
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

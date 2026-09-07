@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import type { Teacher, Destination } from '@/lib/types'
+import type { AdminStatus, Teacher, Destination } from '@/lib/types'
 import { serviceTypeAbbr, SERVICE_TYPES } from '@/lib/service-types'
 
 type TabType = 'teachers' | 'matches' | 'coverage'
@@ -11,6 +11,14 @@ type AdminTeacher = Teacher & {
   created_at: string
   updated_at: string
 }
+
+// Internal outreach-tracking dropdown shown on the Match Coverage page.
+const ADMIN_STATUS_OPTIONS: { value: AdminStatus; label: string }[] = [
+  { value: 'new', label: 'New' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'follow_up', label: 'Follow Up' },
+  { value: 'closed', label: 'Closed' },
+]
 
 interface PotentialMatch {
   seed: AdminTeacher
@@ -261,6 +269,52 @@ export default function AdminDashboard() {
       const saved = await res.json()
       setTeachers((prev) => prev.map((t) => (t.id === saved.id ? saved : t)))
       setEditingTeacher(null)
+    } catch (err) {
+      setActionError((err as Error).message)
+    }
+  }
+
+  // Internal outreach-tracking dropdown on Match Coverage — updates the
+  // teachers list plus the already-fetched coverage/matches snapshots (both
+  // hold their own copies of each teacher row) so the change shows up
+  // immediately no matter which tab is open.
+  const handleStatusChange = async (teacherId: string, status: AdminStatus) => {
+    if (!token) return
+
+    setActionError(null)
+    try {
+      const res = await fetch(
+        `/api/admin/teachers/${teacherId}?token=${encodeURIComponent(token)}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ admin_status: status }),
+        }
+      )
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setActionError(body.error || 'Failed to update status')
+        return
+      }
+      const saved = await res.json()
+      setTeachers((prev) => prev.map((t) => (t.id === saved.id ? saved : t)))
+      setCoverage((prev) =>
+        prev
+          ? {
+              ...prev,
+              pairs: prev.pairs.map((p) => ({
+                a: p.a.id === saved.id ? saved : p.a,
+                b: p.b.id === saved.id ? saved : p.b,
+              })),
+            }
+          : prev
+      )
+      setMatches((prev) =>
+        prev.map((m) => ({
+          seed: m.seed.id === saved.id ? saved : m.seed,
+          realUser: m.realUser.id === saved.id ? saved : m.realUser,
+        }))
+      )
     } catch (err) {
       setActionError((err as Error).message)
     }
@@ -698,8 +752,8 @@ export default function AdminDashboard() {
               <div className="space-y-3">
                 {coverage.pairs.map((p, idx) => (
                   <div key={idx} className="bg-white rounded-lg shadow p-4 grid md:grid-cols-2 gap-4">
-                    <CoverageSide teacher={p.a} />
-                    <CoverageSide teacher={p.b} />
+                    <CoverageSide teacher={p.a} onStatusChange={handleStatusChange} />
+                    <CoverageSide teacher={p.b} onStatusChange={handleStatusChange} />
                   </div>
                 ))}
               </div>
@@ -721,10 +775,30 @@ export default function AdminDashboard() {
   )
 }
 
-function CoverageSide({ teacher: t }: { teacher: AdminTeacher }) {
+function CoverageSide({
+  teacher: t,
+  onStatusChange,
+}: {
+  teacher: AdminTeacher
+  onStatusChange: (teacherId: string, status: AdminStatus) => void
+}) {
   return (
     <div className="border-l-4 border-indigo-500 pl-3 space-y-1">
-      <p className="font-medium">{t.display_name}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="font-medium">{t.display_name}</p>
+        <select
+          value={t.admin_status}
+          onChange={(e) => onStatusChange(t.id, e.target.value as AdminStatus)}
+          className="text-xs border border-gray-300 rounded-lg px-2 py-1 shrink-0"
+          title="Internal outreach status"
+        >
+          {ADMIN_STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
       <p className="text-xs text-gray-600">
         {t.source === 'app' && t.claimed_at ? '✓ Verified' : 'Unclaimed'} · {t.subject || 'ไม่ระบุวิชา'}
       </p>

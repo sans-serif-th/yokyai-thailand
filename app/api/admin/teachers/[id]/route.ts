@@ -1,4 +1,7 @@
 import { createServiceClient } from '@/lib/supabase-server'
+import type { AdminStatus } from '@/lib/types'
+
+const ADMIN_STATUSES: AdminStatus[] = ['new', 'contacted', 'follow_up', 'closed']
 
 function checkAdminToken(token: string | null): boolean {
   if (!token) return false
@@ -25,6 +28,7 @@ const EDITABLE_FIELDS = [
   'transfer_year',
   'facebook_url',
   'category',
+  'admin_status',
 ] as const
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -44,6 +48,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   if (Object.keys(update).length === 0) {
     return Response.json({ error: 'No editable fields provided' }, { status: 400 })
+  }
+
+  if ('admin_status' in update && !ADMIN_STATUSES.includes(update.admin_status as AdminStatus)) {
+    return Response.json({ error: 'Invalid admin_status' }, { status: 400 })
   }
 
   const supabase = createServiceClient()

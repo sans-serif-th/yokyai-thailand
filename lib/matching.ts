@@ -25,7 +25,10 @@ import type { Destination, MatchResult, MatchTier, Teacher } from './types'
 // hidden before this ever leaves the server — contact happens only via an
 // admin-delivered invite link (see lib/invites.ts), never shown here.
 // invite_code is stripped unconditionally (not just for imports) since no
-// match result should ever carry another teacher's claim code.
+// match result should ever carry another teacher's claim code. admin_status
+// is reset to the neutral default for the same reason — it's an internal
+// admin-only outreach note (see /admin's Match Coverage page) and should
+// never describe someone else's profile to an end user.
 export function sanitizeForMatch(teacher: Teacher): Teacher {
   const imported = teacher.source === 'facebook_import'
   return {
@@ -33,6 +36,7 @@ export function sanitizeForMatch(teacher: Teacher): Teacher {
     display_name: imported ? `${teacher.display_name.slice(0, 2)}***` : teacher.display_name,
     facebook_url: imported ? null : teacher.facebook_url,
     invite_code: null,
+    admin_status: 'new',
   }
 }
 

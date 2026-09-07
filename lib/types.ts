@@ -2,6 +2,10 @@ import type { PositionCode } from './positions'
 import type { ServiceTypeCode } from './service-types'
 import type { TeachingGroupCode } from './teaching-groups'
 
+// Internal admin-only outreach tracking (Match Coverage dropdown) — never
+// shown to end users.
+export type AdminStatus = 'new' | 'contacted' | 'follow_up' | 'closed'
+
 export interface Destination {
   id: string
   teacher_id: string
@@ -30,6 +34,7 @@ export interface Teacher {
   invite_code: string | null
   claimed_at: string | null
   category: string
+  admin_status: AdminStatus
 }
 
 export type MatchTier = 'perfect' | 'high' | 'partial'
