@@ -71,12 +71,21 @@ export default function AdminDashboard() {
         fetch(`/api/admin/potential-matches?token=${encodeURIComponent(authToken)}`),
       ])
 
-      if (teachersRes.ok) {
-        setTeachers(await teachersRes.json())
+      if (!teachersRes.ok) {
+        console.error('Teachers API error:', teachersRes.status)
+        return
       }
-      if (matchesRes.ok) {
-        setMatches(await matchesRes.json())
+      if (!matchesRes.ok) {
+        console.error('Matches API error:', matchesRes.status)
+        return
       }
+
+      const teachers = await teachersRes.json()
+      const matches = await matchesRes.json()
+      setTeachers(teachers)
+      setMatches(matches)
+    } catch (err) {
+      console.error('Error loading data:', err)
     } finally {
       setLoading(false)
     }
