@@ -317,3 +317,6 @@ INSERT INTO destinations (teacher_id, province) VALUES ('de627ce9-764f-4af1-973c
 INSERT INTO destinations (teacher_id, province) VALUES ('3f80b536-a275-4dc5-b558-0f53cc81c832', 'สุรินทร์') ON CONFLICT (teacher_id, province) DO NOTHING;
 -- Peter SU (fb:100030425361369) — origin ยะลา → ภูเก็ต
 INSERT INTO destinations (teacher_id, province) VALUES ('6990a8a5-8be0-48fe-9390-88366edeaf66', 'ภูเก็ต') ON CONFLICT (teacher_id, province) DO NOTHING;
+
+-- Batch 6b: KruPaul Tassana (fb:100000867519957) — found in Tab 4, origin ราชบุรี → เพชรบุรี
+INSERT INTO destinations (teacher_id, province) VALUES ('e6ba9942-64bf-433f-98ff-2d0cb879f292', 'เพชรบุรี') ON CONFLICT (teacher_id, province) DO NOTHING;
