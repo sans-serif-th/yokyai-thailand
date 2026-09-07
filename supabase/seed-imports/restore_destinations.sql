@@ -315,3 +315,5 @@ INSERT INTO destinations (teacher_id, province) VALUES ('de627ce9-764f-4af1-973c
 
 -- Batch 6: Aon Wasan recovered from original RTF via fb_id match (name-only matching missed it)
 INSERT INTO destinations (teacher_id, province) VALUES ('3f80b536-a275-4dc5-b558-0f53cc81c832', 'สุรินทร์') ON CONFLICT (teacher_id, province) DO NOTHING;
+-- Peter SU (fb:100030425361369) — origin ยะลา → ภูเก็ต
+INSERT INTO destinations (teacher_id, province) VALUES ('6990a8a5-8be0-48fe-9390-88366edeaf66', 'ภูเก็ต') ON CONFLICT (teacher_id, province) DO NOTHING;
