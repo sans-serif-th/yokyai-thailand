@@ -284,12 +284,20 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
-          >
-            Logout
-          </button>
+          <div className="flex gap-2">
+            <a
+              href="/admin/master-data"
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-100"
+            >
+              Master Data
+            </a>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
