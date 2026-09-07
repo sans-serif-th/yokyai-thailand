@@ -357,6 +357,12 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {loading && teachers.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-600">
+            Loading…
+          </div>
+        ) : (
+          <>
         {tab === 'teachers' && (
           <div>
             {/* Filters */}
@@ -457,6 +463,7 @@ export default function AdminDashboard() {
                     <th className="px-4 py-3 text-left font-medium">Subject</th>
                     <th className="px-4 py-3 text-left font-medium">Origin</th>
                     <th className="px-4 py-3 text-left font-medium">เขต</th>
+                    <th className="px-4 py-3 text-left font-medium">School</th>
                     <th className="px-4 py-3 text-left font-medium">Destinations</th>
                     <th className="px-4 py-3 text-left font-medium">Facebook</th>
                     <th className="px-4 py-3 text-left font-medium">Invitation Link</th>
@@ -503,6 +510,7 @@ export default function AdminDashboard() {
                       <td className="px-4 py-3">{t.subject || '–'}</td>
                       <td className="px-4 py-3">{t.origin_province}</td>
                       <td className="px-4 py-3">{t.origin_zone || '–'}</td>
+                      <td className="px-4 py-3">{t.current_school || '–'}</td>
                       <td className="px-4 py-3 text-xs">
                         {t.destinations?.map(destinationLabel).join(', ') || '–'}
                       </td>
@@ -697,6 +705,8 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+        )}
+          </>
         )}
       </div>
 
