@@ -19,9 +19,16 @@ async function fetchDestinationsForTeacherIds(
   supabase: ReturnType<typeof createServiceClient>,
   teacherIds: string[]
 ): Promise<Destination[]> {
+  // Chunks are independent queries — run them concurrently instead of one
+  // at a time so a popular subject with several hundred candidates doesn't
+  // turn into several sequential round-trips on the matches/favorites tabs.
+  const pages = await Promise.all(
+    chunk(teacherIds, IN_CHUNK_SIZE).map((idsChunk) =>
+      supabase.from('destinations').select('*').in('teacher_id', idsChunk)
+    )
+  )
   const all: Destination[] = []
-  for (const idsChunk of chunk(teacherIds, IN_CHUNK_SIZE)) {
-    const { data, error } = await supabase.from('destinations').select('*').in('teacher_id', idsChunk)
+  for (const { data, error } of pages) {
     if (error) throw error
     all.push(...((data as Destination[]) ?? []))
   }

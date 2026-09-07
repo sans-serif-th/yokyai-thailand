@@ -18,11 +18,19 @@ export default function FavoritesPage() {
   useEffect(() => {
     async function bootstrap() {
       try {
+        // Fetched together, not one-after-the-other. fetchFavorites fails if
+        // there's genuinely no profile yet (it looks the teacher up itself
+        // server-side) — allSettled so that expected failure doesn't mask
+        // the "redirect to onboarding" path below with an error screen.
         const { result } = await withAuthRetry(async (token) => {
-          const profile = await fetchProfile(token)
-          if (!profile.teacher) return { hasProfile: false as const }
-          const { matches } = await fetchFavorites(token)
-          return { hasProfile: true as const, matches }
+          const [profileResult, favoritesResult] = await Promise.allSettled([
+            fetchProfile(token),
+            fetchFavorites(token),
+          ])
+          if (profileResult.status === 'rejected') throw profileResult.reason
+          if (!profileResult.value.teacher) return { hasProfile: false as const }
+          if (favoritesResult.status === 'rejected') throw favoritesResult.reason
+          return { hasProfile: true as const, matches: favoritesResult.value.matches }
         })
 
         if (!result.hasProfile) {

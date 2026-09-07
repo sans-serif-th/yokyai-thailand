@@ -18,10 +18,12 @@ export default function HomePage() {
   useEffect(() => {
     async function bootstrap() {
       try {
+        // Fetched together, not one-after-the-other — /api/stats doesn't
+        // depend on the profile existing, so there's no reason to wait for
+        // fetchProfile to finish before starting it.
         const { result } = await withAuthRetry(async (token) => {
-          const profile = await fetchProfile(token)
+          const [profile, stats] = await Promise.all([fetchProfile(token), fetchStats(token)])
           if (!profile.teacher) return { hasProfile: false as const }
-          const stats = await fetchStats(token)
           return { hasProfile: true as const, stats }
         })
 

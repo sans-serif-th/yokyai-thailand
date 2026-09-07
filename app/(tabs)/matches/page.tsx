@@ -32,11 +32,19 @@ export default function MatchesPage() {
   useEffect(() => {
     async function bootstrap() {
       try {
+        // Fetched together, not one-after-the-other. fetchMatches fails if
+        // there's genuinely no profile yet (findMatchesFor looks it up
+        // itself server-side) — allSettled so that expected failure doesn't
+        // mask the "redirect to onboarding" path below with an error screen.
         const { result } = await withAuthRetry(async (token) => {
-          const profile = await fetchProfile(token)
-          if (!profile.teacher) return { hasProfile: false as const }
-          const { matches } = await fetchMatches(token)
-          return { hasProfile: true as const, matches }
+          const [profileResult, matchesResult] = await Promise.allSettled([
+            fetchProfile(token),
+            fetchMatches(token),
+          ])
+          if (profileResult.status === 'rejected') throw profileResult.reason
+          if (!profileResult.value.teacher) return { hasProfile: false as const }
+          if (matchesResult.status === 'rejected') throw matchesResult.reason
+          return { hasProfile: true as const, matches: matchesResult.value.matches }
         })
 
         if (!result.hasProfile) {

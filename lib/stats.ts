@@ -39,11 +39,33 @@ export function countMutualPairs(all: StatsRow[]): number {
   return count
 }
 
+// These numbers are identical for every visitor (platform-wide aggregates,
+// not per-user data) and don't need to be second-accurate, so a short
+// shared cache turns "recompute across the whole teachers table on every
+// Home tab visit" into a cache hit for the common case of several people
+// loading Home within the same couple of minutes on the same warm
+// serverless instance — same idea as the LINE token-verify cache in
+// lib/line-auth.ts, which is what made the rest of the app's first load
+// noticeably faster.
+const STATS_CACHE_TTL_MS = 5 * 60_000
+let statsCache: { result: PlatformStats; cachedUntil: number } | null = null
+
 // Platform-wide summary shown above the search results — see
 // components/stats-dashboard.tsx. Every number here is a plain count;
 // nothing about an individual teacher is ever derived from this function's
 // return value.
 export async function getPlatformStats(): Promise<PlatformStats> {
+  const now = Date.now()
+  if (statsCache && statsCache.cachedUntil > now) {
+    return statsCache.result
+  }
+
+  const result = await computePlatformStats()
+  statsCache = { result, cachedUntil: now + STATS_CACHE_TTL_MS }
+  return result
+}
+
+async function computePlatformStats(): Promise<PlatformStats> {
   const supabase = createServiceClient()
 
   // Page through with .range() — a plain select silently caps at 1000 rows
