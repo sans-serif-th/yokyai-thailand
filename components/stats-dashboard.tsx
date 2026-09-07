@@ -8,7 +8,7 @@ function formatNumber(n: number) {
   return n.toLocaleString('th-TH')
 }
 
-// Platform-wide summary shown above the search results — 4 boxes, all
+// Platform-wide summary shown above the search results — 5 boxes, all
 // aggregate counts (see /api/stats). Never shows an individual teacher.
 export function StatsDashboard({ stats }: StatsDashboardProps) {
   return (
@@ -18,18 +18,18 @@ export function StatsDashboard({ stats }: StatsDashboardProps) {
         <p className="text-xs text-zinc-600 mt-1">ลงทะเบียนทั้งหมด</p>
       </div>
       <div className="card-surface bg-lavender/20 text-center">
-        <p className="text-sm font-bold leading-snug">
-          {formatNumber(stats.originProvinceCount)} จังหวัดต้นทาง
-          <br />
-          {formatNumber(stats.destinationProvinceCount)} จังหวัดปลายทาง
-        </p>
-        <p className="text-xs text-zinc-600 mt-1">สถานที่ปลายทาง</p>
+        <p className="text-2xl font-bold">{formatNumber(stats.originProvinceCount)} จังหวัด</p>
+        <p className="text-xs text-zinc-600 mt-1">ต้นทาง</p>
+      </div>
+      <div className="card-surface bg-lavender/20 text-center">
+        <p className="text-2xl font-bold">{formatNumber(stats.destinationProvinceCount)} จังหวัด</p>
+        <p className="text-xs text-zinc-600 mt-1">ปลายทาง</p>
       </div>
       <div className="card-surface bg-sungold/20 text-center">
         <p className="text-2xl font-bold">{formatNumber(stats.matchCount)}</p>
         <p className="text-xs text-zinc-600 mt-1">จับคู่สำเร็จ</p>
       </div>
-      <div className="card-surface bg-terracotta/20 text-center">
+      <div className="card-surface bg-terracotta/20 text-center col-span-2">
         <p className="text-2xl font-bold">{formatNumber(stats.subjectCount)}</p>
         <p className="text-xs text-zinc-600 mt-1">สาขาวิชาทั้งหมด</p>
       </div>
