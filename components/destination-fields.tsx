@@ -53,9 +53,22 @@ export function DestinationFields({
   const atLimit = destinations.length >= maxDestinations
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-sm font-medium">ปลายทาง — จังหวัดที่ต้องการย้ายไป</span>
+      <span className="text-[14px] font-semibold">ปลายทาง — จังหวัดที่ต้องการย้ายไป</span>
       {destinations.map((d, i) => (
-        <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2">
+        <div key={i} className="card-surface flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[14px] font-semibold">จังหวัดปลายทาง #{i + 1}:</span>
+            {destinations.length > 1 && (
+              <button
+                type="button"
+                onClick={() => onRemoveDestination(i)}
+                className="text-terracotta"
+                aria-label="ลบปลายทางนี้"
+              >
+                ✕
+              </button>
+            )}
+          </div>
           <select
             className="input-field"
             value={d.province}
@@ -100,14 +113,6 @@ export function DestinationFields({
               </option>
             ))}
           </select>
-          <button
-            type="button"
-            onClick={() => onRemoveDestination(i)}
-            className="text-terracotta px-2"
-            aria-label="ลบปลายทางนี้"
-          >
-            ✕
-          </button>
         </div>
       ))}
       {atLimit ? (

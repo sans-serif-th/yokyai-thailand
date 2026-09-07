@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { ChevronLeftIcon } from './icons'
 import { POSITIONS, requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
 import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
@@ -20,10 +21,6 @@ const STEP_TITLES: Record<Exclude<Step, 0>, string> = {
   2: 'ปลายทางที่ต้องการ',
   3: 'ข้อมูลติดต่อ',
 }
-
-// Cycled by index for the career-category cards — adding a 3rd/4th career
-// later just continues the cycle, no new design decision needed.
-const CATEGORY_CARD_COLORS = ['bg-lavender', 'bg-sungold']
 
 function splitDisplayName(displayName: string | undefined): [string, string] {
   if (!displayName) return ['', '']
@@ -231,15 +228,27 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
 
   return (
     <div className="flex flex-col gap-5 max-w-lg mx-auto p-4">
-      <h1 className="text-xl font-semibold">โปรไฟล์ครู</h1>
+      <div className="flex items-center justify-between py-2">
+        {step > 0 ? (
+          <button
+            type="button"
+            onClick={goBack}
+            aria-label="ย้อนกลับ"
+            className="flex items-center justify-center size-10 text-foreground"
+          >
+            <ChevronLeftIcon />
+          </button>
+        ) : (
+          <div className="size-10" />
+        )}
+        <h1 className="text-xl font-bold">เริ่มใช้งาน</h1>
+        <div className="size-10" />
+      </div>
 
       {step > 0 && (
-        <div className="flex justify-between text-sm">
+        <div className="flex justify-between text-[13px]">
           {([1, 2, 3] as const).map((s) => (
-            <span
-              key={s}
-              className={s === step ? 'font-semibold text-terracotta' : 'text-zinc-400'}
-            >
+            <span key={s} className={s === step ? 'font-bold text-foreground' : 'text-zinc-400'}>
               {s}. {STEP_TITLES[s]}
             </span>
           ))}
@@ -248,17 +257,19 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
 
       {step === 0 && (
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-zinc-600">เลือกสายงานของคุณเพื่อเริ่มกรอกข้อมูล</p>
-          {POSITIONS.map((p, i) => (
-            <button
-              key={p.code}
-              type="button"
-              onClick={() => handleSelectCategory(p.code)}
-              className={`rounded-3xl border border-sage px-4 py-3 text-left font-medium ${CATEGORY_CARD_COLORS[i % CATEGORY_CARD_COLORS.length]}`}
-            >
-              {p.nameTh}
-            </button>
-          ))}
+          <p className="text-[15px] text-zinc-500">เลือกสายงานของคุณเพื่อเริ่มกรอกข้อมูล</p>
+          <div className="flex gap-3">
+            {POSITIONS.map((p) => (
+              <button
+                key={p.code}
+                type="button"
+                onClick={() => handleSelectCategory(p.code)}
+                className="flex-1 rounded-full border border-sage px-5 py-3 text-center text-[18px] font-bold"
+              >
+                {p.nameTh}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -307,7 +318,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
       {step === 3 && (
         <>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">ชื่อ</span>
+            <span className="text-[14px] font-semibold">ชื่อ</span>
             <input
               className="input-field"
               value={firstName}
@@ -316,7 +327,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">นามสกุล</span>
+            <span className="text-[14px] font-semibold">นามสกุล</span>
             <input
               className="input-field"
               value={lastName}
@@ -325,7 +336,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">ลิงก์ Facebook (ไม่บังคับ)</span>
+            <span className="text-[14px] font-semibold">ลิงก์ Facebook (ไม่บังคับ)</span>
             <input
               className="input-field"
               value={facebookUrl}
@@ -334,17 +345,20 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
             />
           </label>
 
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm text-zinc-500">
             ไม่ต้องกรอกเบอร์โทรศัพท์ — เมื่อจับคู่สำเร็จ ระบบจะให้คุณติดต่อกันผ่าน LINE
           </p>
 
-          <label className="flex items-start gap-2 text-sm">
+          <label className="flex items-center gap-2 text-sm cursor-pointer w-fit">
             <input
               type="checkbox"
-              className="mt-1"
+              className="peer sr-only"
               checked={termsAccepted}
               onChange={(e) => setTermsAccepted(e.target.checked)}
             />
+            <span className="flex items-center justify-center size-[18px] rounded shrink-0 border border-sage text-transparent peer-checked:bg-terracotta peer-checked:border-terracotta peer-checked:text-white text-[12px]">
+              ✓
+            </span>
             <span>
               ฉันยอมรับ{' '}
               <Link href="/terms" target="_blank" className="link-accent">
@@ -374,7 +388,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
               disabled={saving || !termsAccepted}
               className="btn-primary"
             >
-              {saving ? 'กำลังบันทึก...' : 'บันทึกโปรไฟล์'}
+              {saving ? 'กำลังบันทึก...' : 'เริ่มใช้งาน'}
             </button>
           )}
         </div>

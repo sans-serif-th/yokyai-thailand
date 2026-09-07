@@ -83,7 +83,7 @@ export function OriginFields({
   return (
     <>
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">ตำแหน่ง</span>
+        <span className="text-[14px] font-semibold">ตำแหน่ง</span>
         <select
           className="input-field"
           value={position}
@@ -99,7 +99,7 @@ export function OriginFields({
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">หน่วยงานต้นสังกัด</span>
+        <span className="text-[14px] font-semibold">หน่วยงานต้นสังกัด</span>
         <select
           className="input-field"
           value={serviceType}
@@ -114,66 +114,64 @@ export function OriginFields({
         </select>
       </label>
 
-      <div className="grid grid-cols-3 gap-3">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">ต้นทาง — จังหวัด</span>
-          <select
-            className="input-field"
-            value={originProvince}
-            onChange={(e) => onOriginProvinceChange(e.target.value)}
-          >
-            <option value="">เลือกจังหวัด</option>
-            {THAI_PROVINCES.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">อำเภอ (ไม่บังคับ)</span>
-          <select
-            className="input-field"
-            value={originDistrict}
-            onChange={(e) => onOriginDistrictChange(e.target.value)}
-            disabled={!originProvince}
-          >
-            <option value="">{originProvince ? 'เลือกอำเภอ' : 'เลือกจังหวัดก่อน'}</option>
-            {districtsForProvince(originProvince).map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">เขตพื้นที่ (ไม่บังคับ)</span>
-          <select
-            className="input-field"
-            value={originZone}
-            onChange={(e) => onOriginZoneChange(e.target.value)}
-            disabled={!serviceType || !hasZoneOptions(serviceType) || !originProvince}
-          >
-            <option value="">
-              {!serviceType || !hasZoneOptions(serviceType)
-                ? 'ไม่มีเขตย่อย'
-                : originProvince
-                  ? 'เลือกเขตพื้นที่'
-                  : 'เลือกจังหวัดก่อน'}
+      <label className="flex flex-col gap-1">
+        <span className="text-[14px] font-semibold">จังหวัดต้นทาง</span>
+        <select
+          className="input-field"
+          value={originProvince}
+          onChange={(e) => onOriginProvinceChange(e.target.value)}
+        >
+          <option value="">เลือกจังหวัด</option>
+          {THAI_PROVINCES.map((p) => (
+            <option key={p} value={p}>
+              {p}
             </option>
-            {zonesFor(serviceType, originProvince).map((z) => (
-              <option key={z} value={z}>
-                {z}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+          ))}
+        </select>
+      </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">โรงเรียนปัจจุบัน (ไม่บังคับ)</span>
+        <span className="text-[14px] font-semibold">อำเภอ (ไม่บังคับ)</span>
+        <select
+          className="input-field"
+          value={originDistrict}
+          onChange={(e) => onOriginDistrictChange(e.target.value)}
+          disabled={!originProvince}
+        >
+          <option value="">{originProvince ? 'เลือกอำเภอ' : 'เลือกจังหวัดก่อน'}</option>
+          {districtsForProvince(originProvince).map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="flex flex-col gap-1">
+        <span className="text-[14px] font-semibold">เขตพื้นที่ (ไม่บังคับ)</span>
+        <select
+          className="input-field"
+          value={originZone}
+          onChange={(e) => onOriginZoneChange(e.target.value)}
+          disabled={!serviceType || !hasZoneOptions(serviceType) || !originProvince}
+        >
+          <option value="">
+            {!serviceType || !hasZoneOptions(serviceType)
+              ? 'ไม่มีเขตย่อย'
+              : originProvince
+                ? 'เลือกเขตพื้นที่'
+                : 'เลือกจังหวัดก่อน'}
+          </option>
+          {zonesFor(serviceType, originProvince).map((z) => (
+            <option key={z} value={z}>
+              {z}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="flex flex-col gap-1">
+        <span className="text-[14px] font-semibold">โรงเรียนปัจจุบัน (ไม่บังคับ)</span>
         <input
           className="input-field"
           value={currentSchool}
@@ -184,7 +182,7 @@ export function OriginFields({
       {requiresTeachingGroup(position) && (
         <>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">กลุ่มสาระการเรียนรู้</span>
+            <span className="text-[14px] font-semibold">กลุ่มสาระการเรียนรู้</span>
             <select
               className="input-field"
               value={teachingGroup}
@@ -200,7 +198,7 @@ export function OriginFields({
           </label>
 
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium">วิชาเอก (ไม่บังคับ — ใช้สำหรับกรองผลลัพธ์)</span>
+            <span className="text-[14px] font-semibold">วิชาเอก (ไม่บังคับ — ใช้สำหรับกรองผลลัพธ์)</span>
             {subjects.map((s, i) => (
               <div key={i} className="flex gap-2">
                 <input
@@ -230,7 +228,7 @@ export function OriginFields({
 
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">รอบที่ต้องการย้าย</span>
+          <span className="text-[14px] font-semibold">รอบที่ต้องการย้าย</span>
           <select
             className="input-field"
             value={transferRound}
@@ -246,7 +244,7 @@ export function OriginFields({
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">ปีที่ต้องการย้าย</span>
+          <span className="text-[14px] font-semibold">ปีที่ต้องการย้าย</span>
           <select
             className="input-field"
             value={transferYear}
@@ -263,7 +261,7 @@ export function OriginFields({
       </div>
 
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">ข้อมูลสวัสดิการเพิ่มเติม (ไม่บังคับ)</span>
+        <span className="text-[14px] font-semibold">ข้อมูลสวัสดิการเพิ่มเติม (ไม่บังคับ)</span>
         <textarea
           className="textarea-field"
           rows={4}

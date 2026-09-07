@@ -34,15 +34,17 @@ body {
   font-family: var(--font-sans), sans-serif;
 }
 
-/* Shared form/UI primitives — the Figma design uses heavy pill shapes for
-   every interactive control, and rounded-3xl cards. Centralized here since
-   the same classes repeat across every form component. */
+/* Shared form/UI primitives. Figma's Field/Select, Field/Text and
+   Field/Textarea components (see e.g. node 8:4 "Onboarding-step-2") are all
+   an 8px-rounded box, not a pill — pill shapes (rounded-full) are reserved
+   for buttons, category cards, and filter chips. Centralized here since the
+   same classes repeat across every form component. */
 @layer components {
   .input-field {
-    @apply w-full rounded-full border border-sage bg-white px-4 py-2 text-foreground disabled:opacity-50 disabled:bg-zinc-100;
+    @apply w-full h-10 rounded-lg border border-sage bg-white px-3 py-2 text-foreground disabled:opacity-50 disabled:bg-zinc-100;
   }
   .textarea-field {
-    @apply w-full rounded-2xl border border-sage bg-white px-4 py-2 text-foreground;
+    @apply w-full min-h-[88px] rounded-lg border border-sage bg-white px-3 py-2 text-foreground;
   }
   .btn-primary {
     @apply rounded-full bg-terracotta px-5 py-2.5 text-white disabled:opacity-50;
