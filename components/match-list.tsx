@@ -14,7 +14,7 @@ const TIER_LABEL: Record<MatchResult['tier'], string> = {
   partial: '⚪ ตรงตำแหน่ง',
 }
 
-const PAGE_SIZE = 15
+const PAGE_SIZE = 25
 
 interface MatchListProps {
   matches: MatchResult[]
