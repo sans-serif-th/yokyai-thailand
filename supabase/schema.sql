@@ -98,6 +98,11 @@ create table teachers (
   -- at them stay valid). Cleared once claimed — see lib/invites.ts.
   invite_code text unique,
 
+  -- Timestamp when the profile was verified/claimed. Null for unclaimed
+  -- facebook_import records; set to now() when an invite is claimed.
+  -- Used to filter matching: only show verified profiles (claimed_at IS NOT NULL).
+  claimed_at timestamptz,
+
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

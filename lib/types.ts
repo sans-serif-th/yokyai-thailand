@@ -28,6 +28,7 @@ export interface Teacher {
   facebook_url: string | null
   source: 'app' | 'facebook_import'
   invite_code: string | null
+  claimed_at: string | null
 }
 
 export type MatchTier = 'perfect' | 'high' | 'partial'

@@ -68,6 +68,7 @@ export async function claimInvite(
       line_user_id: lineUserId,
       source: 'app',
       invite_code: null,
+      claimed_at: new Date().toISOString(),
       ...profilePayloadToTeacherRow(payload),
     })
     .eq('id', seed.id)

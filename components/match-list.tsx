@@ -130,9 +130,9 @@ export function MatchList({
                   </button>
                 </div>
               </div>
-              {m.teacher.source === 'facebook_import' && (
-                <span className="inline-block text-xs text-zinc-500 bg-zinc-100 rounded-full px-2 py-0.5 mt-1">
-                  ข้อมูลนำเข้า
+              {m.teacher.claimed_at && (
+                <span className="inline-block text-xs text-green-600 bg-green-50 rounded-full px-2 py-0.5 mt-1">
+                  ✓ ยืนยันตัวตน
                 </span>
               )}
               <p className="text-sm text-zinc-600">

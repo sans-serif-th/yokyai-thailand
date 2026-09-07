@@ -101,6 +101,7 @@ export async function findMatchesFor(
     .eq('service_type', requester.service_type)
     .in('origin_province', destinationProvinces)
     .neq('id', requester.id)
+    .not('claimed_at', 'is', null) // Only show verified/claimed profiles
 
   if (requiresTeachingGroup(requester.position)) {
     candidatesQuery = candidatesQuery.eq('teaching_group', requester.teaching_group)
