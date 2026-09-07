@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import type { Teacher, Destination } from '@/lib/types'
+import { serviceTypeAbbr } from '@/lib/service-types'
 
 type TabType = 'teachers' | 'matches' | 'coverage'
 
@@ -302,10 +303,12 @@ export default function AdminDashboard() {
                   <tr>
                     <th className="px-4 py-3 text-left font-medium">Name</th>
                     <th className="px-4 py-3 text-left font-medium">Category</th>
+                    <th className="px-4 py-3 text-left font-medium">สพฐ</th>
                     <th className="px-4 py-3 text-left font-medium">Source</th>
                     <th className="px-4 py-3 text-left font-medium">Status</th>
                     <th className="px-4 py-3 text-left font-medium">Subject</th>
                     <th className="px-4 py-3 text-left font-medium">Origin</th>
+                    <th className="px-4 py-3 text-left font-medium">เขต</th>
                     <th className="px-4 py-3 text-left font-medium">Destinations</th>
                     <th className="px-4 py-3 text-left font-medium">Facebook</th>
                     <th className="px-4 py-3 text-left font-medium">Invitation Link</th>
@@ -324,6 +327,7 @@ export default function AdminDashboard() {
                           {!['teacher', 'nurse', 'physician'].includes(t.category) && t.category}
                         </span>
                       </td>
+                      <td className="px-4 py-3">{serviceTypeAbbr(t.service_type)}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
@@ -348,6 +352,7 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-4 py-3">{t.subject || '–'}</td>
                       <td className="px-4 py-3">{t.origin_province}</td>
+                      <td className="px-4 py-3">{t.origin_zone || '–'}</td>
                       <td className="px-4 py-3 text-xs">
                         {t.destinations?.map((d) => d.province).join(', ') || '–'}
                       </td>
