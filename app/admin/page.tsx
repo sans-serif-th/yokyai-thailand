@@ -223,6 +223,7 @@ export default function AdminDashboard() {
                 <thead className="bg-gray-100 border-b border-gray-300">
                   <tr>
                     <th className="px-4 py-3 text-left font-medium">Name</th>
+                    <th className="px-4 py-3 text-left font-medium">Category</th>
                     <th className="px-4 py-3 text-left font-medium">Source</th>
                     <th className="px-4 py-3 text-left font-medium">Status</th>
                     <th className="px-4 py-3 text-left font-medium">Subject</th>
@@ -235,6 +236,14 @@ export default function AdminDashboard() {
                   {teachers.map((t) => (
                     <tr key={t.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium">{t.display_name}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          {t.category === 'teacher' && 'ครู'}
+                          {t.category === 'nurse' && 'พยาบาล'}
+                          {t.category === 'physician' && 'แพทย์'}
+                          {!['teacher', 'nurse', 'physician'].includes(t.category) && t.category}
+                        </span>
+                      </td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${

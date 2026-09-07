@@ -43,6 +43,22 @@ on conflict (code) do nothing;
 
 alter table service_types enable row level security;
 
+-- User categories: teacher, nurse, physician, etc. One category per user for now,
+-- future-proof for multiple categories via junction table if needed.
+create table categories (
+  code text primary key,
+  name_th text not null,
+  name_en text not null
+);
+
+insert into categories (code, name_th, name_en) values
+  ('teacher',   'ครู',        'Teacher'),
+  ('nurse',     'พยาบาล',    'Nurse'),
+  ('physician', 'แพทย์',     'Physician')
+on conflict (code) do nothing;
+
+alter table categories enable row level security;
+
 -- The 2 positions (ตำแหน่ง) eligible for mutual transfer via this system.
 -- Only 'teacher' has a Teaching Group / Subject — see lib/positions.ts
 -- (must stay in sync).
@@ -102,6 +118,10 @@ create table teachers (
   -- facebook_import records; set to now() when an invite is claimed.
   -- Used to filter matching: only show verified profiles (claimed_at IS NOT NULL).
   claimed_at timestamptz,
+
+  -- User category/role: teacher, nurse, physician, etc. One per user for now.
+  -- Future-proof for multiple categories via junction table if needed.
+  category text not null default 'teacher' references categories(code),
 
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
