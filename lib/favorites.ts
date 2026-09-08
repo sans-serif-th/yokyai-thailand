@@ -1,4 +1,5 @@
 import { findMatchesFor } from './matching'
+import { getActiveRound } from './rounds'
 import { createServiceClient } from './supabase-server'
 import type { MatchResult, Teacher } from './types'
 
@@ -56,13 +57,18 @@ export async function getFavoritedMatchesFor(lineUserId: string): Promise<MatchR
     .map((m) => ({ ...m, favorited: true }))
 }
 
+// Stamps the favorite with whichever round is active right now — not yet
+// used to filter anything, but lets future logic tell "still relevant this
+// round" apart from "left over from a past round" (see
+// supabase/migrations/0018_favorites_round.sql). Re-favoriting in a later
+// round updates round_id to that round via the upsert below.
 export async function addFavorite(lineUserId: string, favoritedTeacherId: string): Promise<void> {
-  const teacherId = await getTeacherId(lineUserId)
+  const [teacherId, activeRound] = await Promise.all([getTeacherId(lineUserId), getActiveRound()])
   const supabase = createServiceClient()
   const { error } = await supabase
     .from('favorites')
     .upsert(
-      { teacher_id: teacherId, favorited_teacher_id: favoritedTeacherId },
+      { teacher_id: teacherId, favorited_teacher_id: favoritedTeacherId, round_id: activeRound?.id ?? null },
       { onConflict: 'teacher_id,favorited_teacher_id' }
     )
   if (error) throw error

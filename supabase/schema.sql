@@ -154,23 +154,11 @@ create table destinations (
 create index idx_destinations_teacher on destinations (teacher_id);
 create index idx_destinations_province on destinations (province);
 
--- A teacher saving another teacher's match card for later. Direction matters
--- (teacher_id favorited favorited_teacher_id) — favoriting is not mutual.
-create table favorites (
-  id uuid primary key default gen_random_uuid(),
-  teacher_id uuid not null references teachers(id) on delete cascade,
-  favorited_teacher_id uuid not null references teachers(id) on delete cascade,
-  created_at timestamptz not null default now(),
-  unique (teacher_id, favorited_teacher_id),
-  check (teacher_id != favorited_teacher_id)
-);
-
-create index idx_favorites_teacher on favorites (teacher_id);
-
 -- A transfer cycle (e.g. "2569/1", "2569/2"). Payment and package limits
 -- are scoped to whichever round is currently active — a teacher's profile
 -- and destinations persist across rounds regardless (see
--- round_subscriptions below for what actually resets).
+-- round_subscriptions below for what actually resets). Defined before
+-- favorites/round_subscriptions since both reference it.
 create table rounds (
   id uuid primary key default gen_random_uuid(),
   label text not null unique,
@@ -190,6 +178,26 @@ create table rounds (
 -- boolean column that's only indexed where true works because every
 -- indexed row then shares the same value, so a second true row collides.
 create unique index only_one_active_round on rounds (is_active) where is_active;
+
+-- A teacher saving another teacher's match card for later. Direction matters
+-- (teacher_id favorited favorited_teacher_id) — favoriting is not mutual.
+create table favorites (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null references teachers(id) on delete cascade,
+  favorited_teacher_id uuid not null references teachers(id) on delete cascade,
+
+  -- Which round was active when this favorite was (last) added — lets
+  -- future logic tell "still relevant this round" apart from "left over
+  -- from a past round". Not yet used to filter anything; see
+  -- lib/favorites.ts's addFavorite.
+  round_id uuid references rounds(id),
+
+  created_at timestamptz not null default now(),
+  unique (teacher_id, favorited_teacher_id),
+  check (teacher_id != favorited_teacher_id)
+);
+
+create index idx_favorites_teacher on favorites (teacher_id);
 
 -- A teacher's package for one specific round. Free = 1 destination allowed
 -- that round; paid = 3, but only once verified_at is set (uploading a slip

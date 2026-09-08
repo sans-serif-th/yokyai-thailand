@@ -2,6 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { fetchRoundPhase } from '@/lib/api'
+import { withAuthRetry } from '@/lib/session'
 import { HeartIcon, HomeIcon, SearchIcon, SlidersIcon, UserIcon } from './icons'
 
 const TABS = [
@@ -18,12 +21,40 @@ const TABS = [
 // stays identifiable without sight.
 export function BottomNav() {
   const pathname = usePathname()
+  // null = not yet known — treated as usable so the tab doesn't flash
+  // disabled-then-enabled in the common (matching-phase) case. รายการโปรด
+  // has nothing useful to show before the active round reaches its
+  // matching phase (see components/registration-breakdown.tsx) — it just
+  // repeats the same dashboard ค้นหา already shows — so it's disabled
+  // instead of linking to a redundant page.
+  const [inMatchingPhase, setInMatchingPhase] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    withAuthRetry((token) => fetchRoundPhase(token))
+      .then(({ result }) => setInMatchingPhase(result.inMatchingPhase))
+      .catch(() => setInMatchingPhase(null))
+  }, [])
 
   return (
     <nav className="fixed bottom-0 inset-x-0 px-4 pb-4">
       <div className="max-w-lg mx-auto bg-white border border-black/5 rounded-full p-2 flex items-center justify-center gap-1 shadow-sm">
         {TABS.map(({ href, label, Icon }) => {
           const active = pathname === href
+          const disabled = href === '/favorites' && inMatchingPhase === false
+
+          if (disabled) {
+            return (
+              <span
+                key={href}
+                aria-label={`${label} — ใช้งานได้เมื่อเปิดช่วงจับคู่แล้ว`}
+                title="ใช้งานได้เมื่อเปิดช่วงจับคู่แล้ว"
+                className="flex items-center justify-center size-11 rounded-full shrink-0 text-zinc-300 cursor-not-allowed"
+              >
+                <Icon />
+              </span>
+            )
+          }
+
           return (
             <Link
               key={href}
