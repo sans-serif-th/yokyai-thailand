@@ -842,7 +842,7 @@ export default function AdminDashboard() {
             </h2>
             {activeRound && (
               <>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 mb-2">
                   สถานะปัจจุบัน:{' '}
                   <span className="font-medium">
                     {isRoundInMatchingPhase(activeRound)
@@ -850,6 +850,22 @@ export default function AdminDashboard() {
                       : '🟡 ยังอยู่ในช่วงลงทะเบียน'}
                   </span>
                 </p>
+
+                {/* Quick toggle for testing — flips the phase in one click
+                    without touching the scheduled time below. */}
+                <button
+                  onClick={() =>
+                    handleSaveRoundPhase(
+                      isRoundInMatchingPhase(activeRound) ? null : new Date().toISOString()
+                    )
+                  }
+                  disabled={savingRound}
+                  className="text-xs rounded-full px-3 py-1 border border-dashed border-gray-400 text-gray-600 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 mb-4"
+                >
+                  🔧 Debug: สลับเป็น{' '}
+                  {isRoundInMatchingPhase(activeRound) ? 'ช่วงลงทะเบียน' : 'ช่วงจับคู่'}
+                </button>
+
                 <label className="block text-sm font-medium mb-1">
                   เวลาที่จะเปิดให้ดูผลการจับคู่ (matching_opens_at)
                 </label>
