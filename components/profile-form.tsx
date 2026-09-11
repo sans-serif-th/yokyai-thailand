@@ -6,6 +6,7 @@ import { ChevronLeftIcon } from './icons'
 import { POSITIONS, requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
 import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
+import { autoZone } from '@/lib/education-zones'
 import { DestinationFields, findDuplicateProvince, type DestinationDraft } from './destination-fields'
 import { FREE_DESTINATION_LIMIT } from '@/lib/package-limits'
 import { upcomingTransferYears } from '@/lib/transfer-rounds'
@@ -108,17 +109,24 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
   }
 
   function handleServiceTypeChange(value: string) {
-    setServiceType(value as ServiceTypeCode | '')
-    // Zone options depend on service type — clear selections that may no
-    // longer be valid.
-    setOriginZone('')
-    setDestinations((prev) => prev.map((d) => ({ ...d, zone: '' })))
+    const nextServiceType = value as ServiceTypeCode | ''
+    setServiceType(nextServiceType)
+    // Zone depends on service type — recompute (or auto-fill) for the new one.
+    setOriginZone(autoZone(nextServiceType, originProvince, originDistrict))
+    setDestinations((prev) =>
+      prev.map((d) => ({ ...d, zone: autoZone(nextServiceType, d.province, d.district) }))
+    )
   }
 
   function handleOriginProvinceChange(value: string) {
     setOriginProvince(value)
     setOriginDistrict('')
-    setOriginZone('')
+    setOriginZone(autoZone(serviceType, value, ''))
+  }
+
+  function handleOriginDistrictChange(value: string) {
+    setOriginDistrict(value)
+    setOriginZone(autoZone(serviceType, originProvince, value))
   }
 
   function updateDestination(index: number, field: keyof DestinationDraft, value: string) {
@@ -126,8 +134,10 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
       prev.map((d, i) => {
         if (i !== index) return d
         if (field === 'province') {
-          // District/zone options depend on province — clear stale selections.
-          return { province: value, district: '', zone: '' }
+          return { province: value, district: '', zone: autoZone(serviceType, value, '') }
+        }
+        if (field === 'district') {
+          return { ...d, district: value, zone: autoZone(serviceType, d.province, value) }
         }
         return { ...d, [field]: value }
       })
@@ -282,7 +292,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
           originProvince={originProvince}
           onOriginProvinceChange={handleOriginProvinceChange}
           originDistrict={originDistrict}
-          onOriginDistrictChange={setOriginDistrict}
+          onOriginDistrictChange={handleOriginDistrictChange}
           originZone={originZone}
           onOriginZoneChange={setOriginZone}
           currentSchool={currentSchool}

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { TEACHING_GROUPS, teachingGroupLabel } from '@/lib/teaching-groups'
+import { THAI_PROVINCES } from '@/lib/provinces'
+import { primaryZoneDetails, zonesFor } from '@/lib/education-zones'
 
 interface Subject {
   id: string
@@ -22,7 +24,7 @@ interface TeachingGroupRow {
   name_en: string
 }
 
-type MasterTab = 'subjects' | 'service_types' | 'teaching_groups'
+type MasterTab = 'subjects' | 'service_types' | 'teaching_groups' | 'education_zones'
 
 export default function MasterDataPage() {
   const [authed, setAuthed] = useState(false)
@@ -43,6 +45,8 @@ export default function MasterDataPage() {
 
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null)
   const [editingServiceType, setEditingServiceType] = useState<ServiceType | null>(null)
+
+  const [zoneProvinceFilter, setZoneProvinceFilter] = useState('')
 
   useEffect(() => {
     const storedToken = localStorage.getItem('admin_token')
@@ -260,6 +264,16 @@ export default function MasterDataPage() {
             }`}
           >
             Teaching Groups ({teachingGroups.length})
+          </button>
+          <button
+            onClick={() => setTab('education_zones')}
+            className={`px-4 py-2 font-medium border-b-2 ${
+              tab === 'education_zones'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            เขตพื้นที่การศึกษา
           </button>
         </div>
 
@@ -518,6 +532,76 @@ export default function MasterDataPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {tab === 'education_zones' && (
+          <div className="space-y-6">
+            <p className="text-xs text-gray-500">
+              Reference copy of the data in lib/education-zones.ts, the canonical source the real
+              signup/criteria zone fields read from. Read-only — nothing here can be edited, and
+              editing lib/education-zones.ts is the only way to change it.
+            </p>
+
+            <div className="space-y-2">
+              <h2 className="font-semibold">สพป. — จังหวัด / อำเภอ / เขต</h2>
+              <select
+                value={zoneProvinceFilter}
+                onChange={(e) => setZoneProvinceFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">ทุกจังหวัด</option>
+                {THAI_PROVINCES.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+              <div className="bg-white rounded-lg shadow overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-100 border-b border-gray-300">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-medium">จังหวัด</th>
+                      <th className="px-4 py-3 text-left font-medium">เขต</th>
+                      <th className="px-4 py-3 text-left font-medium">อำเภอ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {(zoneProvinceFilter ? [zoneProvinceFilter] : THAI_PROVINCES).flatMap((province) =>
+                      primaryZoneDetails(province).map(({ zone, districts }) => (
+                        <tr key={`${province}-${zone}`} className="hover:bg-gray-50">
+                          <td className="px-4 py-3">{province}</td>
+                          <td className="px-4 py-3">{zone}</td>
+                          <td className="px-4 py-3">{districts.join(', ')}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="font-semibold">สพม. — จังหวัด / เขต</h2>
+              <div className="bg-white rounded-lg shadow overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-100 border-b border-gray-300">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-medium">จังหวัด</th>
+                      <th className="px-4 py-3 text-left font-medium">เขต</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {THAI_PROVINCES.map((province) => (
+                      <tr key={province} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">{province}</td>
+                        <td className="px-4 py-3">{zonesFor('secondary', province).join(' / ')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

@@ -149,25 +149,39 @@ export function OriginFields({
 
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-semibold">เขตพื้นที่ (ไม่บังคับ)</span>
-        <select
-          className="input-field"
-          value={originZone}
-          onChange={(e) => onOriginZoneChange(e.target.value)}
-          disabled={!serviceType || !hasZoneOptions(serviceType) || !originProvince}
-        >
-          <option value="">
-            {!serviceType || !hasZoneOptions(serviceType)
-              ? 'ไม่มีเขตย่อย'
-              : originProvince
-                ? 'เลือกเขตพื้นที่'
-                : 'เลือกจังหวัดก่อน'}
-          </option>
-          {zonesFor(serviceType, originProvince).map((z) => (
-            <option key={z} value={z}>
-              {z}
-            </option>
-          ))}
-        </select>
+        {serviceType === 'secondary' && zonesFor('secondary', originProvince).length > 1 ? (
+          // Only กรุงเทพมหานคร's สพม. has more than one zone — every other
+          // case below is unambiguous once province (and, for สพป., อำเภอ)
+          // is known, so it's auto-filled instead of manually picked.
+          <select
+            className="input-field"
+            value={originZone}
+            onChange={(e) => onOriginZoneChange(e.target.value)}
+          >
+            <option value="">เลือกเขตพื้นที่</option>
+            {zonesFor('secondary', originProvince).map((z) => (
+              <option key={z} value={z}>
+                {z}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            className="input-field"
+            value={originZone}
+            disabled
+            readOnly
+            placeholder={
+              !serviceType || !hasZoneOptions(serviceType)
+                ? 'ไม่มีเขตย่อย'
+                : !originProvince
+                  ? 'เลือกจังหวัดก่อน'
+                  : serviceType === 'primary' && !originDistrict
+                    ? 'เลือกอำเภอก่อน'
+                    : 'ไม่ทราบเขตพื้นที่'
+            }
+          />
+        )}
       </label>
 
       <label className="flex flex-col gap-1">

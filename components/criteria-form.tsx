@@ -6,6 +6,7 @@ import type { ServiceTypeCode } from '@/lib/service-types'
 import { upcomingTransferYears } from '@/lib/transfer-rounds'
 import { BackHeader } from './back-header'
 import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
+import { autoZone } from '@/lib/education-zones'
 import { DestinationFields, findDuplicateProvince, type DestinationDraft } from './destination-fields'
 import { OriginDestinationTabs, type OriginDestinationTab } from './origin-destination-tabs'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
@@ -80,15 +81,23 @@ export function CriteriaForm({
   }
 
   function handleServiceTypeChange(value: string) {
-    setServiceType(value as ServiceTypeCode | '')
-    setOriginZone('')
-    setDestinations((prev) => prev.map((d) => ({ ...d, zone: '' })))
+    const nextServiceType = value as ServiceTypeCode | ''
+    setServiceType(nextServiceType)
+    setOriginZone(autoZone(nextServiceType, originProvince, originDistrict))
+    setDestinations((prev) =>
+      prev.map((d) => ({ ...d, zone: autoZone(nextServiceType, d.province, d.district) }))
+    )
   }
 
   function handleOriginProvinceChange(value: string) {
     setOriginProvince(value)
     setOriginDistrict('')
-    setOriginZone('')
+    setOriginZone(autoZone(serviceType, value, ''))
+  }
+
+  function handleOriginDistrictChange(value: string) {
+    setOriginDistrict(value)
+    setOriginZone(autoZone(serviceType, originProvince, value))
   }
 
   function updateDestination(index: number, field: keyof DestinationDraft, value: string) {
@@ -96,7 +105,10 @@ export function CriteriaForm({
       prev.map((d, i) => {
         if (i !== index) return d
         if (field === 'province') {
-          return { province: value, district: '', zone: '' }
+          return { province: value, district: '', zone: autoZone(serviceType, value, '') }
+        }
+        if (field === 'district') {
+          return { ...d, district: value, zone: autoZone(serviceType, d.province, value) }
         }
         return { ...d, [field]: value }
       })
@@ -185,7 +197,7 @@ export function CriteriaForm({
           originProvince={originProvince}
           onOriginProvinceChange={handleOriginProvinceChange}
           originDistrict={originDistrict}
-          onOriginDistrictChange={setOriginDistrict}
+          onOriginDistrictChange={handleOriginDistrictChange}
           originZone={originZone}
           onOriginZoneChange={setOriginZone}
           currentSchool={currentSchool}
