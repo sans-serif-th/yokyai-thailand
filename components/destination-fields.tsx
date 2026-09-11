@@ -94,25 +94,39 @@ export function DestinationFields({
               </option>
             ))}
           </select>
-          <select
-            className="input-field"
-            value={d.zone}
-            onChange={(e) => onUpdateDestination(i, 'zone', e.target.value)}
-            disabled={!serviceType || !hasZoneOptions(serviceType) || !d.province}
-          >
-            <option value="">
-              {!serviceType || !hasZoneOptions(serviceType)
-                ? 'ไม่มีเขตย่อย'
-                : d.province
-                  ? 'เลือกเขตพื้นที่'
-                  : 'เลือกจังหวัดก่อน'}
-            </option>
-            {zonesFor(serviceType, d.province).map((z) => (
-              <option key={z} value={z}>
-                {z}
-              </option>
-            ))}
-          </select>
+          {serviceType === 'secondary' && zonesFor('secondary', d.province).length > 1 ? (
+            // Only กรุงเทพมหานคร's สพม. has more than one zone — every other
+            // case below is unambiguous once province (and, for สพป., อำเภอ)
+            // is known, so it's auto-filled instead of manually picked.
+            <select
+              className="input-field"
+              value={d.zone}
+              onChange={(e) => onUpdateDestination(i, 'zone', e.target.value)}
+            >
+              <option value="">เลือกเขตพื้นที่</option>
+              {zonesFor('secondary', d.province).map((z) => (
+                <option key={z} value={z}>
+                  {z}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              className="input-field"
+              value={d.zone}
+              disabled
+              readOnly
+              placeholder={
+                !serviceType || !hasZoneOptions(serviceType)
+                  ? 'ไม่มีเขตย่อย'
+                  : !d.province
+                    ? 'เลือกจังหวัดก่อน'
+                    : serviceType === 'primary' && !d.district
+                      ? 'เลือกอำเภอก่อน'
+                      : 'ไม่ทราบเขตพื้นที่'
+              }
+            />
+          )}
         </div>
       ))}
       {atLimit ? (
