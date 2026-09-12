@@ -9,24 +9,41 @@ function formatNumber(n: number) {
   return n.toLocaleString('th-TH')
 }
 
+// Bar color differs per list purely for visual distinction between the
+// three cards (origin/destination/subject) — matches the Figma update's
+// per-card accent colors.
 function RankedList({
   title,
   rows,
+  barColor,
 }: {
   title: string
   rows: { label: string; count: number }[]
+  barColor: string
 }) {
+  const maxCount = Math.max(1, ...rows.map((r) => r.count))
   return (
     <div className="card-surface">
       <h2 className="text-sm font-semibold mb-2">{title}</h2>
       {rows.length === 0 ? (
         <p className="text-xs text-zinc-500">ยังไม่มีข้อมูล</p>
       ) : (
-        <ul className="flex flex-col gap-1">
-          {rows.map((r) => (
-            <li key={r.label} className="flex items-center justify-between text-sm">
-              <span>{r.label}</span>
-              <span className="text-zinc-500">{formatNumber(r.count)}</span>
+        <ul className="flex flex-col gap-2">
+          {rows.map((r, i) => (
+            <li key={r.label} className="flex items-center gap-2.5 text-sm">
+              <span className="flex size-[17px] shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[11px] text-zinc-500">
+                {i + 1}
+              </span>
+              <span className="flex-1 min-w-0 truncate text-xs text-zinc-500">{r.label}</span>
+              <span className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100">
+                <span
+                  className="block h-full rounded-full"
+                  style={{ width: `${(r.count / maxCount) * 100}%`, backgroundColor: barColor }}
+                />
+              </span>
+              <span className="w-6 shrink-0 text-right text-[10px] text-zinc-500">
+                {formatNumber(r.count)}
+              </span>
             </li>
           ))}
         </ul>
@@ -61,14 +78,17 @@ export function RegistrationBreakdownView({ breakdown, roundLabel }: Registratio
       <RankedList
         title="แยกตามจังหวัดต้นทาง"
         rows={breakdown.byOriginProvince.map((r) => ({ label: r.province, count: r.count }))}
+        barColor="#e52f3e"
       />
       <RankedList
         title="แยกตามจังหวัดปลายทาง"
         rows={breakdown.byDestinationProvince.map((r) => ({ label: r.province, count: r.count }))}
+        barColor="#f29b28"
       />
       <RankedList
         title="แยกตามวิชาเอก"
         rows={breakdown.bySubject.map((r) => ({ label: r.subject, count: r.count }))}
+        barColor="#0b66af"
       />
     </div>
   )

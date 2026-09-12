@@ -7,6 +7,8 @@ import { POSITIONS, requiresTeachingGroup, type PositionCode } from '@/lib/posit
 import { districtsForProvince } from '@/lib/districts'
 import { hasZoneOptions, zonesFor } from '@/lib/education-zones'
 import { TRANSFER_ROUND_OPTIONS } from '@/lib/transfer-rounds'
+import { SectionHeader } from './section-header'
+import { BriefcaseIcon, BuildingIcon, RouteIcon } from './icons'
 
 export const BENEFIT_NOTE_MAX_LENGTH = 500
 
@@ -82,6 +84,12 @@ export function OriginFields({
 }: OriginFieldsProps) {
   return (
     <>
+      <SectionHeader
+        icon={<BriefcaseIcon />}
+        title="ข้อมูลตำแหน่งงาน"
+        subtitle="ข้อมูลเกี่ยวกับตำแหน่งและสายงาน"
+      />
+
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-semibold">ตำแหน่ง</span>
         <select
@@ -96,6 +104,83 @@ export function OriginFields({
             </option>
           ))}
         </select>
+      </label>
+
+      {requiresTeachingGroup(position) && (
+        <>
+          <label className="flex flex-col gap-1">
+            <span className="text-[14px] font-semibold">กลุ่มสาระการเรียนรู้</span>
+            <select
+              className="input-field"
+              value={teachingGroup}
+              onChange={(e) => onTeachingGroupChange(e.target.value)}
+            >
+              <option value="">เลือกกลุ่มสาระ</option>
+              {TEACHING_GROUPS.map((g) => (
+                <option key={g.code} value={g.code}>
+                  {g.nameTh}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="flex flex-col gap-2">
+            <span className="text-[14px] font-semibold">วิชาเอก (ไม่บังคับ — ใช้สำหรับกรองผลลัพธ์)</span>
+            {subjects.map((s, i) => (
+              <div key={i} className="flex gap-2">
+                <input
+                  className="input-field flex-1"
+                  value={s}
+                  onChange={(e) => onUpdateSubject(i, e.target.value)}
+                  placeholder="เช่น คณิตศาสตร์"
+                />
+                {subjects.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveSubject(i)}
+                    className="text-terracotta px-2"
+                    aria-label="ลบวิชาเอกนี้"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+            <button type="button" onClick={onAddSubject} className="self-start text-sm link-accent">
+              + เพิ่มวิชาเอก
+            </button>
+          </div>
+        </>
+      )}
+
+      <SectionHeader
+        icon={<BuildingIcon />}
+        title="ข้อมูลหน่วยงานปัจจุบัน"
+        subtitle="ข้อมูลเกี่ยวกับสถานที่ทำงานปัจจุบัน"
+      />
+
+      <label className="flex flex-col gap-1">
+        <span className="text-[14px] font-semibold">โรงเรียนปัจจุบัน (ไม่บังคับ)</span>
+        <input
+          className="input-field"
+          value={currentSchool}
+          onChange={(e) => onCurrentSchoolChange(e.target.value)}
+        />
+      </label>
+
+      <label className="flex flex-col gap-1">
+        <span className="text-[14px] font-semibold">ข้อมูลสวัสดิการเพิ่มเติม (ไม่บังคับ)</span>
+        <textarea
+          className="textarea-field"
+          rows={4}
+          maxLength={BENEFIT_NOTE_MAX_LENGTH}
+          value={benefitNote}
+          onChange={(e) => onBenefitNoteChange(e.target.value)}
+          placeholder="เช่น มีบ้านพักครู"
+        />
+        <span className="text-xs text-zinc-500 self-end">
+          {benefitNote.length}/{BENEFIT_NOTE_MAX_LENGTH}
+        </span>
       </label>
 
       <label className="flex flex-col gap-1">
@@ -184,61 +269,7 @@ export function OriginFields({
         )}
       </label>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-semibold">โรงเรียนปัจจุบัน (ไม่บังคับ)</span>
-        <input
-          className="input-field"
-          value={currentSchool}
-          onChange={(e) => onCurrentSchoolChange(e.target.value)}
-        />
-      </label>
-
-      {requiresTeachingGroup(position) && (
-        <>
-          <label className="flex flex-col gap-1">
-            <span className="text-[14px] font-semibold">กลุ่มสาระการเรียนรู้</span>
-            <select
-              className="input-field"
-              value={teachingGroup}
-              onChange={(e) => onTeachingGroupChange(e.target.value)}
-            >
-              <option value="">เลือกกลุ่มสาระ</option>
-              {TEACHING_GROUPS.map((g) => (
-                <option key={g.code} value={g.code}>
-                  {g.nameTh}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="flex flex-col gap-2">
-            <span className="text-[14px] font-semibold">วิชาเอก (ไม่บังคับ — ใช้สำหรับกรองผลลัพธ์)</span>
-            {subjects.map((s, i) => (
-              <div key={i} className="flex gap-2">
-                <input
-                  className="input-field flex-1"
-                  value={s}
-                  onChange={(e) => onUpdateSubject(i, e.target.value)}
-                  placeholder="เช่น คณิตศาสตร์"
-                />
-                {subjects.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => onRemoveSubject(i)}
-                    className="text-terracotta px-2"
-                    aria-label="ลบวิชาเอกนี้"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            ))}
-            <button type="button" onClick={onAddSubject} className="self-start text-sm link-accent">
-              + เพิ่มวิชาเอก
-            </button>
-          </div>
-        </>
-      )}
+      <SectionHeader icon={<RouteIcon />} title="ข้อมูลการย้าย" subtitle="ข้อมูลที่เกี่ยวข้องกับความต้องการย้าย" />
 
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1">
@@ -273,21 +304,6 @@ export function OriginFields({
           </select>
         </label>
       </div>
-
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-semibold">ข้อมูลสวัสดิการเพิ่มเติม (ไม่บังคับ)</span>
-        <textarea
-          className="textarea-field"
-          rows={4}
-          maxLength={BENEFIT_NOTE_MAX_LENGTH}
-          value={benefitNote}
-          onChange={(e) => onBenefitNoteChange(e.target.value)}
-          placeholder="เช่น มีบ้านพักครู"
-        />
-        <span className="text-xs text-zinc-500 self-end">
-          {benefitNote.length}/{BENEFIT_NOTE_MAX_LENGTH}
-        </span>
-      </label>
     </>
   )
 }
