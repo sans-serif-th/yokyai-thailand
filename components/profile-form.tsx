@@ -2,24 +2,26 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { ChevronLeftIcon } from './icons'
-import { POSITIONS, requiresTeachingGroup, type PositionCode } from '@/lib/positions'
+import { ChevronLeftIcon, IdCardIcon } from './icons'
+import { requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
 import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
 import { autoZone } from '@/lib/education-zones'
 import { DestinationFields, findDuplicateProvince, type DestinationDraft } from './destination-fields'
 import { FREE_DESTINATION_LIMIT } from '@/lib/package-limits'
 import { upcomingTransferYears } from '@/lib/transfer-rounds'
+import { OnboardingWelcome } from './onboarding-welcome'
+import { StepProgress } from './step-progress'
+import { SectionHeader } from './section-header'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
-// 0 is the career-category picker — a gate before the numbered steps, so
-// adding a future career (e.g. เภสัชกร, พยาบาล, แพทย์) to lib/positions.ts
-// is the only change needed to offer it here.
-type Step = 0 | 1 | 2 | 3
+// -1 is the welcome screen (professional-category gate, see
+// onboarding-welcome.tsx) — shown once, before the numbered steps.
+type Step = -1 | 1 | 2 | 3
 
-const STEP_TITLES: Record<Exclude<Step, 0>, string> = {
+const STEP_TITLES: Record<Exclude<Step, -1>, string> = {
   1: 'ข้อมูลต้นทาง',
-  2: 'ปลายทางที่ต้องการ',
+  2: 'ปลายทางที่ค้นหา',
   3: 'ข้อมูลติดต่อ',
 }
 
@@ -36,7 +38,7 @@ interface ProfileFormProps {
 }
 
 export function ProfileForm({ initialTeacher, initialDestinations, onSave }: ProfileFormProps) {
-  const [step, setStep] = useState<Step>(initialTeacher?.position ? 1 : 0)
+  const [step, setStep] = useState<Step>(initialTeacher?.position ? 1 : -1)
 
   // Step 1 — ข้อมูลต้นทาง
   const [position, setPosition] = useState<PositionCode | ''>(initialTeacher?.position ?? '')
@@ -78,6 +80,11 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
   )
   const [facebookUrl, setFacebookUrl] = useState(initialTeacher?.facebook_url ?? '')
   const [termsAccepted, setTermsAccepted] = useState(false)
+  // Optional marketing opt-in, not persisted anywhere (same as
+  // termsAccepted, which is also purely a client-side save gate) — see
+  // components/onboarding-welcome.tsx's comment on category for the same
+  // pattern.
+  const [lineConsent, setLineConsent] = useState(false)
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -100,12 +107,6 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
 
   function removeSubject(index: number) {
     setSubjects((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  function handleSelectCategory(value: PositionCode) {
-    handlePositionChange(value)
-    setError(null)
-    setStep(1)
   }
 
   function handleServiceTypeChange(value: string) {
@@ -193,7 +194,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
 
   function goBack() {
     setError(null)
-    setStep((s) => (s > 0 ? ((s - 1) as Step) : s))
+    setStep((s) => (s === 1 ? -1 : s > -1 ? ((s - 1) as Step) : s))
   }
 
   async function handleSave() {
@@ -239,7 +240,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
   return (
     <div className="flex flex-col gap-5 max-w-lg mx-auto p-4">
       <div className="flex items-center justify-between py-2">
-        {step > 0 ? (
+        {step > -1 ? (
           <button
             type="button"
             onClick={goBack}
@@ -256,32 +257,10 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
       </div>
 
       {step > 0 && (
-        <div className="flex justify-between text-[13px]">
-          {([1, 2, 3] as const).map((s) => (
-            <span key={s} className={s === step ? 'font-bold text-foreground' : 'text-zinc-400'}>
-              {s}. {STEP_TITLES[s]}
-            </span>
-          ))}
-        </div>
+        <StepProgress steps={[STEP_TITLES[1], STEP_TITLES[2], STEP_TITLES[3]]} currentStep={step} />
       )}
 
-      {step === 0 && (
-        <div className="flex flex-col gap-3">
-          <p className="text-[15px] text-zinc-500">เลือกสายงานของคุณเพื่อเริ่มกรอกข้อมูล</p>
-          <div className="flex gap-3">
-            {POSITIONS.map((p) => (
-              <button
-                key={p.code}
-                type="button"
-                onClick={() => handleSelectCategory(p.code)}
-                className="flex-1 rounded-full border border-sage px-5 py-3 text-center text-[18px] font-bold"
-              >
-                {p.nameTh}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {step === -1 && <OnboardingWelcome onContinue={() => setStep(1)} />}
 
       {step === 1 && (
         <OriginFields
@@ -327,6 +306,8 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
 
       {step === 3 && (
         <>
+          <SectionHeader icon={<IdCardIcon />} title="ข้อมูลติดต่อ" subtitle="กรอกข้อมูลสำหรับติดต่อ" />
+
           <label className="flex flex-col gap-1">
             <span className="text-[14px] font-semibold">ชื่อ</span>
             <input
@@ -363,10 +344,23 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
             <input
               type="checkbox"
               className="peer sr-only"
+              checked={lineConsent}
+              onChange={(e) => setLineConsent(e.target.checked)}
+            />
+            <span className="flex items-center justify-center size-[18px] rounded shrink-0 border border-sage text-transparent peer-checked:bg-brand-red peer-checked:border-brand-red peer-checked:text-white text-[12px]">
+              ✓
+            </span>
+            <span>ยืนยันรับข่าวสารและข้อมูลเพิ่มเติมผ่าน LINE</span>
+          </label>
+
+          <label className="flex items-center gap-2 text-sm cursor-pointer w-fit">
+            <input
+              type="checkbox"
+              className="peer sr-only"
               checked={termsAccepted}
               onChange={(e) => setTermsAccepted(e.target.checked)}
             />
-            <span className="flex items-center justify-center size-[18px] rounded shrink-0 border border-sage text-transparent peer-checked:bg-terracotta peer-checked:border-terracotta peer-checked:text-white text-[12px]">
+            <span className="flex items-center justify-center size-[18px] rounded shrink-0 border border-sage text-transparent peer-checked:bg-brand-red peer-checked:border-brand-red peer-checked:text-white text-[12px]">
               ✓
             </span>
             <span>
@@ -374,6 +368,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
               <Link href="/terms" target="_blank" className="link-accent">
                 ข้อกำหนดและเงื่อนไข
               </Link>
+              {' '}และนโยบายความเป็นส่วนตัว
             </span>
           </label>
         </>
@@ -383,12 +378,12 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
 
       {step > 0 && (
         <div className="flex justify-between gap-3">
-          <button type="button" onClick={goBack} className="btn-secondary">
+          <button type="button" onClick={goBack} className="btn-brand-secondary flex-1">
             ย้อนกลับ
           </button>
 
           {step < 3 ? (
-            <button type="button" onClick={goNext} className="btn-primary">
+            <button type="button" onClick={goNext} className="btn-brand-primary flex-1">
               ถัดไป
             </button>
           ) : (
@@ -396,7 +391,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
               type="button"
               onClick={handleSave}
               disabled={saving || !termsAccepted}
-              className="btn-primary"
+              className="btn-brand-primary flex-1"
             >
               {saving ? 'กำลังบันทึก...' : 'เริ่มใช้งาน'}
             </button>

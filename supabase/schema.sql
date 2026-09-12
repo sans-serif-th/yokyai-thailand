@@ -52,9 +52,10 @@ create table categories (
 );
 
 insert into categories (code, name_th, name_en) values
-  ('teacher',   'ครู',        'Teacher'),
-  ('nurse',     'พยาบาล',    'Nurse'),
-  ('physician', 'แพทย์',     'Physician')
+  ('teacher',    'ครู',        'Teacher'),
+  ('nurse',      'พยาบาล',    'Nurse'),
+  ('physician',  'แพทย์',     'Physician'),
+  ('pharmacist', 'เภสัชกร',   'Pharmacist')
 on conflict (code) do nothing;
 
 alter table categories enable row level security;
