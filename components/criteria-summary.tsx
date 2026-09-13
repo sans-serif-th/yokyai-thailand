@@ -42,7 +42,7 @@ export function CriteriaSummary({ teacher, destinations }: CriteriaSummaryProps)
           <Row label="ตำแหน่ง" value={positionLabel(teacher.position)} />
           <Row label="หน่วยงานต้นสังกัด" value={serviceTypeAbbr(teacher.service_type)} />
           <Row label="จังหวัด" value={teacher.origin_province} />
-          {teacher.origin_district && <Row label="อำเภอ (ไม่บังคับ)" value={teacher.origin_district} />}
+          {teacher.origin_district && <Row label="อำเภอ/เขต (ไม่บังคับ)" value={teacher.origin_district} />}
           {teacher.origin_zone && <Row label="เขตพื้นที่ (ไม่บังคับ)" value={teacher.origin_zone} />}
           {teacher.current_school && <Row label="โรงเรียนปัจจุบัน" value={teacher.current_school} />}
           {teacher.teaching_group && (

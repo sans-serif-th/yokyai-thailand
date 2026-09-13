@@ -18,7 +18,8 @@ insert into teaching_groups (code, name_th, name_en) values
   ('health_pe',       'สุขศึกษาและพลศึกษา',                    'Health and Physical Education'),
   ('art',             'ศิลปะ',                                'Art'),
   ('occupation_tech', 'การงานและเทคโนโลยี',                    'Occupations and Technology'),
-  ('foreign_lang',    'ภาษาต่างประเทศ',                        'Foreign Languages')
+  ('foreign_lang',    'ภาษาต่างประเทศ',                        'Foreign Languages'),
+  ('other',           'อื่นๆ',                                 'Other')
 on conflict (code) do nothing;
 
 -- Static reference data — no client queries this table directly (the app

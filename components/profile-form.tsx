@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { ChevronLeftIcon, IdCardIcon } from './icons'
+import { IdCardIcon } from './icons'
 import { requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
 import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
@@ -238,27 +238,22 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
   }
 
   return (
-    <div className="flex flex-col gap-5 max-w-lg mx-auto p-4">
-      <div className="flex items-center justify-between py-2">
-        {step > -1 ? (
-          <button
-            type="button"
-            onClick={goBack}
-            aria-label="ย้อนกลับ"
-            className="flex items-center justify-center size-10 text-foreground"
-          >
-            <ChevronLeftIcon />
-          </button>
-        ) : (
-          <div className="size-10" />
-        )}
-        <h1 className="text-xl font-bold">เริ่มใช้งาน</h1>
-        <div className="size-10" />
+    <div className="flex flex-col gap-5 max-w-lg mx-auto p-4 pb-24">
+      <div className="fixed inset-x-0 top-0 z-20 border-b border-sage/50 bg-background">
+        <div className="mx-auto flex max-w-lg flex-col gap-3 px-4 pb-3 pt-4">
+          <h1 className="text-center text-xl font-bold">เริ่มใช้งาน</h1>
+          {step > 0 && (
+            <StepProgress
+              steps={[STEP_TITLES[1], STEP_TITLES[2], STEP_TITLES[3]]}
+              currentStep={step}
+            />
+          )}
+        </div>
       </div>
-
-      {step > 0 && (
-        <StepProgress steps={[STEP_TITLES[1], STEP_TITLES[2], STEP_TITLES[3]]} currentStep={step} />
-      )}
+      {/* Spacer matching the fixed header's rendered height above, so
+          content doesn't start underneath it — taller when the stepper is
+          also showing (step > 0) than on the welcome screen alone. */}
+      <div className={step > 0 ? 'h-[104px]' : 'h-[52px]'} />
 
       {step === -1 && <OnboardingWelcome onContinue={() => setStep(1)} />}
 
@@ -377,25 +372,27 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
       {error && <p className="text-terracotta text-sm">{error}</p>}
 
       {step > 0 && (
-        <div className="flex justify-between gap-3">
-          <button type="button" onClick={goBack} className="btn-brand-secondary flex-1">
-            ย้อนกลับ
-          </button>
+        <div className="fixed inset-x-0 bottom-0 border-t border-sage/50 bg-background p-4">
+          <div className="mx-auto flex max-w-lg justify-between gap-3">
+            <button type="button" onClick={goBack} className="btn-brand-secondary flex-1">
+              ย้อนกลับ
+            </button>
 
-          {step < 3 ? (
-            <button type="button" onClick={goNext} className="btn-brand-primary flex-1">
-              ถัดไป
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving || !termsAccepted}
-              className="btn-brand-primary flex-1"
-            >
-              {saving ? 'กำลังบันทึก...' : 'เริ่มใช้งาน'}
-            </button>
-          )}
+            {step < 3 ? (
+              <button type="button" onClick={goNext} className="btn-brand-primary flex-1">
+                ถัดไป
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving || !termsAccepted}
+                className="btn-brand-primary flex-1"
+              >
+                {saving ? 'กำลังบันทึก...' : 'เริ่มใช้งาน'}
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

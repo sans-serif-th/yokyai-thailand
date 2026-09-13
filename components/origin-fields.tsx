@@ -6,7 +6,7 @@ import { SERVICE_TYPES, type ServiceTypeCode } from '@/lib/service-types'
 import { POSITIONS, requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import { districtsForProvince } from '@/lib/districts'
 import { hasZoneOptions, zonesFor } from '@/lib/education-zones'
-import { TRANSFER_ROUND_OPTIONS } from '@/lib/transfer-rounds'
+import { parseTransferRoundYear, transferRoundYearOptions } from '@/lib/transfer-rounds'
 import { SectionHeader } from './section-header'
 import { BriefcaseIcon, BuildingIcon, RouteIcon } from './icons'
 
@@ -132,7 +132,7 @@ export function OriginFields({
                   className="input-field flex-1"
                   value={s}
                   onChange={(e) => onUpdateSubject(i, e.target.value)}
-                  placeholder="เช่น คณิตศาสตร์"
+                  placeholder="เช่น เอกดนตรี"
                 />
                 {subjects.length > 1 && (
                   <button
@@ -216,7 +216,7 @@ export function OriginFields({
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-semibold">อำเภอ (ไม่บังคับ)</span>
+        <span className="text-[14px] font-semibold">อำเภอ/เขต (ไม่บังคับ)</span>
         <select
           className="input-field"
           value={originDistrict}
@@ -271,39 +271,25 @@ export function OriginFields({
 
       <SectionHeader icon={<RouteIcon />} title="ข้อมูลการย้าย" subtitle="ข้อมูลที่เกี่ยวข้องกับความต้องการย้าย" />
 
-      <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1">
-          <span className="text-[14px] font-semibold">รอบที่ต้องการย้าย</span>
-          <select
-            className="input-field"
-            value={transferRound}
-            onChange={(e) => onTransferRoundChange(e.target.value)}
-          >
-            <option value="">เลือกรอบ</option>
-            {TRANSFER_ROUND_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="flex flex-col gap-1">
-          <span className="text-[14px] font-semibold">ปีที่ต้องการย้าย</span>
-          <select
-            className="input-field"
-            value={transferYear}
-            onChange={(e) => onTransferYearChange(e.target.value)}
-          >
-            <option value="">เลือกปี</option>
-            {transferYearOptions.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+      <label className="flex flex-col gap-1">
+        <span className="text-[14px] font-semibold">รอบที่ต้องการย้าย</span>
+        <select
+          className="input-field"
+          value={transferRound && transferYear ? `${transferRound}-${transferYear}` : ''}
+          onChange={(e) => {
+            const { round, year } = parseTransferRoundYear(e.target.value)
+            onTransferRoundChange(round)
+            onTransferYearChange(year)
+          }}
+        >
+          <option value="">เลือกรอบที่ต้องการย้าย</option>
+          {transferRoundYearOptions(transferYearOptions).map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </label>
     </>
   )
 }

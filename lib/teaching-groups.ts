@@ -10,6 +10,7 @@ export type TeachingGroupCode =
   | 'art'
   | 'occupation_tech'
   | 'foreign_lang'
+  | 'other'
 
 export interface TeachingGroup {
   code: TeachingGroupCode
@@ -38,6 +39,7 @@ export const TEACHING_GROUPS: TeachingGroup[] = [
     nameEn: 'Occupations and Technology',
   },
   { code: 'foreign_lang', nameTh: 'ภาษาต่างประเทศ', nameEn: 'Foreign Languages' },
+  { code: 'other', nameTh: 'อื่นๆ', nameEn: 'Other' },
 ]
 
 export function teachingGroupLabel(code: string): string {
