@@ -15,6 +15,25 @@ export const TRANSFER_ROUND_OPTIONS: SelectOption[] = [
   { value: '2', label: 'รอบที่ 2' },
 ]
 
+// Combines TRANSFER_ROUND_OPTIONS x years into single "round/year" choices
+// (e.g. "1/2027") for a single dropdown — round and year are still stored
+// as two separate values/columns (see profilePayloadToTeacherRow), this
+// just presents them as one picker. Value uses "-" (not "/") as the
+// separator so it can be split back unambiguously.
+export function transferRoundYearOptions(years: number[]): SelectOption[] {
+  return years.flatMap((year) =>
+    TRANSFER_ROUND_OPTIONS.map((opt) => ({
+      value: `${opt.value}-${year}`,
+      label: `${opt.value}/${year}`,
+    }))
+  )
+}
+
+export function parseTransferRoundYear(value: string): { round: string; year: string } {
+  const [round, year] = value.split('-')
+  return { round: round ?? '', year: year ?? '' }
+}
+
 // Impure (reads wall-clock time), so it must only ever be called from a
 // useState lazy initializer (runs once, at mount) or an event handler —
 // never directly in the render body (react-hooks/purity forbids that).

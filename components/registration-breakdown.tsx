@@ -1,4 +1,6 @@
+import Image from 'next/image'
 import type { RegistrationBreakdown } from '@/lib/types'
+import { BarChartIcon } from './icons'
 
 interface RegistrationBreakdownViewProps {
   breakdown: RegistrationBreakdown
@@ -35,9 +37,13 @@ function RankedList({
                 {i + 1}
               </span>
               <span className="flex-1 min-w-0 truncate text-xs text-zinc-500">{r.label}</span>
-              <span className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100">
+              {/* No gray track behind the bar — there's no real "total" to
+                  measure against, only relative rank among the rows shown,
+                  so a filled-vs-empty track would misleadingly imply a
+                  percentage-of-whole that doesn't exist. */}
+              <span className="flex-1">
                 <span
-                  className="block h-full rounded-full"
+                  className="block h-2 rounded-full"
                   style={{ width: `${(r.count / maxCount) * 100}%`, backgroundColor: barColor }}
                 />
               </span>
@@ -60,20 +66,37 @@ function RankedList({
 export function RegistrationBreakdownView({ breakdown, roundLabel }: RegistrationBreakdownViewProps) {
   return (
     <div className="max-w-lg mx-auto p-4 flex flex-col gap-3">
-      <div className="card-surface bg-sungold/20 text-center py-8">
-        <p className="text-lg font-medium">ยังอยู่ในช่วงลงทะเบียน 📋</p>
-        <p className="text-sm text-zinc-600 mt-2">
-          ระบบจะเปิดให้ดูผลการจับคู่เมื่อถึงเวลาที่กำหนด
-          {roundLabel ? ` (รอบ ${roundLabel})` : ''}
-        </p>
-        <p className="text-2xl font-bold mt-4">
-          {formatNumber(breakdown.totalRegistered)} คนลงทะเบียนแล้ว
-        </p>
-        <p className="text-xs text-zinc-500 mt-4">
-          ข้อมูลโปรไฟล์ของคุณถูกบันทึกแล้ว และแสดงให้คนอื่นเห็นได้ตามปกติ — คุณแก้ไขข้อมูลได้ตลอดเวลาที่เมนู
-          &quot;โปรไฟล์&quot; และ &quot;เงื่อนไข&quot; ด้านล่าง
+      <h1 className="text-xl font-semibold">ผลการจับคู่</h1>
+
+      <div className="relative overflow-hidden rounded-3xl px-4 py-8">
+        <Image src="/registration-status-bg.png" alt="" fill className="object-cover" priority />
+        <div className="relative z-10 flex items-start justify-center gap-2">
+          <span className="flex shrink-0 items-center justify-center rounded-full bg-white p-1 text-brand-red">
+            <BarChartIcon />
+          </span>
+          <div className="flex flex-col text-white">
+            <p className="text-[14px] font-semibold">ยังอยู่ในช่วงลงทะเบียน</p>
+            <p className="text-xs">
+              ระบบจะเปิดให้ดูผลการจับคู่เมื่อถึงเวลาที่กำหนด
+              {roundLabel && (
+                <>
+                  <br />(รอบ {roundLabel})
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+        <p className="relative z-10 mt-2 text-center text-white">
+          <span className="text-[38px] font-medium tracking-tight">
+            {formatNumber(breakdown.totalRegistered)}
+          </span>{' '}
+          <span className="text-sm">คนลงทะเบียนแล้ว</span>
         </p>
       </div>
+
+      <p className="text-center text-xs text-zinc-500">
+        คุณสามารถแก้ไขข้อมูลได้ตลอดเวลาที่เมนู &quot;โปรไฟล์&quot; และ &quot;ตั้งค่า&quot; ด้านล่าง
+      </p>
 
       <RankedList
         title="แยกตามจังหวัดต้นทาง"

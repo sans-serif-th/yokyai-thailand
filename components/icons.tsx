@@ -334,6 +334,26 @@ export function ShieldCheckIcon({ className }: IconProps) {
   )
 }
 
+export function BarChartIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M2 2v10.667a1.333 1.333 0 0 0 1.333 1.333H14" />
+      <rect x="10" y="3.333" width="2.667" height="8" rx="0.667" fill="currentColor" stroke="none" />
+      <rect x="4.667" y="5.333" width="2.667" height="6" rx="0.667" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
 export function LogOutIcon({ className }: IconProps) {
   return (
     <svg

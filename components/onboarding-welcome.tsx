@@ -21,11 +21,8 @@ export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-2 text-center">
-        <h1 className="text-xl font-bold">คำอธิบายการใช้งานแอปพลิเคชัน</h1>
-        <p className="text-sm text-zinc-500">เหตุใดจึงต้องกรอกข้อมูล</p>
-      </div>
-
+      {/* The illustration below already renders this same title/subtitle as
+          part of the exported design, so no separate heading is added here. */}
       <div className="relative aspect-square w-full overflow-hidden rounded-2xl">
         <Image src="/onboarding-intro.png" alt="" fill className="object-cover" priority />
       </div>
@@ -69,9 +66,15 @@ export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps) {
         })}
       </div>
 
-      <button type="button" onClick={onContinue} className="btn-brand-primary">
-        ถัดไป
-      </button>
+      <div className="fixed inset-x-0 bottom-0 border-t border-sage/50 bg-background p-4">
+        <button
+          type="button"
+          onClick={onContinue}
+          className="btn-brand-primary mx-auto block max-w-lg w-full"
+        >
+          ถัดไป
+        </button>
+      </div>
     </div>
   )
 }
