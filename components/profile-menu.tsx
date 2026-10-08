@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getLiffProfile, liffLogout } from '@/lib/liff'
+import { TopBar } from './top-bar'
 import { ChevronRightIcon, LogOutIcon, PencilIcon } from './icons'
 import type { Teacher } from '@/lib/types'
 
@@ -84,8 +85,8 @@ export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 py-6">
-      <h1 className="py-2 text-xl font-bold">โปรไฟล์</h1>
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
+      <TopBar title="โปรไฟล์" />
 
       <div className="flex flex-col items-center gap-2">
         <div className="size-[97px] overflow-hidden rounded-full bg-brand-red">

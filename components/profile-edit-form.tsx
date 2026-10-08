@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { BackHeader } from './back-header'
+import { TopBar } from './top-bar'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
 function splitDisplayName(displayName: string): [string, string] {
@@ -65,8 +65,8 @@ export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFo
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 py-6">
-      <BackHeader title="โปรไฟล์" href="/profile" />
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
+      <TopBar title="โปรไฟล์" backHref="/profile" />
 
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-semibold">ชื่อ</span>

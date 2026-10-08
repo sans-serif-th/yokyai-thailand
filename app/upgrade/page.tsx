@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { fetchProfile, fetchSubscriptionStatus, uploadPaymentSlip } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
-import { BackHeader } from '@/components/back-header'
+import { TopBar } from '@/components/top-bar'
 import type { SubscriptionStatus } from '@/lib/types'
 
 type View = 'loading' | 'ready' | 'error'
@@ -86,8 +86,8 @@ export default function UpgradePage() {
   if (!status) return null
 
   return (
-    <div className="flex flex-col gap-5 max-w-lg mx-auto p-4">
-      <BackHeader title="อัปเกรดแพ็กเกจ" href="/criteria" />
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
+      <TopBar title="อัปเกรดแพ็กเกจ" backHref="/criteria" />
 
       <div className="card-surface">
         <p className="text-xs text-zinc-500">รอบปัจจุบัน</p>
