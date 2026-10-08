@@ -1,25 +1,37 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { fetchProfile } from '@/lib/api'
+import { Suspense, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { fetchProfile, fetchSubscriptionStatus, saveProfile } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
-import { CriteriaSummary } from '@/components/criteria-summary'
-import type { Destination, Teacher } from '@/lib/types'
+import { CriteriaForm } from '@/components/criteria-form'
+import type { OriginDestinationTab } from '@/components/origin-destination-tabs'
+import { PAID_DESTINATION_LIMIT } from '@/lib/package-limits'
+import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
 type View = 'loading' | 'ready' | 'error'
 
-export default function CriteriaPage() {
+// useSearchParams() bails a statically-rendered page out to client-only
+// rendering unless it's wrapped in Suspense — so the actual page content
+// lives in this inner component, and the default export below just supplies
+// the boundary.
+function CriteriaPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialTab: OriginDestinationTab =
+    searchParams.get('tab') === 'destination' ? 'destination' : 'origin'
   const [view, setView] = useState<View>('loading')
+  const [idToken, setIdToken] = useState<string | null>(null)
   const [teacher, setTeacher] = useState<Teacher | null>(null)
   const [destinations, setDestinations] = useState<Destination[]>([])
+  const [maxDestinations, setMaxDestinations] = useState(PAID_DESTINATION_LIMIT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     async function bootstrap() {
       try {
-        const { result: profile } = await withAuthRetry((t) => fetchProfile(t))
+        const { token, result: profile } = await withAuthRetry((t) => fetchProfile(t))
+        setIdToken(token)
 
         if (!profile.teacher) {
           router.replace('/')
@@ -28,6 +40,10 @@ export default function CriteriaPage() {
 
         setTeacher(profile.teacher)
         setDestinations(profile.destinations ?? [])
+
+        const status = await withAuthRetry((t) => fetchSubscriptionStatus(t))
+        setMaxDestinations(status.result.maxDestinations)
+
         setView('ready')
       } catch (err) {
         setErrorMessage((err as Error).message)
@@ -36,6 +52,13 @@ export default function CriteriaPage() {
     }
     bootstrap()
   }, [router])
+
+  async function handleSave(payload: ProfilePayload) {
+    if (!idToken) throw new Error('Not logged in')
+    await withAuthRetry((t) => saveProfile(t, payload))
+    // Search criteria changed — go show the freshly matching results.
+    router.push('/matches')
+  }
 
   if (view === 'loading') {
     return <p className="text-center p-8 text-zinc-600">กำลังโหลด...</p>
@@ -47,5 +70,21 @@ export default function CriteriaPage() {
 
   if (!teacher) return null
 
-  return <CriteriaSummary teacher={teacher} destinations={destinations} />
+  return (
+    <CriteriaForm
+      teacher={teacher}
+      initialDestinations={destinations}
+      maxDestinations={maxDestinations}
+      initialTab={initialTab}
+      onSave={handleSave}
+    />
+  )
+}
+
+export default function CriteriaPage() {
+  return (
+    <Suspense fallback={<p className="text-center p-8 text-zinc-600">กำลังโหลด...</p>}>
+      <CriteriaPageContent />
+    </Suspense>
+  )
 }

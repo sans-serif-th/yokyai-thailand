@@ -29,6 +29,10 @@ export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFo
       setError('กรุณากรอกชื่อและนามสกุล')
       return
     }
+    if (phone.trim() && !/^[0-9+\-\s]{6,20}$/.test(phone.trim())) {
+      setError('กรุณากรอกเบอร์โทรให้ถูกต้อง')
+      return
+    }
     setError(null)
     setSaving(true)
     try {
@@ -61,11 +65,11 @@ export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFo
   }
 
   return (
-    <div className="flex flex-col gap-5 max-w-lg mx-auto p-4">
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 py-6">
       <BackHeader title="โปรไฟล์" href="/profile" />
 
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">ชื่อ</span>
+        <span className="text-[14px] font-semibold">ชื่อ</span>
         <input
           className="input-field"
           value={firstName}
@@ -74,16 +78,19 @@ export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFo
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">นามสกุล</span>
+        <span className="text-[14px] font-semibold">นามสกุล</span>
         <input
           className="input-field"
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
         />
+        <span className="text-xs text-zinc-500">
+          ชื่อ-นามสกุลของคุณจะถูกเก็บเป็นความลับและไม่แสดงต่อผู้อื่น
+        </span>
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">เบอร์โทร (ไม่บังคับ)</span>
+        <span className="text-[14px] font-semibold">เบอร์โทร (ไม่บังคับ)</span>
         <input
           className="input-field"
           type="tel"
@@ -95,7 +102,7 @@ export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFo
 
       {error && <p className="text-terracotta text-sm">{error}</p>}
 
-      <button type="button" onClick={handleSave} disabled={saving} className="btn-primary">
+      <button type="button" onClick={handleSave} disabled={saving} className="btn-brand-primary">
         {saving ? 'กำลังบันทึก...' : 'บันทึก'}
       </button>
     </div>

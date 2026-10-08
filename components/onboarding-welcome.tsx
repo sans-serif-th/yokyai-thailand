@@ -9,13 +9,13 @@ interface OnboardingWelcomeProps {
   onContinue: () => void
 }
 
-interface Slide {
+export interface Slide {
   image: string
   title: string
   lines: string[]
 }
 
-const SLIDES: Slide[] = [
+export const SLIDES: Slide[] = [
   {
     image: '/onboarding-step-1.jpg',
     title: 'กรอกข้อมูลในช่วงลงทะเบียน',
@@ -33,6 +33,46 @@ const SLIDES: Slide[] = [
   },
 ]
 
+// Shared with the FAQ page's ขั้นตอนการจับคู่ section.
+export function SlideIllustration({ index }: { index: number }) {
+  const slide = SLIDES[index]
+  return (
+    <div className="relative h-[300px] w-full shrink-0 overflow-hidden">
+      {index === 0 ? (
+        <>
+          {/* Slide 1's source image is a square with its step badge in the
+                top margin; Figma crops it to the bottom 300px and re-places
+                just the badge on top, so do the same. */}
+          <Image
+            src={slide.image}
+            alt=""
+            fill
+            sizes="512px"
+            className="object-cover object-bottom"
+            priority
+          />
+          <div className="absolute left-1/2 top-0 h-[50px] w-[51px] -translate-x-1/2 overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element -- see above */}
+            <img
+              src={slide.image}
+              alt=""
+              className="absolute max-w-none"
+              style={{
+                width: '795.56%',
+                height: '813.64%',
+                left: '-348.31%',
+                top: '-16.9%',
+              }}
+            />
+          </div>
+        </>
+      ) : (
+        <Image src={slide.image} alt="" fill sizes="512px" className="object-cover" priority />
+      )}
+    </div>
+  )
+}
+
 // The wizard's entry screen — a 3-slide illustrated explainer (Figma
 // "Onboarding-step-2" frames 164:3004 / 164:2957 / 164:2907) with the
 // supported/coming-soon professional categories listed under each slide.
@@ -47,39 +87,7 @@ export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps) {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col gap-5 px-4 py-6">
-      <div className="relative h-[300px] w-full shrink-0 overflow-hidden">
-        {index === 0 ? (
-          <>
-            {/* Slide 1's source image is a square with its step badge in the
-                top margin; Figma crops it to the bottom 300px and re-places
-                just the badge on top, so do the same. */}
-            <Image
-              src={slide.image}
-              alt=""
-              fill
-              sizes="512px"
-              className="object-cover object-bottom"
-              priority
-            />
-            <div className="absolute left-1/2 top-0 h-[50px] w-[51px] -translate-x-1/2 overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element -- see above */}
-              <img
-                src={slide.image}
-                alt=""
-                className="absolute max-w-none"
-                style={{
-                  width: '795.56%',
-                  height: '813.64%',
-                  left: '-348.31%',
-                  top: '-16.9%',
-                }}
-              />
-            </div>
-          </>
-        ) : (
-          <Image src={slide.image} alt="" fill sizes="512px" className="object-cover" priority />
-        )}
-      </div>
+      <SlideIllustration index={index} />
 
       <div className="flex flex-col items-center text-center">
         <h1 className="text-[24px] font-bold leading-tight">{slide.title}</h1>

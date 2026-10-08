@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getLiffProfile, liffLogout } from '@/lib/liff'
-import { ChevronRightIcon, FileTextIcon, LogOutIcon, PencilIcon, StarIcon } from './icons'
+import { ChevronRightIcon, LogOutIcon, PencilIcon } from './icons'
 import type { Teacher } from '@/lib/types'
 
 interface LineProfile {
@@ -18,33 +18,33 @@ interface ProfileMenuProps {
 }
 
 function MenuRow({
-  icon,
   label,
   href,
+  external,
   onClick,
-  tone = 'default',
+  icon,
 }: {
-  icon: React.ReactNode
   label: string
   href?: string
+  external?: boolean
   onClick?: () => void
-  tone?: 'default' | 'danger'
+  icon?: React.ReactNode
 }) {
   const content = (
     <>
-      <span
-        className={`flex items-center justify-center w-9 h-9 rounded-full ${
-          tone === 'danger' ? 'bg-terracotta/10 text-terracotta' : 'bg-lavender/30 text-foreground'
-        }`}
-      >
-        {icon}
-      </span>
-      <span className={`flex-1 text-sm ${tone === 'danger' ? 'text-terracotta' : ''}`}>{label}</span>
-      <ChevronRightIcon className="text-zinc-400" />
+      <span className="flex-1 text-[14px] font-bold leading-5 tracking-[0.1px]">{label}</span>
+      {icon ?? <ChevronRightIcon className="size-4" />}
     </>
   )
-  const rowClass = 'flex items-center gap-3 py-4 px-4 border-b border-sage last:border-0'
+  const rowClass = 'flex min-h-[51px] items-center gap-1 rounded-lg bg-white px-4 py-2 text-left'
 
+  if (href && external) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={rowClass}>
+        {content}
+      </a>
+    )
+  }
   if (href) {
     return (
       <Link href={href} className={rowClass}>
@@ -53,14 +53,14 @@ function MenuRow({
     )
   }
   return (
-    <button type="button" onClick={onClick} className={`${rowClass} w-full text-left`}>
+    <button type="button" onClick={onClick} className={`${rowClass} w-full`}>
       {content}
     </button>
   )
 }
 
-// The โปรไฟล์ tab's landing content — a menu, not a form. Name editing
-// happens on the separate /profile/edit screen.
+// The โปรไฟล์ tab's landing content — a menu, not a form. Name/phone
+// editing happens on the separate /profile/edit screen.
 export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
   const [lineProfile, setLineProfile] = useState<LineProfile | null>(null)
 
@@ -84,40 +84,41 @@ export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
   }
 
   return (
-    <div className="flex flex-col gap-5 max-w-lg mx-auto p-4">
-      <h1 className="text-xl font-semibold">โปรไฟล์</h1>
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 py-6">
+      <h1 className="py-2 text-xl font-bold">โปรไฟล์</h1>
 
-      <div className="flex items-center gap-3 card-surface">
-        <div className="w-12 h-12 rounded-full bg-lavender overflow-hidden shrink-0">
+      <div className="flex flex-col items-center gap-2">
+        <div className="size-[97px] overflow-hidden rounded-full bg-brand-red">
           {lineProfile?.pictureUrl && (
             <Image
               src={lineProfile.pictureUrl}
               alt=""
-              width={48}
-              height={48}
-              className="w-full h-full object-cover"
+              width={97}
+              height={97}
+              className="h-full w-full object-cover"
               unoptimized
             />
           )}
         </div>
-        <div className="flex-1">
-          <p className="text-xs text-zinc-500">บัญชี LINE</p>
-          <p className="text-sm font-medium">{lineProfile?.displayName ?? teacher.display_name}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-[18px] font-semibold leading-[27px]">
+            {lineProfile?.displayName ?? teacher.display_name}
+          </p>
+          <Link href="/profile/edit" aria-label="แก้ไข" className="text-foreground">
+            <PencilIcon className="size-[10px]" />
+          </Link>
         </div>
-        <Link
-          href="/profile/edit"
-          aria-label="แก้ไข"
-          className="flex items-center justify-center w-9 h-9 rounded-full text-terracotta shrink-0"
-        >
-          <PencilIcon />
-        </Link>
       </div>
 
-      <div className="card-surface p-0 overflow-hidden">
-        <MenuRow icon={<StarIcon />} label="อัพเกรด" href="/upgrade" />
-        <MenuRow icon={<FileTextIcon />} label="เกี่ยวกับเรา" href="/about" />
-        <MenuRow icon={<FileTextIcon />} label="ข้อกำหนดและเงื่อนไข" href="/terms" />
-        <MenuRow icon={<LogOutIcon />} label="ออกจากระบบ" onClick={handleLogout} tone="danger" />
+      <div className="flex flex-col gap-[13px]">
+        <MenuRow label="เกี่ยวกับเรา / คำถามที่พบบ่อย (FAQs)" href="/faq" />
+        <MenuRow label="ข้อกำหนดและเงื่อนไข" href="/terms" />
+        <MenuRow label="ช่วยเหลือ" href="https://lin.ee/ZwsPm2X" external />
+        <MenuRow
+          label="ออกจากระบบ"
+          onClick={handleLogout}
+          icon={<LogOutIcon className="size-4" />}
+        />
       </div>
     </div>
   )

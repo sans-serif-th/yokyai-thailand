@@ -54,8 +54,9 @@ async function fetchDestinationsForTeacherIds(
 //   partial: base match only — the only tier reachable when the position has
 //            no subject (e.g. นักจัดการงานทั่วไป), since subjectMatch is then
 //            always false
-// PDPA + invite-flow safety: a facebook_import row was never entered by the
-// person it names, so its display_name is masked and its Facebook link is
+// PDPA + invite-flow safety: every display_name is masked (see maskName). A
+// facebook_import row was never entered by the person it names, so its
+// Facebook link is also
 // hidden before this ever leaves the server — contact happens only via an
 // admin-delivered invite link (see lib/invites.ts), never shown here.
 // invite_code is stripped unconditionally (not just for imports) since no
@@ -64,11 +65,22 @@ async function fetchDestinationsForTeacherIds(
 // admin-only outreach note (see /admin's Match Coverage page) and should
 // never describe someone else's profile to an end user. phone is likewise
 // never shared — match cards expose no contact details at all.
+// "สมชาย ใจดี" -> "ส***** ใ*****" (Figma match cards): every word keeps only
+// its first character, for imported and real users alike — onboarding tells
+// users their name stays private and isn't shown to others.
+export function maskName(displayName: string): string {
+  return displayName
+    .trim()
+    .split(/\s+/)
+    .map((w) => `${Array.from(w)[0] ?? ''}*****`)
+    .join(' ')
+}
+
 export function sanitizeForMatch(teacher: Teacher): Teacher {
   const imported = teacher.source === 'facebook_import'
   return {
     ...teacher,
-    display_name: imported ? `${teacher.display_name.slice(0, 2)}***` : teacher.display_name,
+    display_name: maskName(teacher.display_name),
     facebook_url: imported ? null : teacher.facebook_url,
     phone: null,
     invite_code: null,
@@ -92,8 +104,14 @@ function rankTier(
     !!requester.subject && !!candidate.subject && requester.subject === candidate.subject
 
   const districtMatch =
-    districtSatisfied(requesterDestForCandidateProvince?.district ?? null, candidate.origin_district) &&
-    districtSatisfied(candidateDestForRequesterProvince?.district ?? null, requester.origin_district)
+    districtSatisfied(
+      requesterDestForCandidateProvince?.district ?? null,
+      candidate.origin_district
+    ) &&
+    districtSatisfied(
+      candidateDestForRequesterProvince?.district ?? null,
+      requester.origin_district
+    )
 
   if (subjectMatch && districtMatch) return 'perfect'
   if (subjectMatch) return 'high'

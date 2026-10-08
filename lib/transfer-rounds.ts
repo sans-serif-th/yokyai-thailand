@@ -15,6 +15,11 @@ export const TRANSFER_ROUND_OPTIONS: SelectOption[] = [
   { value: '2', label: 'รอบที่ 2' },
 ]
 
+// Years are stored Gregorian (transfer_year) but shown to users as พ.ศ.
+export function toBuddhistYear(gregorianYear: number): number {
+  return gregorianYear + 543
+}
+
 // Combines TRANSFER_ROUND_OPTIONS x years into single "round/year" choices
 // (e.g. "รอบที่ 1 / 2027") for a single dropdown — round and year are still stored
 // as two separate values/columns (see profilePayloadToTeacherRow), this
@@ -24,7 +29,7 @@ export function transferRoundYearOptions(years: number[]): SelectOption[] {
   return years.flatMap((year) =>
     TRANSFER_ROUND_OPTIONS.map((opt) => ({
       value: `${opt.value}-${year}`,
-      label: `${opt.label} / ${year}`,
+      label: `${opt.label} / ${toBuddhistYear(year)}`,
     }))
   )
 }
@@ -34,20 +39,20 @@ export function parseTransferRoundYear(value: string): { round: string; year: st
   return { round: round ?? '', year: year ?? '' }
 }
 
-// Impure (reads wall-clock time), so it must only ever be called from a
-// useState lazy initializer (runs once, at mount) or an event handler —
-// never directly in the render body (react-hooks/purity forbids that).
+// Only พ.ศ. 2570 (2027) is open for registration right now, so the picker
+// offers exactly รอบที่ 1 / 2570 and รอบที่ 2 / 2570. Widen this list when
+// further years open. (Kept as a function so callers' useState lazy
+// initializers don't need to change.)
 export function upcomingTransferYears(): number[] {
-  const currentYear = new Date().getFullYear()
-  return [currentYear + 1, currentYear + 2, currentYear + 3]
+  return [2027]
 }
 
 // Rows saved before the round/year split (or before this field existed at
 // all) may carry only a year — displayed as "ปี <year>" rather than the
 // misleading "รอบที่ <year>".
 export function formatTransferRound(round: string | null, year: number | null): string | null {
-  if (round && year) return `รอบที่ ${round}/${year}`
-  if (year) return `ปี ${year}`
+  if (round && year) return `รอบที่ ${round} / ${toBuddhistYear(year)}`
+  if (year) return `ปี ${toBuddhistYear(year)}`
   if (round) return `รอบที่ ${round}`
   return null
 }
