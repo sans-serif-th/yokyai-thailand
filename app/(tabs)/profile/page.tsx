@@ -6,6 +6,7 @@ import { fetchProfile } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { ProfileMenu } from '@/components/profile-menu'
 import type { Teacher } from '@/lib/types'
+import { PageSkeleton } from '@/components/page-skeleton'
 
 type View = 'loading' | 'ready' | 'error'
 
@@ -40,7 +41,7 @@ export default function ProfilePage() {
   }
 
   if (view === 'loading') {
-    return <p className="text-center p-8 text-zinc-600">กำลังโหลด...</p>
+    return <PageSkeleton title="โปรไฟล์" />
   }
 
   if (view === 'error') {

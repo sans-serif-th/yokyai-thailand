@@ -8,6 +8,7 @@ import { CriteriaForm } from '@/components/criteria-form'
 import type { OriginDestinationTab } from '@/components/origin-destination-tabs'
 import { PAID_DESTINATION_LIMIT } from '@/lib/package-limits'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
+import { PageSkeleton } from '@/components/page-skeleton'
 
 type View = 'loading' | 'ready' | 'error'
 
@@ -61,7 +62,7 @@ function CriteriaPageContent() {
   }
 
   if (view === 'loading') {
-    return <p className="text-center p-8 text-zinc-600">กำลังโหลด...</p>
+    return <PageSkeleton title="ตั้งค่าเกณฑ์การจับคู่" />
   }
 
   if (view === 'error') {

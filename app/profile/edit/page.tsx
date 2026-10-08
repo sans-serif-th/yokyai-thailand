@@ -6,6 +6,7 @@ import { fetchProfile, saveProfile } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { ProfileEditForm } from '@/components/profile-edit-form'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
+import { PageSkeleton } from '@/components/page-skeleton'
 
 type View = 'loading' | 'ready' | 'error'
 
@@ -46,7 +47,7 @@ export default function ProfileEditPage() {
   }
 
   if (view === 'loading') {
-    return <p className="text-center p-8 text-zinc-600">กำลังโหลด...</p>
+    return <PageSkeleton title="โปรไฟล์" backHref="/profile" />
   }
 
   if (view === 'error') {

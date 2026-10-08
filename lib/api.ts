@@ -38,42 +38,72 @@ export async function authedFetch(path: string, idToken: string, init?: RequestI
   return body
 }
 
+// Short-lived in-memory cache of GET responses. Every tab is a client page
+// that refetches on mount, so without this each tab switch waits on a full
+// network round-trip (several, in sequence) behind a bare "loading" text.
+// Caching the promise also dedupes concurrent callers (e.g. the bottom nav
+// and the page both asking for the round phase). Module state survives
+// client-side navigation; mutations below clear the affected entries.
+const CACHE_TTL_MS = 60_000
+const cache = new Map<string, { at: number; value: Promise<unknown> }>()
+
+function cached<T>(key: string, load: () => Promise<T>): Promise<T> {
+  const hit = cache.get(key)
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.value as Promise<T>
+  const value = load()
+  cache.set(key, { at: Date.now(), value })
+  // Never keep a failed request around — the next caller should retry.
+  value.catch(() => {
+    if (cache.get(key)?.value === value) cache.delete(key)
+  })
+  return value
+}
+
+export function invalidateCache(...prefixes: string[]) {
+  for (const key of [...cache.keys()]) {
+    if (prefixes.length === 0 || prefixes.some((p) => key.startsWith(p))) cache.delete(key)
+  }
+}
+
 export async function fetchProfile(
   idToken: string
 ): Promise<{ teacher: Teacher | null; destinations: Destination[] }> {
-  return authedFetch('/api/teachers', idToken)
+  return cached('profile', () => authedFetch('/api/teachers', idToken))
 }
 
 export async function saveProfile(
   idToken: string,
   payload: ProfilePayload
 ): Promise<{ teacher: Teacher }> {
-  return authedFetch('/api/teachers', idToken, {
+  const res = await authedFetch('/api/teachers', idToken, {
     method: 'PUT',
     body: JSON.stringify(payload),
   })
+  // Profile changes alter matches, stats and the registration breakdown too.
+  invalidateCache()
+  return res
 }
 
 export async function fetchMatches(idToken: string): Promise<{ matches: MatchResult[] }> {
-  return authedFetch('/api/matches', idToken)
+  return cached('matches', () => authedFetch('/api/matches', idToken))
 }
 
 export async function fetchStats(idToken: string): Promise<PlatformStats> {
-  return authedFetch('/api/stats', idToken)
+  return cached('stats', () => authedFetch('/api/stats', idToken))
 }
 
 export async function fetchRoundPhase(
   idToken: string
 ): Promise<{ inMatchingPhase: boolean; roundLabel: string | null }> {
-  return authedFetch('/api/round-phase', idToken)
+  return cached('round-phase', () => authedFetch('/api/round-phase', idToken))
 }
 
 export async function fetchRegistrationBreakdown(idToken: string): Promise<RegistrationBreakdown> {
-  return authedFetch('/api/registration-breakdown', idToken)
+  return cached('breakdown', () => authedFetch('/api/registration-breakdown', idToken))
 }
 
 export async function fetchFavorites(idToken: string): Promise<{ matches: MatchResult[] }> {
-  return authedFetch('/api/favorites', idToken)
+  return cached('favorites', () => authedFetch('/api/favorites', idToken))
 }
 
 // Dev-only — see app/api/matches/dev/route.ts. 404s unless
@@ -87,6 +117,7 @@ export async function addFavorite(idToken: string, teacherId: string): Promise<v
     method: 'POST',
     body: JSON.stringify({ teacherId }),
   })
+  invalidateCache('favorites', 'matches')
 }
 
 export async function removeFavorite(idToken: string, teacherId: string): Promise<void> {
@@ -94,10 +125,11 @@ export async function removeFavorite(idToken: string, teacherId: string): Promis
     method: 'DELETE',
     body: JSON.stringify({ teacherId }),
   })
+  invalidateCache('favorites', 'matches')
 }
 
 export async function fetchSubscriptionStatus(idToken: string): Promise<SubscriptionStatus> {
-  return authedFetch('/api/subscription', idToken)
+  return cached('subscription', () => authedFetch('/api/subscription', idToken))
 }
 
 export async function uploadPaymentSlip(idToken: string, slipDataUrl: string): Promise<void> {
@@ -105,6 +137,7 @@ export async function uploadPaymentSlip(idToken: string, slipDataUrl: string): P
     method: 'POST',
     body: JSON.stringify({ slip: slipDataUrl }),
   })
+  invalidateCache('subscription')
 }
 
 // Both require login — never callable as an unverified visitor (see
