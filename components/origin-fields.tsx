@@ -149,7 +149,7 @@ export function OriginFields({
       />
 
       <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-semibold">ชื่อโรงเรียนปัจจุบัน*</span>
+        <span className="text-[14px] font-semibold">ชื่อโรงเรียนปัจจุบัน (ไม่บังคับ)</span>
         <input
           className="input-field"
           value={currentSchool}

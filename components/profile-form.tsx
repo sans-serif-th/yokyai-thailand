@@ -176,7 +176,6 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
     if (!serviceType) return 'กรุณาเลือกหน่วยงานต้นสังกัด'
     if (!originProvince) return 'กรุณาเลือกจังหวัดต้นทาง'
     if (requiresTeachingGroup(position) && !teachingGroup) return 'กรุณาเลือกกลุ่มสาระการเรียนรู้'
-    if (!currentSchool.trim()) return 'กรุณากรอกชื่อโรงเรียนปัจจุบัน'
     return null
   }
 
