@@ -5,9 +5,14 @@ import { requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
 import { upcomingTransferYears } from '@/lib/transfer-rounds'
 import { BackHeader } from './back-header'
+import { TransferFields } from './transfer-fields'
 import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
 import { autoZone } from '@/lib/education-zones'
-import { DestinationFields, findDuplicateProvince, type DestinationDraft } from './destination-fields'
+import {
+  DestinationFields,
+  findDuplicateProvince,
+  type DestinationDraft,
+} from './destination-fields'
 import { OriginDestinationTabs, type OriginDestinationTab } from './origin-destination-tabs'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
@@ -85,7 +90,10 @@ export function CriteriaForm({
     setServiceType(nextServiceType)
     setOriginZone(autoZone(nextServiceType, originProvince, originDistrict))
     setDestinations((prev) =>
-      prev.map((d) => ({ ...d, zone: autoZone(nextServiceType, d.province, d.district) }))
+      prev.map((d) => ({
+        ...d,
+        zone: autoZone(nextServiceType, d.province, d.district),
+      }))
     )
   }
 
@@ -105,10 +113,18 @@ export function CriteriaForm({
       prev.map((d, i) => {
         if (i !== index) return d
         if (field === 'province') {
-          return { province: value, district: '', zone: autoZone(serviceType, value, '') }
+          return {
+            province: value,
+            district: '',
+            zone: autoZone(serviceType, value, ''),
+          }
         }
         if (field === 'district') {
-          return { ...d, district: value, zone: autoZone(serviceType, d.province, value) }
+          return {
+            ...d,
+            district: value,
+            zone: autoZone(serviceType, d.province, value),
+          }
         }
         return { ...d, [field]: value }
       })
@@ -158,6 +174,7 @@ export function CriteriaForm({
       await onSave({
         displayName: teacher.display_name,
         facebookUrl: teacher.facebook_url,
+        phone: teacher.phone,
         position,
         serviceType,
         originProvince,
@@ -208,23 +225,27 @@ export function CriteriaForm({
           onUpdateSubject={updateSubject}
           onAddSubject={addSubject}
           onRemoveSubject={removeSubject}
-          transferRound={transferRound}
-          onTransferRoundChange={setTransferRound}
-          transferYear={transferYear}
-          onTransferYearChange={setTransferYear}
-          transferYearOptions={transferYearOptions}
           benefitNote={benefitNote}
           onBenefitNoteChange={setBenefitNote}
         />
       ) : (
-        <DestinationFields
-          serviceType={serviceType}
-          destinations={destinations}
-          onUpdateDestination={updateDestination}
-          onAddDestination={addDestination}
-          onRemoveDestination={removeDestination}
-          maxDestinations={maxDestinations}
-        />
+        <>
+          <TransferFields
+            transferRound={transferRound}
+            onTransferRoundChange={setTransferRound}
+            transferYear={transferYear}
+            onTransferYearChange={setTransferYear}
+            transferYearOptions={transferYearOptions}
+          />
+          <DestinationFields
+            serviceType={serviceType}
+            destinations={destinations}
+            onUpdateDestination={updateDestination}
+            onAddDestination={addDestination}
+            onRemoveDestination={removeDestination}
+            maxDestinations={maxDestinations}
+          />
+        </>
       )}
 
       {error && <p className="text-terracotta text-sm">{error}</p>}
@@ -232,7 +253,9 @@ export function CriteriaForm({
       <button type="button" onClick={handleSave} disabled={saving} className="btn-primary">
         {saving ? 'กำลังบันทึก...' : 'บันทึก'}
       </button>
-      <p className="text-xs text-zinc-500 text-center">หลังบันทึก ระบบจะรีเฟรชผลการจับคู่ให้ทันที</p>
+      <p className="text-xs text-zinc-500 text-center">
+        หลังบันทึก ระบบจะรีเฟรชผลการจับคู่ให้ทันที
+      </p>
     </div>
   )
 }

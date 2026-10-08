@@ -1,12 +1,14 @@
 'use client'
 
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { THAI_PROVINCES } from '@/lib/provinces'
 import type { ServiceTypeCode } from '@/lib/service-types'
 import { districtsForProvince } from '@/lib/districts'
 import { hasZoneOptions, zonesFor } from '@/lib/education-zones'
 import { SectionHeader } from './section-header'
-import { MapPinIcon } from './icons'
+import { LockIcon, MapPinIcon } from './icons'
+import { UpgradeDialog } from './upgrade-dialog'
 
 export interface DestinationDraft {
   province: string
@@ -52,12 +54,13 @@ export function DestinationFields({
   maxDestinations,
   showUpgradeLink = true,
 }: DestinationFieldsProps) {
+  const router = useRouter()
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
   const atLimit = destinations.length >= maxDestinations
   return (
-    <div className="flex flex-col gap-2">
-      <span className="text-[14px] font-semibold">ปลายทาง — จังหวัดที่ต้องการย้ายไป</span>
+    <div className="flex flex-col gap-4">
       {destinations.map((d, i) => (
-        <div key={i} className="card-surface flex flex-col gap-2">
+        <div key={i} className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <SectionHeader
               icon={<MapPinIcon />}
@@ -76,7 +79,7 @@ export function DestinationFields({
             )}
           </div>
           <label className="flex flex-col gap-1">
-            <span className="text-[14px] font-semibold">จังหวัดปลายทาง</span>
+            <span className="text-[14px] font-semibold">จังหวัดปลายทาง{i === 0 ? '*' : ':'}</span>
             <select
               className="input-field"
               value={d.province}
@@ -145,26 +148,27 @@ export function DestinationFields({
         </div>
       ))}
       {atLimit ? (
-        <p className="text-xs text-zinc-500">
-          แพ็กเกจปัจจุบันเพิ่มปลายทางได้สูงสุด {maxDestinations} แห่ง
-          {showUpgradeLink && (
-            <>
-              {' '}
-              <Link href="/upgrade" className="link-accent">
-                อัปเกรดเพื่อเพิ่มได้มากขึ้น
-              </Link>
-            </>
-          )}
-        </p>
-      ) : (
         <button
           type="button"
-          onClick={onAddDestination}
-          className="self-start text-sm link-accent"
+          onClick={() => setUpgradeOpen(true)}
+          className="btn-brand-secondary flex items-center justify-center gap-2"
         >
-          + เพิ่มปลายทาง
+          <LockIcon />
+          อัพเกรดเพื่อเพิ่มปลายทาง
+        </button>
+      ) : (
+        <button type="button" onClick={onAddDestination} className="btn-brand-secondary">
+          เพิ่มปลายทาง
         </button>
       )}
+      <UpgradeDialog
+        open={upgradeOpen}
+        onCancel={() => setUpgradeOpen(false)}
+        onConfirm={() => {
+          setUpgradeOpen(false)
+          if (showUpgradeLink) router.push('/upgrade')
+        }}
+      />
     </div>
   )
 }

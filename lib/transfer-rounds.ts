@@ -16,7 +16,7 @@ export const TRANSFER_ROUND_OPTIONS: SelectOption[] = [
 ]
 
 // Combines TRANSFER_ROUND_OPTIONS x years into single "round/year" choices
-// (e.g. "1/2027") for a single dropdown — round and year are still stored
+// (e.g. "รอบที่ 1 / 2027") for a single dropdown — round and year are still stored
 // as two separate values/columns (see profilePayloadToTeacherRow), this
 // just presents them as one picker. Value uses "-" (not "/") as the
 // separator so it can be split back unambiguously.
@@ -24,7 +24,7 @@ export function transferRoundYearOptions(years: number[]): SelectOption[] {
   return years.flatMap((year) =>
     TRANSFER_ROUND_OPTIONS.map((opt) => ({
       value: `${opt.value}-${year}`,
-      label: `${opt.value}/${year}`,
+      label: `${opt.label} / ${year}`,
     }))
   )
 }

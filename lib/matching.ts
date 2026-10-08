@@ -62,13 +62,15 @@ async function fetchDestinationsForTeacherIds(
 // match result should ever carry another teacher's claim code. admin_status
 // is reset to the neutral default for the same reason — it's an internal
 // admin-only outreach note (see /admin's Match Coverage page) and should
-// never describe someone else's profile to an end user.
+// never describe someone else's profile to an end user. phone is likewise
+// never shared — match cards expose no contact details at all.
 export function sanitizeForMatch(teacher: Teacher): Teacher {
   const imported = teacher.source === 'facebook_import'
   return {
     ...teacher,
     display_name: imported ? `${teacher.display_name.slice(0, 2)}***` : teacher.display_name,
     facebook_url: imported ? null : teacher.facebook_url,
+    phone: null,
     invite_code: null,
     admin_status: 'new',
   }

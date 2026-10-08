@@ -10,6 +10,7 @@ import type { ProfilePayload } from './types'
 
 const BENEFIT_NOTE_MAX_LENGTH = 500
 const FACEBOOK_URL_MAX_LENGTH = 300
+const PHONE_PATTERN = /^[0-9+\-\s]{6,20}$/
 
 export function validateProfilePayload(body: unknown): body is ProfilePayload {
   if (!body || typeof body !== 'object') return false
@@ -47,6 +48,9 @@ export function validateProfilePayload(body: unknown): body is ProfilePayload {
       return false
     }
   }
+  if (b.phone !== null && b.phone !== undefined) {
+    if (typeof b.phone !== 'string' || !PHONE_PATTERN.test(b.phone.trim())) return false
+  }
   if (!Array.isArray(b.destinations) || b.destinations.length === 0) return false
   return b.destinations.every(
     (d) => d && typeof d === 'object' && typeof (d as { province?: unknown }).province === 'string'
@@ -70,5 +74,6 @@ export function profilePayloadToTeacherRow(payload: ProfilePayload) {
     transfer_round: payload.transferRound ?? null,
     transfer_year: payload.transferYear ?? null,
     facebook_url: payload.facebookUrl?.trim() || null,
+    phone: payload.phone?.trim() || null,
   }
 }

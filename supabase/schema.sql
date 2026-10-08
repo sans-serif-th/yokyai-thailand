@@ -102,6 +102,7 @@ create table teachers (
   transfer_round text,         -- required, "1" or "2" — informational only, not used for matching
   transfer_year integer,       -- required, paired with transfer_round (e.g. round "1", year 2027)
 
+  phone text,                  -- optional contact number from the onboarding contact step; informational only, never shown on match cards
   facebook_url text,           -- optional, an alternate contact route shown on match cards alongside LINE — informational only, not used for matching
 
   -- 'app': signed up via LINE themselves. 'facebook_import': seeded from a

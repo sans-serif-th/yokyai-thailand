@@ -22,7 +22,7 @@ export function StepProgress({ steps, currentStep }: StepProgressProps) {
   const n = steps.length
   return (
     <div className="relative w-full" data-name="step-progress">
-      <div className="pointer-events-none absolute inset-x-0 top-4 h-1">
+      <div className="pointer-events-none absolute inset-x-0 top-[15px] h-[3px]">
         {steps.slice(0, -1).map((_, i) => {
           const left = ((i + 0.5) / n) * 100
           const width = (1 / n) * 100
@@ -30,7 +30,7 @@ export function StepProgress({ steps, currentStep }: StepProgressProps) {
           return (
             <div
               key={i}
-              className={`absolute h-full ${reached ? 'bg-brand-yellow' : 'bg-zinc-300'}`}
+              className={`absolute h-full ${reached ? 'bg-brand-orange' : 'bg-zinc-200'}`}
               style={{ left: `${left}%`, width: `${width}%` }}
             />
           )
@@ -44,14 +44,14 @@ export function StepProgress({ steps, currentStep }: StepProgressProps) {
             <div key={label} className="flex flex-col items-center gap-2">
               <div
                 className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
-                  reached ? 'bg-brand-red text-white' : 'bg-zinc-300 text-white'
+                  reached ? 'bg-brand-red text-white' : 'bg-zinc-200 text-white'
                 }`}
               >
                 <CheckCircleIcon className="size-6" />
               </div>
               <span
-                className={`text-center text-[12px] leading-tight ${
-                  reached ? 'text-foreground' : 'text-zinc-300'
+                className={`text-center text-[14px] leading-[21px] ${
+                  reached ? 'text-foreground' : 'text-zinc-500'
                 }`}
               >
                 {label}

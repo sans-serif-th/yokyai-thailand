@@ -6,9 +6,8 @@ import { SERVICE_TYPES, type ServiceTypeCode } from '@/lib/service-types'
 import { POSITIONS, requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import { districtsForProvince } from '@/lib/districts'
 import { hasZoneOptions, zonesFor } from '@/lib/education-zones'
-import { parseTransferRoundYear, transferRoundYearOptions } from '@/lib/transfer-rounds'
 import { SectionHeader } from './section-header'
-import { BriefcaseIcon, BuildingIcon, RouteIcon } from './icons'
+import { BriefcaseIcon, BuildingIcon } from './icons'
 
 export const BENEFIT_NOTE_MAX_LENGTH = 500
 
@@ -43,11 +42,6 @@ interface OriginFieldsProps {
   onUpdateSubject: (index: number, value: string) => void
   onAddSubject: () => void
   onRemoveSubject: (index: number) => void
-  transferRound: string
-  onTransferRoundChange: (value: string) => void
-  transferYear: string
-  onTransferYearChange: (value: string) => void
-  transferYearOptions: number[]
   benefitNote: string
   onBenefitNoteChange: (value: string) => void
 }
@@ -74,11 +68,6 @@ export function OriginFields({
   onUpdateSubject,
   onAddSubject,
   onRemoveSubject,
-  transferRound,
-  onTransferRoundChange,
-  transferYear,
-  onTransferYearChange,
-  transferYearOptions,
   benefitNote,
   onBenefitNoteChange,
 }: OriginFieldsProps) {
@@ -91,7 +80,7 @@ export function OriginFields({
       />
 
       <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-semibold">ตำแหน่ง</span>
+        <span className="text-[14px] font-semibold">ตำแหน่ง*</span>
         <select
           className="input-field"
           value={position}
@@ -109,7 +98,7 @@ export function OriginFields({
       {requiresTeachingGroup(position) && (
         <>
           <label className="flex flex-col gap-1">
-            <span className="text-[14px] font-semibold">กลุ่มสาระการเรียนรู้</span>
+            <span className="text-[14px] font-semibold">กลุ่มสาระการเรียนรู้*</span>
             <select
               className="input-field"
               value={teachingGroup}
@@ -125,7 +114,7 @@ export function OriginFields({
           </label>
 
           <div className="flex flex-col gap-2">
-            <span className="text-[14px] font-semibold">วิชาเอก (ไม่บังคับ — ใช้สำหรับกรองผลลัพธ์)</span>
+            <span className="text-[14px] font-semibold">วิชาเอก (ไม่บังคับ)</span>
             {subjects.map((s, i) => (
               <div key={i} className="flex gap-2">
                 <input
@@ -160,7 +149,7 @@ export function OriginFields({
       />
 
       <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-semibold">โรงเรียนปัจจุบัน (ไม่บังคับ)</span>
+        <span className="text-[14px] font-semibold">ชื่อโรงเรียนปัจจุบัน*</span>
         <input
           className="input-field"
           value={currentSchool}
@@ -169,22 +158,19 @@ export function OriginFields({
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-semibold">ข้อมูลสวัสดิการเพิ่มเติม (ไม่บังคับ)</span>
+        <span className="text-[14px] font-semibold">ข้อมูลเพิ่มเติม (ไม่บังคับ)</span>
         <textarea
           className="textarea-field"
           rows={4}
           maxLength={BENEFIT_NOTE_MAX_LENGTH}
           value={benefitNote}
           onChange={(e) => onBenefitNoteChange(e.target.value)}
-          placeholder="เช่น มีบ้านพักครู"
+          placeholder="เช่น สวัสดิการ..."
         />
-        <span className="text-xs text-zinc-500 self-end">
-          {benefitNote.length}/{BENEFIT_NOTE_MAX_LENGTH}
-        </span>
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-semibold">หน่วยงานต้นสังกัด</span>
+        <span className="text-[14px] font-semibold">หน่วยงานต้นสังกัด*</span>
         <select
           className="input-field"
           value={serviceType}
@@ -200,7 +186,7 @@ export function OriginFields({
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-semibold">จังหวัดต้นทาง</span>
+        <span className="text-[14px] font-semibold">จังหวัดต้นทาง*</span>
         <select
           className="input-field"
           value={originProvince}
@@ -267,28 +253,6 @@ export function OriginFields({
             }
           />
         )}
-      </label>
-
-      <SectionHeader icon={<RouteIcon />} title="ข้อมูลการย้าย" subtitle="ข้อมูลที่เกี่ยวข้องกับความต้องการย้าย" />
-
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-semibold">รอบที่ต้องการย้าย</span>
-        <select
-          className="input-field"
-          value={transferRound && transferYear ? `${transferRound}-${transferYear}` : ''}
-          onChange={(e) => {
-            const { round, year } = parseTransferRoundYear(e.target.value)
-            onTransferRoundChange(round)
-            onTransferYearChange(year)
-          }}
-        >
-          <option value="">เลือกรอบที่ต้องการย้าย</option>
-          {transferRoundYearOptions(transferYearOptions).map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
       </label>
     </>
   )
