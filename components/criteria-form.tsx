@@ -145,7 +145,6 @@ export function CriteriaForm({
     if (!serviceType) return 'กรุณาเลือกหน่วยงานต้นสังกัด'
     if (!originProvince) return 'กรุณาเลือกจังหวัดต้นทาง'
     if (requiresTeachingGroup(position) && !teachingGroup) return 'กรุณาเลือกกลุ่มสาระการเรียนรู้'
-    if (!currentSchool.trim()) return 'กรุณากรอกชื่อโรงเรียนปัจจุบัน'
     if (!transferRound) return 'กรุณาเลือกรอบที่ต้องการย้าย'
     if (!transferYear) return 'กรุณาเลือกปีที่ต้องการย้าย'
     if (!destinations.some((d) => d.province.trim())) {
