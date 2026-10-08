@@ -2,17 +2,21 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { HeartIcon } from './icons'
+import { HeartIcon, HomeIcon } from './icons'
+import { RoundPill } from './round-pill'
+import { SegmentedTabs } from './segmented-tabs'
 import { positionLabel } from '@/lib/positions'
 import { serviceTypeAbbr } from '@/lib/service-types'
 import { teachingGroupLabel } from '@/lib/teaching-groups'
 import type { MatchResult } from '@/lib/types'
 
-const TIER_LABEL: Record<MatchResult['tier'], string> = {
-  perfect: '✅ ตรงที่สุด',
-  high: '🟡 ตรงวิชาเอก',
-  partial: '⚪ ตรงตำแหน่ง',
+const TIER_BADGE: Record<MatchResult['tier'], { label: string; className: string }> = {
+  perfect: { label: 'ตรงที่สุด', className: 'bg-[#f0fdf4] text-[#15803d]' },
+  high: { label: 'ตรงวิชาเอก', className: 'bg-[#fff7ed] text-[#c2410c]' },
+  partial: { label: 'ตรงตำแหน่ง', className: 'bg-zinc-100 text-zinc-600' },
 }
+
+type FilterTab = 'all' | 'subject' | 'destination'
 
 const PAGE_SIZE = 25
 
@@ -21,6 +25,7 @@ interface MatchListProps {
   onToggleFavorite: (teacherId: string, currentlyFavorited: boolean) => void
   title?: string
   showSettingsLink?: boolean
+  roundLabel?: string | null
 }
 
 export function MatchList({
@@ -28,7 +33,9 @@ export function MatchList({
   onToggleFavorite,
   title = 'ผลการจับคู่',
   showSettingsLink = false,
+  roundLabel = null,
 }: MatchListProps) {
+  const [filterTab, setFilterTab] = useState<FilterTab>('all')
   const [subjectFilter, setSubjectFilter] = useState('')
   const [destinationFilter, setDestinationFilter] = useState('')
 
@@ -105,97 +112,126 @@ export function MatchList({
     )
   }
 
+  function handleTabChange(tab: FilterTab) {
+    setFilterTab(tab)
+    // ทั้งหมด always means "no narrowing"; the other tabs each own one filter.
+    if (tab !== 'subject') setSubjectFilter('')
+    if (tab !== 'destination') setDestinationFilter('')
+  }
+
   return (
-    <div className="max-w-lg mx-auto p-4 flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{title}</h1>
-        {showSettingsLink && (
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 py-6">
+      <div className="flex items-center gap-2 py-2">
+        <h1 className="flex-1 text-xl font-bold">{title}</h1>
+        <RoundPill roundLabel={roundLabel} />
+        {showSettingsLink && !roundLabel && (
           <Link href="/criteria" className="text-sm link-accent">
             ตั้งค่า
           </Link>
         )}
       </div>
 
-      <div className="flex gap-2">
+      <SegmentedTabs
+        value={filterTab}
+        onChange={handleTabChange}
+        options={[
+          { value: 'all', label: 'ทั้งหมด' },
+          { value: 'subject', label: 'วิชาเอก' },
+          { value: 'destination', label: 'จังหวัด' },
+        ]}
+      />
+
+      {filterTab === 'subject' && (
         <select
-          className="flex-1 min-w-0 appearance-none rounded-full border border-sage bg-cream px-3 py-3 text-center text-sm font-bold text-foreground"
+          className="input-field"
           value={subjectFilter}
           onChange={(e) => setSubjectFilter(e.target.value)}
         >
-          <option value="">กรองตามวิชาเอก</option>
+          <option value="">เลือกวิชาเอก</option>
           {subjectOptions.map(([s, count]) => (
             <option key={s} value={s}>
               {s} ({count})
             </option>
           ))}
         </select>
+      )}
+      {filterTab === 'destination' && (
         <select
-          className="flex-1 min-w-0 appearance-none rounded-full border border-sage bg-cream px-3 py-3 text-center text-sm font-bold text-foreground"
+          className="input-field"
           value={destinationFilter}
           onChange={(e) => setDestinationFilter(e.target.value)}
         >
-          <option value="">กรองตามจังหวัดปลายทาง</option>
+          <option value="">เลือกจังหวัดปลายทาง</option>
           {destinationOptions.map(([p, count]) => (
             <option key={p} value={p}>
               {p} ({count})
             </option>
           ))}
         </select>
-      </div>
+      )}
 
       {filtered.length === 0 ? (
-        <p className="text-zinc-600 text-sm">ไม่พบผลลัพธ์ที่ตรงกับตัวกรอง ลองปรับตัวกรองให้กว้างขึ้น</p>
+        <p className="text-zinc-600 text-sm">
+          ไม่พบผลลัพธ์ที่ตรงกับตัวกรอง ลองปรับตัวกรองให้กว้างขึ้น
+        </p>
       ) : (
         <ul className="flex flex-col gap-3">
           {visible.map((m) => (
-            <li
-              key={m.teacher.id}
-              className="bg-white border border-sage rounded-2xl p-3 flex flex-col gap-1"
-            >
+            <li key={m.teacher.id} className="flex flex-col gap-1 rounded-2xl bg-white p-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-bold text-[15px]">{m.teacher.display_name}</span>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[12px] text-zinc-500">{TIER_LABEL[m.tier]}</span>
+                <span className="text-sm font-semibold">{m.teacher.display_name}</span>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span
+                    className={`rounded-lg px-2 py-1 text-[10px] leading-[15px] ${TIER_BADGE[m.tier].className}`}
+                  >
+                    {TIER_BADGE[m.tier].label}
+                  </span>
                   <button
                     type="button"
                     onClick={() => onToggleFavorite(m.teacher.id, m.favorited)}
                     aria-label={m.favorited ? 'เอาออกจากรายการโปรด' : 'เพิ่มในรายการโปรด'}
-                    className={m.favorited ? 'text-terracotta' : 'text-zinc-400'}
+                    className={m.favorited ? 'text-brand-red' : 'text-zinc-400'}
                   >
                     <HeartIcon filled={m.favorited} />
                   </button>
                 </div>
               </div>
               {m.teacher.claimed_at && (
-                <span className="inline-block text-[12px] text-sage-dark bg-sage/20 rounded-full px-2 py-0.5 w-fit">
+                <span className="inline-block w-fit rounded-full bg-sage/20 px-2 py-0.5 text-[10px] text-sage-dark">
                   ✓ ยืนยันตัวตน
                 </span>
               )}
-              <p className="text-[13px] text-zinc-500">
-                {positionLabel(m.teacher.position)} · {serviceTypeAbbr(m.teacher.service_type)}
-                {m.teacher.teaching_group ? ` · ${teachingGroupLabel(m.teacher.teaching_group)}` : ''}
-                {m.teacher.subject ? ` · ${m.teacher.subject}` : ''}
+              <p className="text-xs text-zinc-600">
+                {[
+                  positionLabel(m.teacher.position),
+                  serviceTypeAbbr(m.teacher.service_type),
+                  m.teacher.teaching_group ? teachingGroupLabel(m.teacher.teaching_group) : null,
+                  m.teacher.subject ? `เอก${m.teacher.subject}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
               </p>
-              <p className="text-[13px]">
+              <p className="text-xs">
                 ต้นทาง: {m.teacher.origin_province}
                 {m.teacher.origin_zone ? ` ${m.teacher.origin_zone}` : ''}
                 {m.teacher.origin_district ? ` (${m.teacher.origin_district})` : ''}
               </p>
-              <p className="text-[13px]">
+              <p className="text-xs">
                 ปลายทาง:{' '}
-                {m.destinations
-                  .map((d) => d.province + (d.zone ? ` ${d.zone}` : ''))
-                  .join(', ')}
+                {m.destinations.map((d) => d.province + (d.zone ? ` ${d.zone}` : '')).join(', ')}
               </p>
               {m.teacher.benefit_note && (
-                <p className="text-[13px] text-zinc-500">💡 {m.teacher.benefit_note}</p>
+                <p className="flex items-center gap-2.5 text-xs text-zinc-600">
+                  <HomeIcon className="size-4 shrink-0" />
+                  {m.teacher.benefit_note}
+                </p>
               )}
               {m.teacher.facebook_url && (
                 <a
                   href={m.teacher.facebook_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[13px] link-accent w-fit"
+                  className="w-fit text-xs link-accent"
                 >
                   ติดต่อผ่าน Facebook
                 </a>

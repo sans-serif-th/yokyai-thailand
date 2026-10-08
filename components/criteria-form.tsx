@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
 import { upcomingTransferYears } from '@/lib/transfer-rounds'
-import { BackHeader } from './back-header'
 import { TransferFields } from './transfer-fields'
 import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
 import { autoZone } from '@/lib/education-zones'
@@ -146,6 +145,7 @@ export function CriteriaForm({
     if (!serviceType) return 'กรุณาเลือกหน่วยงานต้นสังกัด'
     if (!originProvince) return 'กรุณาเลือกจังหวัดต้นทาง'
     if (requiresTeachingGroup(position) && !teachingGroup) return 'กรุณาเลือกกลุ่มสาระการเรียนรู้'
+    if (!currentSchool.trim()) return 'กรุณากรอกชื่อโรงเรียนปัจจุบัน'
     if (!transferRound) return 'กรุณาเลือกรอบที่ต้องการย้าย'
     if (!transferYear) return 'กรุณาเลือกปีที่ต้องการย้าย'
     if (!destinations.some((d) => d.province.trim())) {
@@ -200,8 +200,8 @@ export function CriteriaForm({
   }
 
   return (
-    <div className="flex flex-col gap-5 max-w-lg mx-auto p-4">
-      <BackHeader title="แก้ไขการตั้งค่า" href="/criteria" />
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 py-6">
+      <h1 className="py-2 text-xl font-bold">ตั้งค่าเกณฑ์การจับคู่</h1>
 
       <OriginDestinationTabs active={tab} onChange={setTab} />
 

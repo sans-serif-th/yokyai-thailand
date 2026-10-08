@@ -51,7 +51,7 @@ export default function MatchesPage() {
             return { state: 'registration' as const, breakdown, roundLabel: phase.roundLabel }
           }
           const { matches } = await fetchMatches(token)
-          return { state: 'ready' as const, matches }
+          return { state: 'ready' as const, matches, roundLabel: phase.roundLabel }
         })
 
         if (result.state === 'onboarding') {
@@ -67,6 +67,7 @@ export default function MatchesPage() {
         }
 
         setMatches(result.matches)
+        setRoundLabel(result.roundLabel)
         setView('ready')
       } catch (err) {
         setErrorMessage((err as Error).message)
@@ -152,6 +153,7 @@ export default function MatchesPage() {
           matches={devMode ? (devMatches ?? []) : matches}
           onToggleFavorite={handleToggleFavorite}
           showSettingsLink
+          roundLabel={roundLabel}
         />
       )}
     </div>

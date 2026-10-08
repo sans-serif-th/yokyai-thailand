@@ -41,7 +41,7 @@ export default function FavoritesPage() {
             return { state: 'registration' as const, breakdown, roundLabel: phase.roundLabel }
           }
           const { matches } = await fetchFavorites(token)
-          return { state: 'ready' as const, matches }
+          return { state: 'ready' as const, matches, roundLabel: phase.roundLabel }
         })
 
         if (result.state === 'onboarding') {
@@ -57,6 +57,7 @@ export default function FavoritesPage() {
         }
 
         setMatches(result.matches)
+        setRoundLabel(result.roundLabel)
         setView('ready')
       } catch (err) {
         setErrorMessage((err as Error).message)
@@ -100,5 +101,12 @@ export default function FavoritesPage() {
     )
   }
 
-  return <MatchList matches={matches} onToggleFavorite={handleToggleFavorite} title="รายการโปรด" />
+  return (
+    <MatchList
+      matches={matches}
+      onToggleFavorite={handleToggleFavorite}
+      title="รายการโปรด"
+      roundLabel={roundLabel}
+    />
+  )
 }

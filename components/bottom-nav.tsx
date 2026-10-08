@@ -15,10 +15,9 @@ const TABS = [
   { href: '/profile', label: 'โปรไฟล์', Icon: UserIcon },
 ] as const
 
-// Matches Figma's floating, icon-only pill nav. Labels are dropped visually
-// (per the design — see bb90303's precedent of favoring Figma's icon-only
-// treatment over an added text label) but kept as aria-label so each tab
-// stays identifiable without sight.
+// Matches Figma's full-width, rounded-top, icon-only bar with a red
+// underline on the active tab. Labels are dropped visually but kept as
+// aria-label so each tab stays identifiable without sight.
 export function BottomNav() {
   const pathname = usePathname()
   // null = not yet known — treated as usable so the tab doesn't flash
@@ -36,8 +35,8 @@ export function BottomNav() {
   }, [])
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 px-4 pb-4">
-      <div className="max-w-lg mx-auto bg-white border border-black/5 rounded-full p-2 flex items-center justify-center gap-1 shadow-sm">
+    <nav className="fixed inset-x-0 bottom-0 z-10 rounded-t-[30px] bg-white shadow-[0_4px_4px_rgba(0,0,0,0.04)]">
+      <div className="mx-auto flex h-[88px] max-w-lg items-start justify-center gap-[49px] px-[46px] pt-[23px]">
         {TABS.map(({ href, label, Icon }) => {
           const active = pathname === href
           const disabled = href === '/favorites' && inMatchingPhase === false
@@ -48,7 +47,7 @@ export function BottomNav() {
                 key={href}
                 aria-label={`${label} — ใช้งานได้เมื่อเปิดช่วงจับคู่แล้ว`}
                 title="ใช้งานได้เมื่อเปิดช่วงจับคู่แล้ว"
-                className="flex items-center justify-center size-11 rounded-full shrink-0 text-zinc-300 cursor-not-allowed"
+                className="flex h-[37px] shrink-0 cursor-not-allowed flex-col items-center gap-[10px] text-zinc-300"
               >
                 <Icon />
               </span>
@@ -61,11 +60,12 @@ export function BottomNav() {
               href={href}
               aria-label={label}
               aria-current={active ? 'page' : undefined}
-              className={`flex items-center justify-center size-11 rounded-full shrink-0 ${
-                active ? 'bg-black/5 text-foreground' : 'text-zinc-400'
+              className={`flex h-[37px] shrink-0 flex-col items-center gap-[10px] ${
+                active ? 'text-brand-red' : 'text-zinc-600'
               }`}
             >
               <Icon />
+              {active && <span className="h-[3px] w-[22px] rounded-full bg-brand-red" />}
             </Link>
           )
         })}
