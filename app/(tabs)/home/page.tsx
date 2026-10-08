@@ -34,7 +34,7 @@ export default function HomePage() {
   }, [router])
 
   if (view === 'loading') {
-    return <PageSkeleton title="อัพเดท" centered />
+    return <PageSkeleton title="อัพเดท" />
   }
 
   if (view === 'error') {
@@ -43,7 +43,7 @@ export default function HomePage() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
-      <TopBar title="อัพเดท" centered />
+      <TopBar title="อัพเดท" />
 
       {NEWS.map((item) => (
         <article key={item.id} className="flex flex-col gap-2 rounded-[10px] bg-white">
