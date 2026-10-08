@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { fetchProfile } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
+import { TopBar } from '@/components/top-bar'
 import { NEWS } from '@/lib/news'
 
 type View = 'loading' | 'ready' | 'error'
@@ -40,8 +41,8 @@ export default function HomePage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 py-6">
-      <h1 className="py-2 text-center text-xl font-bold">อัพเดท</h1>
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
+      <TopBar title="อัพเดท" centered />
 
       {NEWS.map((item) => (
         <article key={item.id} className="flex flex-col gap-2 rounded-[10px] bg-white">

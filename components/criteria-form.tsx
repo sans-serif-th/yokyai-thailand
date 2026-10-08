@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
 import { upcomingTransferYears } from '@/lib/transfer-rounds'
+import { TopBar } from './top-bar'
 import { TransferFields } from './transfer-fields'
 import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
 import { autoZone } from '@/lib/education-zones'
@@ -199,8 +200,8 @@ export function CriteriaForm({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 py-6">
-      <h1 className="py-2 text-xl font-bold">ตั้งค่าเกณฑ์การจับคู่</h1>
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
+      <TopBar title="ตั้งค่าเกณฑ์การจับคู่" />
 
       <OriginDestinationTabs active={tab} onChange={setTab} />
 

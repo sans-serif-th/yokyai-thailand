@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeftIcon } from '@/components/icons'
+import { TopBar } from '@/components/top-bar'
 import { SLIDES, SlideIllustration } from '@/components/onboarding-welcome'
 import { FAQ_ITEMS } from '@/lib/faq'
-import Link from 'next/link'
 
 function Caret({ open }: { open: boolean }) {
   return (
@@ -56,18 +55,8 @@ export default function FaqPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 py-6">
-      <div className="flex items-center gap-2 py-2">
-        <Link
-          href="/profile"
-          aria-label="ย้อนกลับ"
-          className="flex size-10 shrink-0 items-center justify-center"
-        >
-          <ArrowLeftIcon />
-        </Link>
-        <h1 className="flex-1 text-xl font-bold">คำถามที่พบบ่อย (FAQs)</h1>
-        <span className="size-10 shrink-0" />
-      </div>
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
+      <TopBar title="คำถามที่พบบ่อย (FAQs)" backHref="/profile" />
 
       <div className="flex flex-col gap-2">
         {FAQ_ITEMS.map((item, i) => {

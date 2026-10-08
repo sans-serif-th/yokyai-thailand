@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { HeartIcon, HomeIcon } from './icons'
+import { TopBar } from './top-bar'
 import { RoundPill } from './round-pill'
 import { SegmentedTabs } from './segmented-tabs'
 import { positionLabel } from '@/lib/positions'
@@ -103,7 +104,8 @@ export function MatchList({
 
   if (matches.length === 0) {
     return (
-      <div className="max-w-lg mx-auto p-4 text-center text-zinc-600">
+      <div className="mx-auto w-full max-w-lg px-4 pb-6 text-center text-zinc-600">
+        <TopBar title={title} right={<RoundPill roundLabel={roundLabel} />} />
         <p className="text-lg">ยังไม่พบคู่สับเปลี่ยนในตอนนี้</p>
         <p className="text-sm mt-1">
           ลองเพิ่มจังหวัดปลายทางให้กว้างขึ้น หรือกลับมาตรวจสอบใหม่ภายหลัง
@@ -120,16 +122,20 @@ export function MatchList({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 py-6">
-      <div className="flex items-center gap-2 py-2">
-        <h1 className="flex-1 text-xl font-bold">{title}</h1>
-        <RoundPill roundLabel={roundLabel} />
-        {showSettingsLink && !roundLabel && (
-          <Link href="/criteria" className="text-sm link-accent">
-            ตั้งค่า
-          </Link>
-        )}
-      </div>
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
+      <TopBar
+        title={title}
+        right={
+          <>
+            <RoundPill roundLabel={roundLabel} />
+            {showSettingsLink && !roundLabel && (
+              <Link href="/criteria" className="text-sm link-accent">
+                ตั้งค่า
+              </Link>
+            )}
+          </>
+        }
+      />
 
       <SegmentedTabs
         value={filterTab}

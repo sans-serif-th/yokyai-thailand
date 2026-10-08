@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { useState } from 'react'
 import type { RegistrationBreakdown } from '@/lib/types'
 import { BarChartIcon, ChevronRightIcon } from './icons'
+import { TopBar } from './top-bar'
 import { RoundPill } from './round-pill'
 import { SegmentedTabs } from './segmented-tabs'
 
@@ -76,33 +77,48 @@ export function RegistrationBreakdownView({
   const [tab, setTab] = useState<BreakdownTab>('origin')
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 py-6">
-      <div className="flex items-center gap-2 py-2">
-        <h1 className="flex-1 text-xl font-bold">ผลการจับคู่</h1>
-        <RoundPill roundLabel={roundLabel} />
-      </div>
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
+      <TopBar title="ผลการจับคู่" right={<RoundPill roundLabel={roundLabel} />} />
 
-      <div className="relative overflow-hidden rounded-3xl px-4 py-8">
-        <Image src="/registration-status-bg.png" alt="" fill className="object-cover" priority />
-        <div className="relative z-10 flex items-start justify-center gap-2">
-          <span className="flex shrink-0 items-center justify-center rounded-full bg-white p-1 text-brand-red">
-            <BarChartIcon />
-          </span>
-          <div className="flex flex-col text-white">
-            <p className="text-[14px] font-semibold">ยังอยู่ในช่วงลงทะเบียน</p>
-            <p className="text-xs">
-              ระบบจะเปิดให้ดูผลการจับคู่
-              <br />
-              เมื่อถึงเวลาที่กำหนด{roundLabel && ` (รอบ ${roundLabel})`}
-            </p>
+      <div className="relative overflow-hidden rounded-3xl px-4 py-6">
+        {/* Two separate Figma images: the gradient card and the 3-bar chart,
+            so the chart can sit bottom-right without text overlapping it. */}
+        <Image
+          src="/registration-card-bg.png"
+          alt=""
+          fill
+          sizes="512px"
+          className="object-cover"
+          priority
+        />
+        <Image
+          src="/registration-card-chart.png"
+          alt=""
+          width={1432}
+          height={1098}
+          className="absolute bottom-4 right-4 h-auto w-[120px]"
+        />
+        <div className="relative z-10 flex flex-col items-start gap-3 text-white">
+          <div className="flex items-start gap-2">
+            <span className="flex shrink-0 items-center justify-center rounded-full bg-white p-1 text-brand-red">
+              <BarChartIcon />
+            </span>
+            <div className="flex flex-col">
+              <p className="text-[14px] font-semibold leading-[21px]">ยังอยู่ในช่วงลงทะเบียน</p>
+              <p className="text-xs leading-[18px]">
+                ระบบจะเปิดให้ดูผลการจับคู่
+                <br />
+                เมื่อถึงเวลาที่กำหนด{roundLabel && ` (รอบ ${roundLabel})`}
+              </p>
+            </div>
           </div>
+          <p className="flex flex-col pt-3">
+            <span className="text-[38px] font-medium leading-[57px] tracking-[-2px]">
+              {formatNumber(breakdown.totalRegistered)}
+            </span>
+            <span className="text-sm leading-[21px]">คนลงทะเบียนแล้ว</span>
+          </p>
         </div>
-        <p className="relative z-10 mt-2 text-center text-white">
-          <span className="text-[38px] font-medium tracking-tight">
-            {formatNumber(breakdown.totalRegistered)}
-          </span>{' '}
-          <span className="text-sm">คนลงทะเบียนแล้ว</span>
-        </p>
       </div>
 
       <SegmentedTabs

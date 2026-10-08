@@ -1,7 +1,9 @@
+import { TopBar } from '@/components/top-bar'
+
 export default function TermsPage() {
   return (
-    <div className="max-w-lg mx-auto p-4 flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">ข้อกำหนดและเงื่อนไข</h1>
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 pb-6">
+      <TopBar title="ข้อกำหนดและเงื่อนไข" />
 
       <p className="text-sm text-zinc-800 bg-sungold/25 border border-sungold rounded-2xl p-3">
         ฉบับร่าง — ข้อความนี้เป็นเพียงตัวอย่างเบื้องต้น ยังไม่ผ่านการตรวจสอบทางกฎหมาย
