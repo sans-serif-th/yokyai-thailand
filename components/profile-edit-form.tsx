@@ -20,7 +20,7 @@ interface ProfileEditFormProps {
 export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFormProps) {
   const [firstName, setFirstName] = useState(() => splitDisplayName(teacher.display_name)[0])
   const [lastName, setLastName] = useState(() => splitDisplayName(teacher.display_name)[1])
-  const [facebookUrl, setFacebookUrl] = useState(teacher.facebook_url ?? '')
+  const [phone, setPhone] = useState(teacher.phone ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -45,7 +45,8 @@ export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFo
         benefitNote: teacher.benefit_note,
         transferRound: teacher.transfer_round,
         transferYear: teacher.transfer_year,
-        facebookUrl: facebookUrl.trim() || null,
+        facebookUrl: teacher.facebook_url,
+        phone: phone.trim() || null,
         destinations: destinations.map((d) => ({
           province: d.province,
           district: d.district,
@@ -82,12 +83,13 @@ export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFo
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">ลิงก์ Facebook (ไม่บังคับ)</span>
+        <span className="text-sm font-medium">เบอร์โทร (ไม่บังคับ)</span>
         <input
           className="input-field"
-          value={facebookUrl}
-          onChange={(e) => setFacebookUrl(e.target.value)}
-          placeholder="https://facebook.com/..."
+          type="tel"
+          inputMode="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
         />
       </label>
 

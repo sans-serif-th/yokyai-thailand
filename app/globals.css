@@ -4,8 +4,8 @@
    guide colors, reused for this app's restyle — see docs/CONTEXT.md-adjacent
    components for where each token is used). */
 :root {
-  --background: #faf6f0; /* Off-White Surface */
-  --foreground: #19191b; /* near Deep Night */
+  --background: #fafafa; /* Figma Color/background/app */
+  --foreground: #171717; /* Figma Color/text/primary */
   --color-cream: #faf6f0;
   --color-terracotta: #df8c7c;
   --color-sage: #bcd6cd;
@@ -21,6 +21,7 @@
   --color-brand-red: #db1e34;
   --color-brand-red-soft: #fee4e4; /* section-header icon chip background */
   --color-brand-yellow: #fec524;
+  --color-brand-orange: #ea580c; /* stepper connectors (Figma brand/secondary) */
 }
 
 @theme inline {
@@ -36,7 +37,8 @@
   --color-brand-red: var(--color-brand-red);
   --color-brand-red-soft: var(--color-brand-red-soft);
   --color-brand-yellow: var(--color-brand-yellow);
-  --font-sans: var(--font-sarabun);
+  --color-brand-orange: var(--color-brand-orange);
+  --font-sans: var(--font-anuphan);
 }
 
 body {
@@ -52,10 +54,19 @@ body {
    same classes repeat across every form component. */
 @layer components {
   .input-field {
-    @apply w-full h-10 rounded-lg border border-sage bg-white px-3 py-2 text-foreground disabled:opacity-50 disabled:bg-zinc-100;
+    @apply w-full h-10 rounded-lg border border-transparent bg-white px-3 py-2 text-[15px] text-foreground placeholder:text-zinc-500 focus:border-brand-red focus:outline-none disabled:opacity-50 disabled:bg-zinc-100;
+  }
+  select.input-field {
+    @apply appearance-none pr-9;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='m7 10 5 5 5-5z' fill='%23171717'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
+  select.input-field:has(option[value='']:checked) {
+    @apply text-zinc-500;
   }
   .textarea-field {
-    @apply w-full min-h-[88px] rounded-lg border border-sage bg-white px-3 py-2 text-foreground;
+    @apply w-full min-h-[88px] rounded-lg border border-transparent bg-white px-3 py-2 text-[15px] text-foreground placeholder:text-zinc-500 focus:border-brand-red focus:outline-none;
   }
   .btn-primary {
     @apply rounded-full bg-terracotta px-5 py-2.5 text-white disabled:opacity-50;
@@ -70,7 +81,7 @@ body {
   /* Paired with .btn-brand-primary so "ย้อนกลับ"/"ถัดไป" share the same
      square-cornered shape on the redesigned wizard screens. */
   .btn-brand-secondary {
-    @apply rounded-lg border border-sage bg-white px-5 py-3 font-bold text-foreground disabled:opacity-50;
+    @apply rounded-lg border border-zinc-300 bg-white px-5 py-3 font-bold text-foreground disabled:opacity-50;
   }
   .btn-secondary {
     @apply rounded-full border border-sage bg-white px-5 py-2.5 text-foreground;

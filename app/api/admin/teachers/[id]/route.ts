@@ -27,6 +27,7 @@ const EDITABLE_FIELDS = [
   'transfer_round',
   'transfer_year',
   'facebook_url',
+  'phone',
   'category',
   'admin_status',
 ] as const

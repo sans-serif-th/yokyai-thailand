@@ -7,12 +7,17 @@ import { requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import type { ServiceTypeCode } from '@/lib/service-types'
 import { OriginFields, splitSubjects, joinSubjects } from './origin-fields'
 import { autoZone } from '@/lib/education-zones'
-import { DestinationFields, findDuplicateProvince, type DestinationDraft } from './destination-fields'
+import {
+  DestinationFields,
+  findDuplicateProvince,
+  type DestinationDraft,
+} from './destination-fields'
 import { FREE_DESTINATION_LIMIT } from '@/lib/package-limits'
 import { upcomingTransferYears } from '@/lib/transfer-rounds'
 import { OnboardingWelcome } from './onboarding-welcome'
 import { StepProgress } from './step-progress'
 import { SectionHeader } from './section-header'
+import { TransferFields } from './transfer-fields'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
 
 // -1 is the welcome screen (professional-category gate, see
@@ -75,10 +80,8 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
   const [firstName, setFirstName] = useState(
     () => splitDisplayName(initialTeacher?.display_name)[0]
   )
-  const [lastName, setLastName] = useState(
-    () => splitDisplayName(initialTeacher?.display_name)[1]
-  )
-  const [facebookUrl, setFacebookUrl] = useState(initialTeacher?.facebook_url ?? '')
+  const [lastName, setLastName] = useState(() => splitDisplayName(initialTeacher?.display_name)[1])
+  const [phone, setPhone] = useState(initialTeacher?.phone ?? '')
   const [termsAccepted, setTermsAccepted] = useState(false)
   // Optional marketing opt-in, not persisted anywhere (same as
   // termsAccepted, which is also purely a client-side save gate) — see
@@ -115,7 +118,10 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
     // Zone depends on service type — recompute (or auto-fill) for the new one.
     setOriginZone(autoZone(nextServiceType, originProvince, originDistrict))
     setDestinations((prev) =>
-      prev.map((d) => ({ ...d, zone: autoZone(nextServiceType, d.province, d.district) }))
+      prev.map((d) => ({
+        ...d,
+        zone: autoZone(nextServiceType, d.province, d.district),
+      }))
     )
   }
 
@@ -135,10 +141,18 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
       prev.map((d, i) => {
         if (i !== index) return d
         if (field === 'province') {
-          return { province: value, district: '', zone: autoZone(serviceType, value, '') }
+          return {
+            province: value,
+            district: '',
+            zone: autoZone(serviceType, value, ''),
+          }
         }
         if (field === 'district') {
-          return { ...d, district: value, zone: autoZone(serviceType, d.province, value) }
+          return {
+            ...d,
+            district: value,
+            zone: autoZone(serviceType, d.province, value),
+          }
         }
         return { ...d, [field]: value }
       })
@@ -147,7 +161,9 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
 
   function addDestination() {
     setDestinations((prev) =>
-      prev.length >= FREE_DESTINATION_LIMIT ? prev : [...prev, { province: '', district: '', zone: '' }]
+      prev.length >= FREE_DESTINATION_LIMIT
+        ? prev
+        : [...prev, { province: '', district: '', zone: '' }]
     )
   }
 
@@ -160,12 +176,13 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
     if (!serviceType) return 'กรุณาเลือกหน่วยงานต้นสังกัด'
     if (!originProvince) return 'กรุณาเลือกจังหวัดต้นทาง'
     if (requiresTeachingGroup(position) && !teachingGroup) return 'กรุณาเลือกกลุ่มสาระการเรียนรู้'
-    if (!transferRound) return 'กรุณาเลือกรอบที่ต้องการย้าย'
-    if (!transferYear) return 'กรุณาเลือกปีที่ต้องการย้าย'
+    if (!currentSchool.trim()) return 'กรุณากรอกชื่อโรงเรียนปัจจุบัน'
     return null
   }
 
   function validateStep2(): string | null {
+    if (!transferRound) return 'กรุณาเลือกรอบที่ต้องการย้าย'
+    if (!transferYear) return 'กรุณาเลือกปีที่ต้องการย้าย'
     if (!destinations.some((d) => d.province.trim())) {
       return 'กรุณาเพิ่มปลายทางอย่างน้อย 1 แห่ง'
     }
@@ -178,6 +195,8 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
 
   function validateStep3(): string | null {
     if (!firstName.trim() || !lastName.trim()) return 'กรุณากรอกชื่อและนามสกุล'
+    if (phone.trim() && !/^[0-9+\-\s]{6,20}$/.test(phone.trim()))
+      return 'กรุณากรอกเบอร์โทรให้ถูกต้อง'
     if (!termsAccepted) return 'กรุณายอมรับข้อกำหนดและเงื่อนไขก่อนบันทึกโปรไฟล์'
     return null
   }
@@ -223,7 +242,8 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
         benefitNote: benefitNote.trim() || null,
         transferRound: transferRound || null,
         transferYear: transferYear ? Number(transferYear) : null,
-        facebookUrl: facebookUrl.trim() || null,
+        facebookUrl: null,
+        phone: phone.trim() || null,
         destinations: validDestinations.map((d) => ({
           province: d.province,
           district: d.district.trim() || null,
@@ -237,25 +257,22 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
     }
   }
 
+  if (step === -1) return <OnboardingWelcome onContinue={() => setStep(1)} />
+
   return (
-    <div className="flex flex-col gap-5 max-w-lg mx-auto p-4 pb-24">
-      <div className="fixed inset-x-0 top-0 z-20 border-b border-sage/50 bg-background">
-        <div className="mx-auto flex max-w-lg flex-col gap-3 px-4 pb-3 pt-4">
-          <h1 className="text-center text-xl font-bold">เริ่มใช้งาน</h1>
-          {step > 0 && (
-            <StepProgress
-              steps={[STEP_TITLES[1], STEP_TITLES[2], STEP_TITLES[3]]}
-              currentStep={step}
-            />
-          )}
+    <div className="flex w-full flex-col gap-5 max-w-lg mx-auto p-4 pb-24">
+      <div className="fixed inset-x-0 top-0 z-20 bg-background">
+        <div className="mx-auto flex max-w-lg flex-col gap-4 px-4 pb-3 pt-6">
+          <h1 className="py-2 text-xl font-bold">เริ่มใช้งาน</h1>
+          <StepProgress
+            steps={[STEP_TITLES[1], STEP_TITLES[2], STEP_TITLES[3]]}
+            currentStep={step}
+          />
         </div>
       </div>
       {/* Spacer matching the fixed header's rendered height above, so
-          content doesn't start underneath it — taller when the stepper is
-          also showing (step > 0) than on the welcome screen alone. */}
-      <div className={step > 0 ? 'h-[104px]' : 'h-[52px]'} />
-
-      {step === -1 && <OnboardingWelcome onContinue={() => setStep(1)} />}
+          content doesn't start underneath it. */}
+      <div className="h-[136px]" />
 
       {step === 1 && (
         <OriginFields
@@ -277,34 +294,42 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
           onUpdateSubject={updateSubject}
           onAddSubject={addSubject}
           onRemoveSubject={removeSubject}
-          transferRound={transferRound}
-          onTransferRoundChange={setTransferRound}
-          transferYear={transferYear}
-          onTransferYearChange={setTransferYear}
-          transferYearOptions={transferYearOptions}
           benefitNote={benefitNote}
           onBenefitNoteChange={setBenefitNote}
         />
       )}
 
       {step === 2 && (
-        <DestinationFields
-          serviceType={serviceType}
-          destinations={destinations}
-          onUpdateDestination={updateDestination}
-          onAddDestination={addDestination}
-          onRemoveDestination={removeDestination}
-          maxDestinations={FREE_DESTINATION_LIMIT}
-          showUpgradeLink={false}
-        />
+        <>
+          <TransferFields
+            transferRound={transferRound}
+            onTransferRoundChange={setTransferRound}
+            transferYear={transferYear}
+            onTransferYearChange={setTransferYear}
+            transferYearOptions={transferYearOptions}
+          />
+          <DestinationFields
+            serviceType={serviceType}
+            destinations={destinations}
+            onUpdateDestination={updateDestination}
+            onAddDestination={addDestination}
+            onRemoveDestination={removeDestination}
+            maxDestinations={FREE_DESTINATION_LIMIT}
+            showUpgradeLink={false}
+          />
+        </>
       )}
 
       {step === 3 && (
         <>
-          <SectionHeader icon={<IdCardIcon />} title="ข้อมูลติดต่อ" subtitle="กรอกข้อมูลสำหรับติดต่อ" />
+          <SectionHeader
+            icon={<IdCardIcon />}
+            title="ข้อมูลติดต่อ"
+            subtitle="เราจะไม่แสดงข้อมูลติดต่อนี้จนกว่าคุณจะอนุญาตให้เข้าถึง"
+          />
 
           <label className="flex flex-col gap-1">
-            <span className="text-[14px] font-semibold">ชื่อ</span>
+            <span className="text-[14px] font-semibold">ชื่อ*</span>
             <input
               className="input-field"
               value={firstName}
@@ -312,58 +337,62 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
             />
           </label>
 
+          <div className="flex flex-col gap-1">
+            <label className="flex flex-col gap-1">
+              <span className="text-[14px] font-semibold">นามสกุล*</span>
+              <input
+                className="input-field"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+              />
+            </label>
+            <p className="text-xs text-zinc-500">
+              ชื่อ-นามสกุลของคุณจะถูกเก็บเป็นความลับและไม่แสดงต่อผู้อื่น
+            </p>
+          </div>
+
           <label className="flex flex-col gap-1">
-            <span className="text-[14px] font-semibold">นามสกุล</span>
+            <span className="text-[14px] font-semibold">เบอร์โทร (ไม่บังคับ)</span>
             <input
               className="input-field"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              type="tel"
+              inputMode="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
             />
           </label>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-[14px] font-semibold">ลิงก์ Facebook (ไม่บังคับ)</span>
-            <input
-              className="input-field"
-              value={facebookUrl}
-              onChange={(e) => setFacebookUrl(e.target.value)}
-              placeholder="https://facebook.com/..."
-            />
-          </label>
-
-          <p className="text-sm text-zinc-500">
-            ไม่ต้องกรอกเบอร์โทรศัพท์ — เมื่อจับคู่สำเร็จ ระบบจะให้คุณติดต่อกันผ่าน LINE
-          </p>
-
-          <label className="flex items-center gap-2 text-sm cursor-pointer w-fit">
+          <label className="flex items-center gap-2 text-xs cursor-pointer w-fit">
             <input
               type="checkbox"
               className="peer sr-only"
               checked={lineConsent}
               onChange={(e) => setLineConsent(e.target.checked)}
             />
-            <span className="flex items-center justify-center size-[18px] rounded shrink-0 border border-sage text-transparent peer-checked:bg-brand-red peer-checked:border-brand-red peer-checked:text-white text-[12px]">
+            <span className="flex items-center justify-center size-[18px] rounded shrink-0 border border-zinc-300 bg-white text-transparent peer-checked:bg-brand-red peer-checked:border-brand-red peer-checked:text-white text-[12px]">
               ✓
             </span>
             <span>ยืนยันรับข่าวสารและข้อมูลเพิ่มเติมผ่าน LINE</span>
           </label>
 
-          <label className="flex items-center gap-2 text-sm cursor-pointer w-fit">
+          <label className="flex items-center gap-2 text-xs cursor-pointer w-fit">
             <input
               type="checkbox"
               className="peer sr-only"
               checked={termsAccepted}
               onChange={(e) => setTermsAccepted(e.target.checked)}
             />
-            <span className="flex items-center justify-center size-[18px] rounded shrink-0 border border-sage text-transparent peer-checked:bg-brand-red peer-checked:border-brand-red peer-checked:text-white text-[12px]">
+            <span className="flex items-center justify-center size-[18px] rounded shrink-0 border border-zinc-300 bg-white text-transparent peer-checked:bg-brand-red peer-checked:border-brand-red peer-checked:text-white text-[12px]">
               ✓
             </span>
             <span>
-              ฉันยอมรับ{' '}
-              <Link href="/terms" target="_blank" className="link-accent">
-                ข้อกำหนดและเงื่อนไข
+              <Link href="/terms" target="_blank" className="underline">
+                ฉันยอมรับข้อกำหนดการใช้งาน
               </Link>
-              {' '}และนโยบายความเป็นส่วนตัว
+              และ
+              <Link href="/terms" target="_blank" className="underline">
+                นโยบายความเป็นส่วนตัว
+              </Link>
             </span>
           </label>
         </>
@@ -371,8 +400,8 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
 
       {error && <p className="text-terracotta text-sm">{error}</p>}
 
-      {step > 0 && (
-        <div className="fixed inset-x-0 bottom-0 border-t border-sage/50 bg-background p-4">
+      {
+        <div className="fixed inset-x-0 bottom-0 bg-background p-4">
           <div className="mx-auto flex max-w-lg justify-between gap-3">
             <button type="button" onClick={goBack} className="btn-brand-secondary flex-1">
               ย้อนกลับ
@@ -389,12 +418,12 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
                 disabled={saving || !termsAccepted}
                 className="btn-brand-primary flex-1"
               >
-                {saving ? 'กำลังบันทึก...' : 'เริ่มใช้งาน'}
+                {saving ? 'กำลังบันทึก...' : 'ลงทะเบียน'}
               </button>
             )}
           </div>
         </div>
-      )}
+      }
     </div>
   )
 }
