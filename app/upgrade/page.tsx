@@ -6,6 +6,7 @@ import { fetchProfile, fetchSubscriptionStatus, uploadPaymentSlip } from '@/lib/
 import { withAuthRetry } from '@/lib/session'
 import { TopBar } from '@/components/top-bar'
 import type { SubscriptionStatus } from '@/lib/types'
+import { PageSkeleton } from '@/components/page-skeleton'
 
 type View = 'loading' | 'ready' | 'error'
 
@@ -76,7 +77,7 @@ export default function UpgradePage() {
   }
 
   if (view === 'loading') {
-    return <p className="text-center p-8 text-zinc-600">กำลังโหลด...</p>
+    return <PageSkeleton title="อัปเกรดแพ็กเกจ" backHref="/criteria" />
   }
 
   if (view === 'error') {

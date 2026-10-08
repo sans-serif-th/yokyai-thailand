@@ -15,6 +15,7 @@ import { withAuthRetry } from '@/lib/session'
 import { MatchList } from '@/components/match-list'
 import { RegistrationBreakdownView } from '@/components/registration-breakdown'
 import type { MatchResult, RegistrationBreakdown } from '@/lib/types'
+import { PageSkeleton } from '@/components/page-skeleton'
 
 type View = 'loading' | 'registration' | 'ready' | 'error'
 
@@ -43,9 +44,8 @@ export default function MatchesPage() {
         // that query already returns [] itself during registration phase,
         // but skipping the call entirely avoids the wasted round-trip.
         const { result } = await withAuthRetry(async (token) => {
-          const profile = await fetchProfile(token)
+          const [profile, phase] = await Promise.all([fetchProfile(token), fetchRoundPhase(token)])
           if (!profile.teacher) return { state: 'onboarding' as const }
-          const phase = await fetchRoundPhase(token)
           if (!phase.inMatchingPhase) {
             const breakdown = await fetchRegistrationBreakdown(token)
             return { state: 'registration' as const, breakdown, roundLabel: phase.roundLabel }
@@ -115,7 +115,7 @@ export default function MatchesPage() {
   }
 
   if (view === 'loading') {
-    return <p className="text-center p-8 text-zinc-600">กำลังโหลด...</p>
+    return <PageSkeleton title="ผลการจับคู่" />
   }
 
   if (view === 'error') {

@@ -7,6 +7,7 @@ import { fetchProfile } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { TopBar } from '@/components/top-bar'
 import { NEWS } from '@/lib/news'
+import { PageSkeleton } from '@/components/page-skeleton'
 
 type View = 'loading' | 'ready' | 'error'
 
@@ -33,7 +34,7 @@ export default function HomePage() {
   }, [router])
 
   if (view === 'loading') {
-    return <p className="text-center p-8 text-zinc-600">กำลังโหลด...</p>
+    return <PageSkeleton title="อัพเดท" centered />
   }
 
   if (view === 'error') {
