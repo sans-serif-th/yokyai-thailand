@@ -9,6 +9,7 @@ import { RefreshButton } from './refresh-button'
 import { SegmentedTabs } from './segmented-tabs'
 import { positionLabel } from '@/lib/positions'
 import { serviceTypeAbbr } from '@/lib/service-types'
+import { subjectLabel } from '@/lib/subject-label'
 import { teachingGroupLabel } from '@/lib/teaching-groups'
 import type { MatchResult } from '@/lib/types'
 
@@ -228,7 +229,7 @@ export function MatchList({
                   positionLabel(m.teacher.position),
                   serviceTypeAbbr(m.teacher.service_type),
                   m.teacher.teaching_group ? teachingGroupLabel(m.teacher.teaching_group) : null,
-                  m.teacher.subject ? `เอก${m.teacher.subject}` : null,
+                  m.teacher.subject ? subjectLabel(m.teacher.subject) : null,
                 ]
                   .filter(Boolean)
                   .join(' · ')}
