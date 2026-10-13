@@ -10,7 +10,9 @@ Automated tests (`npm test`, `lib/contacts.flow.test.ts`) จำลอง API + 
      ไม่เช่นนั้น userId ไม่ตรงกันและข้อความจะไม่ถึงผู้ใช้
 2. LINE Developers → Messaging API channel → แท็บ Messaging API → Issue **Channel access token (long-lived)**
 3. ใส่ env `LINE_MESSAGING_ACCESS_TOKEN` ใน Vercel (Production) แล้ว redeploy
-4. LIFF settings → Add friend option → **On (aggressive)** เพื่อให้ผู้ใช้ถูกชวนเพิ่ม OA ตอนล็อกอิน
+4. LINE Developers → **LINE Login channel** (ไม่ใช่ Messaging API channel) → แท็บ LIFF → กด **Edit** ที่ LIFF app → Add friend option → **On (aggressive)** → Update
+   - ช่องนี้อยู่ในหน้า Edit ของ LIFF app เท่านั้น (ปุ่ม Edit ตรง Linked LINE Official Account ในหน้า Basic settings ใช้เลือก OA ที่ผูกไว้ ไม่มีตัวเลือกนี้)
+   - ต้องผูก OA กับ Login channel (Linked LINE Official Account) ไว้ก่อน ตัวเลือกจึงจะใช้ได้
 5. รัน migration ใน Supabase ตามลำดับ: `0023` → `0024` → `0025`
 6. ตรวจโควตาข้อความของ OA (push ทุกครั้งนับเป็น 1 ข้อความ)
 
