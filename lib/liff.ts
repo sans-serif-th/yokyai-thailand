@@ -1,6 +1,7 @@
 'use client'
 
 import liff from '@line/liff'
+import { authLog } from './auth-log'
 
 function requireLiffId(): string {
   const liffId = process.env.NEXT_PUBLIC_LIFF_ID
@@ -18,8 +19,15 @@ let initPromise: Promise<void> | null = null
 // this resolves.
 export function initLiff(): Promise<void> {
   if (!initPromise) {
+    const params = new URLSearchParams(window.location.search)
+    authLog(
+      'init:start',
+      `path=${window.location.pathname} code=${params.has('code')} state=${params.has('liff.state')}`
+    )
     initPromise = liff.init({ liffId: requireLiffId() }).then(() => {
+      authLog('init:done', `loggedIn=${liff.isLoggedIn()}`)
       if (!liff.isLoggedIn()) {
+        authLog('login:redirect', 'initLiff found no session')
         liff.login()
         // login() redirects away; never resolve, so callers don't go on to
         // read a (missing) ID token and flash an error during the redirect.
@@ -56,6 +64,10 @@ export function getLiffIdToken(): string {
 // returning user is "logged in" yet holds a dead token.
 export function isIdTokenExpired(): boolean {
   const decoded = liff.getDecodedIDToken()
+  authLog(
+    'token:check',
+    `exp=${decoded?.exp ?? 'none'} iat=${decoded?.iat ?? 'none'} now=${Math.floor(Date.now() / 1000)}`
+  )
   // Can't tell -> let the server decide, rather than risk a re-login loop.
   if (!decoded?.exp) return false
   return decoded.exp * 1000 - Date.now() < 60_000
