@@ -2,7 +2,7 @@ import { POSITIONS, requiresTeachingGroup } from './positions'
 import { SERVICE_TYPES } from './service-types'
 import { TEACHING_GROUPS } from './teaching-groups'
 import { TRANSFER_ROUND_PATTERN } from './transfer-rounds'
-import type { ProfilePayload } from './types'
+import type { Destination, ProfilePayload, Teacher } from './types'
 
 // Shared by PUT /api/teachers and POST /api/join/[code] — both accept the
 // same shape and must apply identical rules, so this lives in one place
@@ -82,5 +82,38 @@ export function profilePayloadToTeacherRow(payload: ProfilePayload) {
     facebook_url: payload.facebookUrl?.trim() || null,
     phone: payload.phone?.trim() || null,
     line_id: payload.lineId?.trim() || null,
+  }
+}
+
+// Rebuilds a full payload from the stored profile — PUT /api/teachers replaces
+// the whole record, so a partial edit (e.g. adding just a LINE ID) has to send
+// every other field back unchanged.
+export function teacherToPayload(
+  teacher: Teacher,
+  destinations: Destination[],
+  overrides: Partial<ProfilePayload> = {}
+): ProfilePayload {
+  return {
+    displayName: teacher.display_name,
+    position: teacher.position,
+    serviceType: teacher.service_type,
+    originProvince: teacher.origin_province,
+    originDistrict: teacher.origin_district,
+    originZone: teacher.origin_zone,
+    currentSchool: teacher.current_school,
+    teachingGroup: teacher.teaching_group,
+    subject: teacher.subject,
+    benefitNote: teacher.benefit_note,
+    transferRound: teacher.transfer_round,
+    transferYear: teacher.transfer_year,
+    facebookUrl: teacher.facebook_url,
+    phone: teacher.phone,
+    lineId: teacher.line_id,
+    destinations: destinations.map((d) => ({
+      province: d.province,
+      district: d.district,
+      zone: d.zone,
+    })),
+    ...overrides,
   }
 }

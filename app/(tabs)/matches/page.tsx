@@ -11,10 +11,10 @@ import {
   fetchRoundPhase,
   invalidateCache,
   removeFavorite,
-  sendContactRequest,
 } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { MatchList } from '@/components/match-list'
+import { useContactRequest } from '@/components/use-contact-request'
 import { RegistrationBreakdownView } from '@/components/registration-breakdown'
 import type { MatchResult, RegistrationBreakdown } from '@/lib/types'
 import { PageSkeleton } from '@/components/page-skeleton'
@@ -36,6 +36,7 @@ export default function MatchesPage() {
   const [devLoading, setDevLoading] = useState(false)
   const [breakdown, setBreakdown] = useState<RegistrationBreakdown | null>(null)
   const [roundLabel, setRoundLabel] = useState<string | null>(null)
+  const { request: handleRequestContact, prompt: linePrompt } = useContactRequest(setMatches)
   // Bumped by the refresh button to re-run the bootstrap effect below.
   const [refreshKey, setRefreshKey] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
@@ -108,24 +109,6 @@ export default function MatchesPage() {
     }
   }
 
-  async function handleRequestContact(teacherId: string) {
-    const mark = (prev: MatchResult[]) =>
-      prev.map((m) =>
-        m.teacher.id === teacherId
-          ? { ...m, contact: { requestId: '', status: 'pending' as const, direction: 'outgoing' as const } }
-          : m
-      )
-    const clear = (prev: MatchResult[]) =>
-      prev.map((m) => (m.teacher.id === teacherId ? { ...m, contact: null } : m))
-    setMatches(mark)
-    try {
-      await withAuthRetry((token) => sendContactRequest(token, teacherId))
-    } catch (err) {
-      setMatches(clear)
-      window.alert((err as Error).message)
-    }
-  }
-
   async function handleToggleDevMode() {
     if (devMode) {
       setDevMode(false)
@@ -166,6 +149,7 @@ export default function MatchesPage() {
 
   return (
     <div className="flex flex-col gap-2">
+      {linePrompt}
       {DEV_TOOLS_ENABLED && (
         <div className="max-w-lg mx-auto w-full px-4 pt-4 flex justify-end">
           <button

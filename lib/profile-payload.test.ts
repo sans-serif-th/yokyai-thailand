@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { profilePayloadToTeacherRow, validateProfilePayload } from './profile-payload'
+import {
+  profilePayloadToTeacherRow,
+  teacherToPayload,
+  validateProfilePayload,
+} from './profile-payload'
 
 const base = {
   displayName: 'สมชาย ใจดี',
@@ -97,5 +101,33 @@ describe('profilePayloadToTeacherRow', () => {
     expect(row.phone).toBeNull()
     expect(row.teaching_group).toBeNull()
     expect(row.subject).toBeNull()
+  })
+})
+
+describe('teacherToPayload', () => {
+  it('round-trips a stored teacher and applies overrides', () => {
+    const teacher = {
+      display_name: 'สมชาย ใจดี',
+      position: 'teacher',
+      service_type: 'primary',
+      origin_province: 'เชียงใหม่',
+      origin_district: null,
+      origin_zone: null,
+      current_school: null,
+      teaching_group: 'math',
+      subject: null,
+      benefit_note: null,
+      transfer_round: '1',
+      transfer_year: 2027,
+      facebook_url: null,
+      phone: '0812345678',
+      line_id: null,
+    } as never
+    const dests = [{ id: 'd', teacher_id: 't', province: 'กรุงเทพมหานคร', district: null, zone: null }]
+    const p = teacherToPayload(teacher, dests, { lineId: 'somchai.j' })
+    expect(p.displayName).toBe('สมชาย ใจดี')
+    expect(p.phone).toBe('0812345678')
+    expect(p.lineId).toBe('somchai.j')
+    expect(p.destinations).toEqual([{ province: 'กรุงเทพมหานคร', district: null, zone: null }])
   })
 })
