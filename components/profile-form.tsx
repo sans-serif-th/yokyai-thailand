@@ -243,6 +243,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
         transferYear: transferYear ? Number(transferYear) : null,
         facebookUrl: null,
         phone: phone.trim() || null,
+        lineId: initialTeacher?.line_id ?? null,
         destinations: validDestinations.map((d) => ({
           province: d.province,
           district: d.district.trim() || null,

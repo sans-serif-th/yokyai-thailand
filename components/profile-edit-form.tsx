@@ -1,5 +1,6 @@
 'use client'
 
+import { LINE_ID_PATTERN } from '@/lib/profile-payload'
 import Link from 'next/link'
 import { useState } from 'react'
 import { TopBar } from './top-bar'
@@ -22,6 +23,7 @@ export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFo
   const [firstName, setFirstName] = useState(() => splitDisplayName(teacher.display_name)[0])
   const [lastName, setLastName] = useState(() => splitDisplayName(teacher.display_name)[1])
   const [phone, setPhone] = useState(teacher.phone ?? '')
+  const [lineId, setLineId] = useState(teacher.line_id ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -32,6 +34,10 @@ export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFo
     }
     if (phone.trim() && !/^[0-9+\-\s]{6,20}$/.test(phone.trim())) {
       setError('กรุณากรอกเบอร์โทรให้ถูกต้อง')
+      return
+    }
+    if (lineId.trim() && !LINE_ID_PATTERN.test(lineId.trim())) {
+      setError('LINE ID ไม่ถูกต้อง (4-20 ตัว ใช้ตัวอักษร ตัวเลข . - _ ได้)')
       return
     }
     setError(null)
@@ -52,6 +58,7 @@ export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFo
         transferYear: teacher.transfer_year,
         facebookUrl: teacher.facebook_url,
         phone: phone.trim() || null,
+        lineId: lineId.trim() || null,
         destinations: destinations.map((d) => ({
           province: d.province,
           district: d.district,
@@ -90,6 +97,20 @@ export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFo
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
           />
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className="text-[14px] font-semibold leading-[21px]">LINE ID</span>
+          <input
+            className="input-field"
+            autoCapitalize="none"
+            autoCorrect="off"
+            value={lineId}
+            onChange={(e) => setLineId(e.target.value)}
+          />
+          <span className="text-[12px] leading-[18px] text-zinc-500">
+            แสดงให้คู่ที่คุณยอมรับคำขอติดต่อเห็นเท่านั้น
+          </span>
         </label>
 
         <label className="flex flex-col gap-1">

@@ -31,6 +31,7 @@ export interface Teacher {
   transfer_year: number | null
   facebook_url: string | null
   phone: string | null
+  line_id: string | null
   source: 'app' | 'facebook_import'
   invite_code: string | null
   claimed_at: string | null
@@ -55,7 +56,20 @@ export interface ProfilePayload {
   transferYear: number | null
   facebookUrl: string | null
   phone?: string | null
+  lineId?: string | null
   destinations: { province: string; district: string | null; zone: string | null }[]
+}
+
+export type ContactStatus = 'pending' | 'accepted' | 'declined'
+
+// Which way a contact request points relative to the viewer.
+export type ContactDirection = 'incoming' | 'outgoing'
+
+// Attached to a match card when a request exists between the two teachers.
+export interface MatchContact {
+  requestId: string
+  status: ContactStatus
+  direction: ContactDirection
 }
 
 export interface MatchResult {
@@ -63,6 +77,23 @@ export interface MatchResult {
   destinations: Destination[]
   tier: MatchTier
   favorited: boolean
+  contact?: MatchContact | null
+}
+
+// One row of /contacts. `name`/`phone`/`facebookUrl` are only filled once the
+// request is accepted — see toContactView in lib/contacts.ts.
+export interface ContactRequestView {
+  id: string
+  status: ContactStatus
+  direction: ContactDirection
+  createdAt: string
+  teacherId: string
+  summary: { position: string; teachingGroup: string | null; originProvince: string }
+  maskedName: string
+  name: string | null
+  lineId: string | null
+  phone: string | null
+  facebookUrl: string | null
 }
 
 export interface Round {

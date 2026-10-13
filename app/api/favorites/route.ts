@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { attachContactStatus } from '@/lib/contacts'
 import { addFavorite, getFavoritedMatchesFor, removeFavorite } from '@/lib/favorites'
 import { LineAuthError, verifyRequestAuth } from '@/lib/line-auth'
 
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
   try {
     const auth = await verifyRequestAuth(request)
     const matches = await getFavoritedMatchesFor(auth.sub)
-    return NextResponse.json({ matches })
+    return NextResponse.json({ matches: await attachContactStatus(auth.sub, matches) })
   } catch (err) {
     if (err instanceof LineAuthError) {
       return NextResponse.json({ error: err.message }, { status: 401 })

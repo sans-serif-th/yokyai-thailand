@@ -16,6 +16,7 @@ const base = {
   transferYear: 2027,
   facebookUrl: null,
   phone: null,
+  lineId: null,
   destinations: [{ province: 'กรุงเทพมหานคร', district: null, zone: null }],
 }
 
@@ -71,6 +72,14 @@ describe('validateProfilePayload', () => {
 })
 
 describe('profilePayloadToTeacherRow', () => {
+  it('validates LINE ID format but allows empty', () => {
+    expect(validateProfilePayload({ ...base, lineId: 'somchai.j' })).toBe(true)
+    expect(validateProfilePayload({ ...base, lineId: '@yokyai' })).toBe(true)
+    expect(validateProfilePayload({ ...base, lineId: 'ab' })).toBe(false)
+    expect(validateProfilePayload({ ...base, lineId: 'has space' })).toBe(false)
+    expect(validateProfilePayload({ ...base, lineId: null })).toBe(true)
+  })
+
   it('maps to snake_case and trims phone', () => {
     const row = profilePayloadToTeacherRow({ ...base, phone: ' 0812345678 ' } as never)
     expect(row.phone).toBe('0812345678')
