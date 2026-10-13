@@ -110,7 +110,7 @@ export function DestinationFields({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-[14px] font-semibold">เขตพื้นที่ (ไม่บังคับ)</span>
+            <span className="text-[14px] font-semibold">เขตพื้นที่</span>
             {serviceType === 'secondary' && zonesFor('secondary', d.province).length > 1 ? (
               // Only กรุงเทพมหานคร's สพม. has more than one zone — every other
               // case below is unambiguous once province (and, for สพป., อำเภอ)
