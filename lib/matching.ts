@@ -159,16 +159,16 @@ export async function findMatchesFor(
 
   const destinationProvinces = requesterDestinations.map((d) => d.province)
 
-  // For positions with a subject at all, the subject itself must match
-  // exactly — not just the broader teaching_group — and an unspecified
-  // subject can't be matched against anything (we don't know what to look
-  // for, and "both unspecified" is not the same as "both the same subject").
-  if (requiresTeachingGroup(requester.position) && !requester.subject) {
+  // Teachers must have a teaching group to be matched at all. The subject
+  // (เอก) is optional: when both sides state one it must be identical, but a
+  // side that left it blank is matched at the group level (e.g. both คณิตศาสตร์)
+  // and ranks lower — see the per-candidate check below.
+  if (requiresTeachingGroup(requester.position) && !requester.teaching_group) {
     return []
   }
 
   // Candidates: same position, same service type, (if applicable) same
-  // exact subject, currently in one of the requester's desired provinces,
+  // teaching group, currently in one of the requester's desired provinces,
   // not the requester themself.
   let candidatesQuery = supabase
     .from('teachers')
@@ -180,7 +180,7 @@ export async function findMatchesFor(
     .not('claimed_at', 'is', null) // Only show verified/claimed profiles
 
   if (requiresTeachingGroup(requester.position)) {
-    candidatesQuery = candidatesQuery.eq('subject', requester.subject as string)
+    candidatesQuery = candidatesQuery.eq('teaching_group', requester.teaching_group as string)
   }
 
   const { data: candidates, error: candidatesError } = await candidatesQuery
@@ -200,6 +200,17 @@ export async function findMatchesFor(
 
   const results: MatchResult[] = []
   for (const candidate of candidates as Teacher[]) {
+    // Both stated a subject -> they must be the same one. A blank on either
+    // side falls back to the group match already applied in the query.
+    if (
+      requiresTeachingGroup(requester.position) &&
+      requester.subject &&
+      candidate.subject &&
+      requester.subject !== candidate.subject
+    ) {
+      continue
+    }
+
     const candidateDests = destinationsByTeacher.get(candidate.id) ?? []
     const candidateDestForRequesterProvince = candidateDests.find(
       (d) => d.province === requester.origin_province
