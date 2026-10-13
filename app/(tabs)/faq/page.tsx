@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icons'
 import { TopBar } from '@/components/top-bar'
 import { SLIDES, SlideIllustration } from '@/components/onboarding-welcome'
 import { FAQ_ITEMS } from '@/lib/faq'
@@ -19,12 +20,52 @@ function Caret({ open }: { open: boolean }) {
   )
 }
 
+const SWIPE_MIN_PX = 40
+
 function SlideCarousel() {
   const [index, setIndex] = useState(0)
+  const touchStartX = useRef<number | null>(null)
   const slide = SLIDES[index]
+  const last = SLIDES.length - 1
+
+  const go = (next: number) => setIndex(Math.min(last, Math.max(0, next)))
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    touchStartX.current = null
+    if (Math.abs(dx) >= SWIPE_MIN_PX) go(index + (dx < 0 ? 1 : -1))
+  }
+
   return (
     <div className="flex flex-col gap-5 pb-4">
-      <SlideIllustration index={index} />
+      <div
+        className="relative touch-pan-y"
+        onTouchStart={(e) => (touchStartX.current = e.touches[0].clientX)}
+        onTouchEnd={handleTouchEnd}
+      >
+        <SlideIllustration index={index} />
+        {index > 0 && (
+          <button
+            type="button"
+            onClick={() => go(index - 1)}
+            aria-label="สไลด์ก่อนหน้า"
+            className="absolute left-2 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 shadow"
+          >
+            <ChevronLeftIcon />
+          </button>
+        )}
+        {index < last && (
+          <button
+            type="button"
+            onClick={() => go(index + 1)}
+            aria-label="สไลด์ถัดไป"
+            className="absolute right-2 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 shadow"
+          >
+            <ChevronRightIcon />
+          </button>
+        )}
+      </div>
       <div className="flex flex-col items-center text-center">
         <p className="text-[24px] font-bold leading-tight">{slide.title}</p>
         <p className="text-[14px] leading-[21px]">
@@ -36,15 +77,20 @@ function SlideCarousel() {
           ))}
         </p>
       </div>
-      <div className="flex justify-center gap-[3px]">
+      <div className="flex justify-center">
         {SLIDES.map((_, i) => (
           <button
             key={i}
             type="button"
             onClick={() => setIndex(i)}
             aria-label={`สไลด์ที่ ${i + 1}`}
-            className={`size-2 rounded-full ${i === index ? 'bg-brand-red' : 'bg-zinc-200'}`}
-          />
+            aria-current={i === index}
+            className="flex size-8 items-center justify-center"
+          >
+            <span
+              className={`size-2 rounded-full ${i === index ? 'bg-brand-red' : 'bg-zinc-200'}`}
+            />
+          </button>
         ))}
       </div>
     </div>
