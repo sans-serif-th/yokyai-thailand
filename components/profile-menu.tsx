@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { getLiffProfile, liffLogout } from '@/lib/liff'
+import { getLiffProfile, isLiffInClient, liffLogout } from '@/lib/liff'
 import { TopBar } from './top-bar'
 import { ChevronRightIcon, LogOutIcon, PencilIcon } from './icons'
 import type { Teacher } from '@/lib/types'
@@ -64,6 +64,16 @@ function MenuRow({
 // editing happens on the separate /profile/edit screen.
 export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
   const [lineProfile, setLineProfile] = useState<LineProfile | null>(null)
+  // Logging out only makes sense in an external browser — see isLiffInClient.
+  const [canLogout, setCanLogout] = useState(false)
+
+  useEffect(() => {
+    try {
+      setCanLogout(!isLiffInClient())
+    } catch {
+      setCanLogout(false)
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -115,11 +125,13 @@ export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
         <MenuRow label="เกี่ยวกับเรา / คำถามที่พบบ่อย (FAQs)" href="/faq?from=profile" />
         <MenuRow label="ข้อกำหนดและเงื่อนไข" href="/terms" />
         <MenuRow label="ช่วยเหลือ" href="https://lin.ee/ZwsPm2X" external />
-        <MenuRow
-          label="ออกจากระบบ"
-          onClick={handleLogout}
-          icon={<LogOutIcon className="size-4" />}
-        />
+        {canLogout && (
+          <MenuRow
+            label="ออกจากระบบ"
+            onClick={handleLogout}
+            icon={<LogOutIcon className="size-4" />}
+          />
+        )}
       </div>
     </div>
   )
