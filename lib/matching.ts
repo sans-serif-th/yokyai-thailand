@@ -83,6 +83,7 @@ export function sanitizeForMatch(teacher: Teacher): Teacher {
     display_name: maskName(teacher.display_name),
     facebook_url: imported ? null : teacher.facebook_url,
     phone: null,
+    line_id: null,
     invite_code: null,
     admin_status: 'new',
   }

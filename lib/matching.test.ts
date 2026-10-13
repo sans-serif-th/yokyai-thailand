@@ -19,6 +19,7 @@ const teacher: Teacher = {
   transfer_year: 2027,
   facebook_url: 'https://facebook.com/x',
   phone: '0812345678',
+  line_id: 'somchai.j',
   source: 'app',
   invite_code: 'ABC',
   claimed_at: null,
@@ -39,6 +40,7 @@ describe('sanitizeForMatch', () => {
     const s = sanitizeForMatch(teacher)
     expect(s.display_name).toBe('ส***** ใ*****')
     expect(s.phone).toBeNull()
+    expect(s.line_id).toBeNull()
     expect(s.invite_code).toBeNull()
     expect(s.admin_status).toBe('new')
     expect(s.facebook_url).toBe('https://facebook.com/x')

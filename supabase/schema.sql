@@ -102,6 +102,7 @@ create table teachers (
   transfer_round text,         -- required, "1" or "2" — informational only, not used for matching
   transfer_year integer,       -- required, paired with transfer_round (e.g. round "1", year 2027)
 
+  line_id text,                -- optional searchable LINE ID, shared only after a contact request is accepted
   phone text,                  -- optional contact number from the onboarding contact step; informational only, never shown on match cards
   facebook_url text,           -- optional, an alternate contact route shown on match cards alongside LINE — informational only, not used for matching
 
@@ -253,3 +254,20 @@ alter table destinations enable row level security;
 alter table favorites enable row level security;
 alter table rounds enable row level security;
 alter table round_subscriptions enable row level security;
+
+create table if not exists contact_requests (
+  id uuid primary key default gen_random_uuid(),
+  requester_id uuid not null references teachers(id) on delete cascade,
+  target_id uuid not null references teachers(id) on delete cascade,
+  status text not null default 'pending' check (status in ('pending', 'accepted', 'declined')),
+  created_at timestamptz not null default now(),
+  responded_at timestamptz,
+  unique (requester_id, target_id),
+  check (requester_id <> target_id)
+);
+
+create index if not exists idx_contact_requests_requester on contact_requests (requester_id);
+create index if not exists idx_contact_requests_target on contact_requests (target_id);
+
+-- Default-deny RLS: only the service-role API routes touch this table.
+alter table contact_requests enable row level security;

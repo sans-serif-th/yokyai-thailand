@@ -19,6 +19,46 @@ const TIER_BADGE: Record<MatchResult['tier'], { label: string; className: string
   partial: { label: 'ตรงตำแหน่ง', className: 'bg-zinc-100 text-zinc-600' },
 }
 
+function ContactAction({
+  match,
+  onRequest,
+}: {
+  match: MatchResult
+  onRequest: (teacherId: string) => void
+}) {
+  const c = match.contact
+  const base = 'mt-1 w-fit rounded-lg px-3 py-1.5 text-xs'
+  if (!c) {
+    return (
+      <button
+        type="button"
+        onClick={() => onRequest(match.teacher.id)}
+        className={`${base} btn-brand-secondary`}
+      >
+        ขอติดต่อ
+      </button>
+    )
+  }
+  if (c.status === 'accepted') {
+    return (
+      <Link href="/contacts" className={`${base} bg-[#f0fdf4] text-[#15803d]`}>
+        ดูข้อมูลติดต่อ
+      </Link>
+    )
+  }
+  if (c.status === 'declined') {
+    return <span className={`${base} bg-zinc-100 text-zinc-500`}>ไม่สะดวกติดต่อ</span>
+  }
+  if (c.direction === 'incoming') {
+    return (
+      <Link href="/contacts" className={`${base} btn-brand-primary`}>
+        มีคำขอติดต่อ — ตอบกลับ
+      </Link>
+    )
+  }
+  return <span className={`${base} bg-zinc-100 text-zinc-500`}>ส่งคำขอแล้ว — รออีกฝ่ายตอบ</span>
+}
+
 type FilterTab = 'all' | 'subject' | 'destination'
 
 const PAGE_SIZE = 25
@@ -26,6 +66,7 @@ const PAGE_SIZE = 25
 interface MatchListProps {
   matches: MatchResult[]
   onToggleFavorite: (teacherId: string, currentlyFavorited: boolean) => void
+  onRequestContact?: (teacherId: string) => void
   title?: string
   showSettingsLink?: boolean
   roundLabel?: string | null
@@ -36,6 +77,7 @@ interface MatchListProps {
 export function MatchList({
   matches,
   onToggleFavorite,
+  onRequestContact,
   title = 'ผลการจับคู่',
   showSettingsLink = false,
   roundLabel = null,
@@ -249,6 +291,7 @@ export function MatchList({
                   {m.teacher.benefit_note}
                 </p>
               )}
+              {onRequestContact && <ContactAction match={m} onRequest={onRequestContact} />}
               {m.teacher.facebook_url && (
                 <a
                   href={m.teacher.facebook_url}

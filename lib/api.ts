@@ -1,4 +1,5 @@
 import type {
+  ContactRequestView,
   Destination,
   MatchResult,
   PlatformStats,
@@ -126,6 +127,30 @@ export async function removeFavorite(idToken: string, teacherId: string): Promis
     body: JSON.stringify({ teacherId }),
   })
   invalidateCache('favorites', 'matches')
+}
+
+export async function fetchContacts(idToken: string): Promise<{ contacts: ContactRequestView[] }> {
+  return cached('contacts', () => authedFetch('/api/contacts', idToken))
+}
+
+export async function sendContactRequest(idToken: string, teacherId: string): Promise<void> {
+  await authedFetch('/api/contacts', idToken, {
+    method: 'POST',
+    body: JSON.stringify({ teacherId }),
+  })
+  invalidateCache('contacts', 'matches', 'favorites')
+}
+
+export async function respondContactRequest(
+  idToken: string,
+  requestId: string,
+  action: 'accept' | 'decline'
+): Promise<void> {
+  await authedFetch(`/api/contacts/${requestId}`, idToken, {
+    method: 'PATCH',
+    body: JSON.stringify({ action }),
+  })
+  invalidateCache('contacts', 'matches', 'favorites')
 }
 
 export async function fetchSubscriptionStatus(idToken: string): Promise<SubscriptionStatus> {

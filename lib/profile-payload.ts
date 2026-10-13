@@ -11,6 +11,9 @@ import type { ProfilePayload } from './types'
 const BENEFIT_NOTE_MAX_LENGTH = 500
 const FACEBOOK_URL_MAX_LENGTH = 300
 const PHONE_PATTERN = /^[0-9+\-\s]{6,20}$/
+// LINE IDs are 4-20 characters: letters, digits, '.', '-' and '_' (an official
+// account's leading '@' is tolerated).
+export const LINE_ID_PATTERN = /^@?[A-Za-z0-9._-]{4,20}$/
 
 export function validateProfilePayload(body: unknown): body is ProfilePayload {
   if (!body || typeof body !== 'object') return false
@@ -51,6 +54,9 @@ export function validateProfilePayload(body: unknown): body is ProfilePayload {
   if (b.phone !== null && b.phone !== undefined) {
     if (typeof b.phone !== 'string' || !PHONE_PATTERN.test(b.phone.trim())) return false
   }
+  if (b.lineId !== null && b.lineId !== undefined) {
+    if (typeof b.lineId !== 'string' || !LINE_ID_PATTERN.test(b.lineId.trim())) return false
+  }
   if (!Array.isArray(b.destinations) || b.destinations.length === 0) return false
   return b.destinations.every(
     (d) => d && typeof d === 'object' && typeof (d as { province?: unknown }).province === 'string'
@@ -75,5 +81,6 @@ export function profilePayloadToTeacherRow(payload: ProfilePayload) {
     transfer_year: payload.transferYear ?? null,
     facebook_url: payload.facebookUrl?.trim() || null,
     phone: payload.phone?.trim() || null,
+    line_id: payload.lineId?.trim() || null,
   }
 }

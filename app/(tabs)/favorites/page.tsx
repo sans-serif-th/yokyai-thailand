@@ -8,6 +8,7 @@ import {
   fetchRegistrationBreakdown,
   fetchRoundPhase,
   removeFavorite,
+  sendContactRequest,
 } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { MatchList } from '@/components/match-list'
@@ -78,6 +79,24 @@ export default function FavoritesPage() {
     }
   }
 
+  async function handleRequestContact(teacherId: string) {
+    const mark = (prev: MatchResult[]) =>
+      prev.map((m) =>
+        m.teacher.id === teacherId
+          ? { ...m, contact: { requestId: '', status: 'pending' as const, direction: 'outgoing' as const } }
+          : m
+      )
+    const clear = (prev: MatchResult[]) =>
+      prev.map((m) => (m.teacher.id === teacherId ? { ...m, contact: null } : m))
+    setMatches(mark)
+    try {
+      await withAuthRetry((token) => sendContactRequest(token, teacherId))
+    } catch (err) {
+      setMatches(clear)
+      window.alert((err as Error).message)
+    }
+  }
+
   if (view === 'loading') {
     return <PageSkeleton title="รายการโปรด" />
   }
@@ -105,6 +124,7 @@ export default function FavoritesPage() {
     <MatchList
       matches={matches}
       onToggleFavorite={handleToggleFavorite}
+      onRequestContact={handleRequestContact}
       title="รายการโปรด"
       roundLabel={roundLabel}
     />

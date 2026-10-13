@@ -175,6 +175,7 @@ export function CriteriaForm({
         displayName: teacher.display_name,
         facebookUrl: teacher.facebook_url,
         phone: teacher.phone,
+        lineId: teacher.line_id,
         position,
         serviceType,
         originProvince,
