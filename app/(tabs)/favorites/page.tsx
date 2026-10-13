@@ -8,11 +8,13 @@ import {
   fetchRegistrationBreakdown,
   fetchRoundPhase,
   removeFavorite,
+  respondContactRequest,
   sendContactRequest,
 } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { MatchList } from '@/components/match-list'
 import { RegistrationBreakdownView } from '@/components/registration-breakdown'
+import { MAX_CONTACT_SENDS, type MatchContact } from '@/lib/types'
 import type { MatchResult, RegistrationBreakdown } from '@/lib/types'
 import { PageSkeleton } from '@/components/page-skeleton'
 
@@ -80,19 +82,38 @@ export default function FavoritesPage() {
   }
 
   async function handleRequestContact(teacherId: string) {
-    const mark = (prev: MatchResult[]) =>
-      prev.map((m) =>
-        m.teacher.id === teacherId
-          ? { ...m, contact: { requestId: '', status: 'pending' as const, direction: 'outgoing' as const } }
-          : m
-      )
-    const clear = (prev: MatchResult[]) =>
-      prev.map((m) => (m.teacher.id === teacherId ? { ...m, contact: null } : m))
-    setMatches(mark)
+    const prevContact = matches.find((m) => m.teacher.id === teacherId)?.contact
+    const sendsLeft =
+      prevContact?.status === 'cancelled' ? Math.max(0, prevContact.sendsLeft - 1) : MAX_CONTACT_SENDS - 1
+    const setContact = (contact: MatchContact | null) => (prev: MatchResult[]) =>
+      prev.map((m) => (m.teacher.id === teacherId ? { ...m, contact } : m))
+    setMatches(
+      setContact({ requestId: '', status: 'pending', direction: 'outgoing', sendsLeft })
+    )
     try {
-      await withAuthRetry((token) => sendContactRequest(token, teacherId))
+      const {
+        result: { status, requestId },
+      } = await withAuthRetry((token) =>
+        sendContactRequest(token, teacherId)
+      )
+      setMatches(setContact({ requestId, status, direction: 'outgoing', sendsLeft }))
     } catch (err) {
-      setMatches(clear)
+      setMatches(setContact(prevContact ?? null))
+      window.alert((err as Error).message)
+    }
+  }
+
+  async function handleCancelContact(requestId: string) {
+    const target = matches.find((m) => m.contact?.requestId === requestId)
+    if (!target?.contact) return
+    const before = target.contact
+    const setContact = (contact: MatchContact) => (prev: MatchResult[]) =>
+      prev.map((m) => (m.contact?.requestId === requestId ? { ...m, contact } : m))
+    setMatches(setContact({ ...before, status: 'cancelled' }))
+    try {
+      await withAuthRetry((token) => respondContactRequest(token, requestId, 'cancel'))
+    } catch (err) {
+      setMatches(setContact(before))
       window.alert((err as Error).message)
     }
   }
@@ -125,6 +146,7 @@ export default function FavoritesPage() {
       matches={matches}
       onToggleFavorite={handleToggleFavorite}
       onRequestContact={handleRequestContact}
+      onCancelContact={handleCancelContact}
       title="รายการโปรด"
       roundLabel={roundLabel}
     />

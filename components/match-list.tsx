@@ -22,12 +22,28 @@ const TIER_BADGE: Record<MatchResult['tier'], { label: string; className: string
 function ContactAction({
   match,
   onRequest,
+  onCancel,
 }: {
   match: MatchResult
   onRequest: (teacherId: string) => void
+  onCancel?: (requestId: string) => void
 }) {
   const c = match.contact
   const base = 'mt-1 w-fit rounded-lg px-3 py-1.5 text-xs'
+  if (c?.status === 'cancelled') {
+    if (c.sendsLeft <= 0) {
+      return <span className={`${base} bg-zinc-100 text-zinc-500`}>ส่งคำขอครบ 3 ครั้งแล้ว</span>
+    }
+    return (
+      <button
+        type="button"
+        onClick={() => onRequest(match.teacher.id)}
+        className={`${base} btn-brand-secondary`}
+      >
+        ส่งคำขออีกครั้ง (เหลือ {c.sendsLeft} ครั้ง)
+      </button>
+    )
+  }
   if (!c) {
     return (
       <button
@@ -56,7 +72,22 @@ function ContactAction({
       </Link>
     )
   }
-  return <span className={`${base} bg-zinc-100 text-zinc-500`}>ส่งคำขอแล้ว — รออีกฝ่ายตอบ</span>
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-2">
+      <span className="rounded-lg bg-zinc-100 px-3 py-1.5 text-xs text-zinc-500">
+        ส่งคำขอแล้ว — รออีกฝ่ายตอบ
+      </span>
+      {onCancel && (
+        <button
+          type="button"
+          onClick={() => onCancel(c.requestId)}
+          className="text-xs text-zinc-500 underline"
+        >
+          ยกเลิกคำขอ
+        </button>
+      )}
+    </div>
+  )
 }
 
 type FilterTab = 'all' | 'subject' | 'destination'
@@ -67,6 +98,7 @@ interface MatchListProps {
   matches: MatchResult[]
   onToggleFavorite: (teacherId: string, currentlyFavorited: boolean) => void
   onRequestContact?: (teacherId: string) => void
+  onCancelContact?: (requestId: string) => void
   title?: string
   showSettingsLink?: boolean
   roundLabel?: string | null
@@ -78,6 +110,7 @@ export function MatchList({
   matches,
   onToggleFavorite,
   onRequestContact,
+  onCancelContact,
   title = 'ผลการจับคู่',
   showSettingsLink = false,
   roundLabel = null,
@@ -291,7 +324,7 @@ export function MatchList({
                   {m.teacher.benefit_note}
                 </p>
               )}
-              {onRequestContact && <ContactAction match={m} onRequest={onRequestContact} />}
+              {onRequestContact && <ContactAction match={m} onRequest={onRequestContact} onCancel={onCancelContact} />}
               {m.teacher.facebook_url && (
                 <a
                   href={m.teacher.facebook_url}

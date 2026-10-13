@@ -40,7 +40,7 @@ export default function ContactsPage() {
     load()
   }, [load])
 
-  async function respond(id: string, action: 'accept' | 'decline') {
+  async function respond(id: string, action: 'accept' | 'decline' | 'cancel') {
     setBusyId(id)
     try {
       await withAuthRetry((token) => respondContactRequest(token, id, action))
@@ -151,8 +151,22 @@ export default function ContactsPage() {
               <span className="text-sm font-semibold">{c.maskedName}</span>
               <p className="text-xs text-zinc-600">{summaryText(c)}</p>
               <p className="text-xs text-zinc-500">
-                {c.status === 'pending' ? 'รออีกฝ่ายตอบ' : 'อีกฝ่ายไม่สะดวกติดต่อ'}
+                {c.status === 'pending'
+                  ? 'รออีกฝ่ายตอบ'
+                  : c.status === 'cancelled'
+                    ? 'ยกเลิกคำขอแล้ว'
+                    : 'อีกฝ่ายไม่สะดวกติดต่อ'}
               </p>
+              {c.status === 'pending' && (
+                <button
+                  type="button"
+                  disabled={busyId === c.id}
+                  onClick={() => respond(c.id, 'cancel')}
+                  className="w-fit text-xs text-zinc-500 underline"
+                >
+                  ยกเลิกคำขอ
+                </button>
+              )}
             </div>
           ))}
         </section>
