@@ -109,7 +109,7 @@ export function MatchList({
 
   if (matches.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-lg px-4 pb-6 text-center text-zinc-600">
+      <div className="mx-auto w-full max-w-lg px-4 pb-6 text-zinc-600">
         <TopBar
           title={title}
           right={
@@ -119,10 +119,12 @@ export function MatchList({
             </>
           }
         />
-        <p className="text-lg">ยังไม่พบคู่สับเปลี่ยนในตอนนี้</p>
-        <p className="text-sm mt-1">
-          ลองเพิ่มจังหวัดปลายทางให้กว้างขึ้น หรือกลับมาตรวจสอบใหม่ภายหลัง
-        </p>
+        <div className="text-center">
+          <p className="text-lg">ยังไม่พบคู่สับเปลี่ยนในตอนนี้</p>
+          <p className="text-sm mt-1">
+            ลองเพิ่มจังหวัดปลายทางให้กว้างขึ้น หรือกลับมาตรวจสอบใหม่ภายหลัง
+          </p>
+        </div>
       </div>
     )
   }
