@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getLiffProfile, isLiffInClient, liffLogout } from '@/lib/liff'
 import { TopBar } from './top-bar'
-import { ChevronRightIcon, LogOutIcon, PencilIcon } from './icons'
+import { CheckIcon, ChevronRightIcon, CopyIcon, LogOutIcon, PencilIcon } from './icons'
 import type { Teacher } from '@/lib/types'
 
 interface LineProfile {
@@ -66,6 +66,7 @@ export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
   const [lineProfile, setLineProfile] = useState<LineProfile | null>(null)
   // Logging out only makes sense in an external browser — see isLiffInClient.
   const [canLogout, setCanLogout] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     try {
@@ -88,6 +89,25 @@ export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
       cancelled = true
     }
   }, [])
+
+  async function handleCopyId() {
+    try {
+      await navigator.clipboard.writeText(teacher.id)
+    } catch {
+      // Clipboard API needs a secure context / permission — fall back to a
+      // temporary textarea + execCommand (works inside the LINE browser).
+      const el = document.createElement('textarea')
+      el.value = teacher.id
+      el.style.position = 'fixed'
+      el.style.opacity = '0'
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   function handleLogout() {
     liffLogout()
@@ -118,6 +138,18 @@ export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
           <Link href="/profile/edit" aria-label="แก้ไข" className="text-foreground">
             <PencilIcon className="size-[10px]" />
           </Link>
+        </div>
+        <div className="flex items-center gap-1 text-[12px] leading-[18px] text-zinc-500">
+          <span>ID: </span>
+          <span className="break-all font-mono">{teacher.id}</span>
+          <button
+            type="button"
+            onClick={handleCopyId}
+            aria-label="คัดลอก ID"
+            className="flex size-7 shrink-0 items-center justify-center rounded-full text-foreground"
+          >
+            {copied ? <CheckIcon className="text-[#15803d]" /> : <CopyIcon />}
+          </button>
         </div>
       </div>
 
