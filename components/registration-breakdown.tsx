@@ -4,6 +4,7 @@ import type { RegistrationBreakdown } from '@/lib/types'
 import { BarChartIcon, ChevronRightIcon } from './icons'
 import { TopBar } from './top-bar'
 import { RoundPill } from './round-pill'
+import { RefreshButton } from './refresh-button'
 import { SegmentedTabs } from './segmented-tabs'
 
 type BreakdownTab = 'origin' | 'destination' | 'subject'
@@ -11,6 +12,8 @@ type BreakdownTab = 'origin' | 'destination' | 'subject'
 interface RegistrationBreakdownViewProps {
   breakdown: RegistrationBreakdown
   roundLabel: string | null
+  onRefresh?: () => void
+  refreshing?: boolean
 }
 
 function formatNumber(n: number) {
@@ -73,12 +76,22 @@ function RankedList({ title, rows }: { title: string; rows: { label: string; cou
 export function RegistrationBreakdownView({
   breakdown,
   roundLabel,
+  onRefresh,
+  refreshing = false,
 }: RegistrationBreakdownViewProps) {
   const [tab, setTab] = useState<BreakdownTab>('origin')
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
-      <TopBar title="ผลการจับคู่" right={<RoundPill roundLabel={roundLabel} />} />
+      <TopBar
+        title="ผลการจับคู่"
+        right={
+          <>
+            <RoundPill roundLabel={roundLabel} />
+            {onRefresh && <RefreshButton onClick={onRefresh} refreshing={refreshing} />}
+          </>
+        }
+      />
 
       <div className="relative overflow-hidden rounded-3xl px-4 py-6">
         {/* Two separate Figma images: the gradient card and the 3-bar chart,
