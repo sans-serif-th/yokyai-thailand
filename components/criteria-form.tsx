@@ -250,7 +250,7 @@ export function CriteriaForm({
 
       {error && <p className="text-terracotta text-sm">{error}</p>}
 
-      <button type="button" onClick={handleSave} disabled={saving} className="btn-primary">
+      <button type="button" onClick={handleSave} disabled={saving} className="btn-brand-primary">
         {saving ? 'กำลังบันทึก...' : 'บันทึก'}
       </button>
       <p className="text-xs text-zinc-500 text-center">
