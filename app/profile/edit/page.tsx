@@ -47,7 +47,7 @@ export default function ProfileEditPage() {
   }
 
   if (view === 'loading') {
-    return <PageSkeleton title="โปรไฟล์" backHref="/profile" />
+    return <PageSkeleton title="แก้ไขโปรไฟล์" backHref="/profile" />
   }
 
   if (view === 'error') {

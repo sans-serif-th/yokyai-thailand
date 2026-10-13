@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { TopBar } from './top-bar'
 import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
@@ -15,7 +16,7 @@ interface ProfileEditFormProps {
   onSave: (payload: ProfilePayload) => Promise<void>
 }
 
-// Editing name only — everything else on the profile is passed through
+// Figma "profile-edit" (188:1434). Editing name only — everything else on the profile is passed through
 // unchanged, since PUT /api/teachers replaces the whole record.
 export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFormProps) {
   const [firstName, setFirstName] = useState(() => splitDisplayName(teacher.display_name)[0])
@@ -65,46 +66,62 @@ export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFo
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
-      <TopBar title="โปรไฟล์" backHref="/profile" />
+    <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col gap-5 px-4 pb-6">
+      <TopBar title="แก้ไขโปรไฟล์" backHref="/profile" />
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-semibold">ชื่อ</span>
-        <input
-          className="input-field"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-        />
-      </label>
+      <div className="flex justify-center" aria-hidden>
+        <div className="size-[97px] rounded-full bg-brand-red" />
+      </div>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-semibold">นามสกุล</span>
-        <input
-          className="input-field"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-        />
-        <span className="text-xs text-zinc-500">
-          ชื่อ-นามสกุลของคุณจะถูกเก็บเป็นความลับและไม่แสดงต่อผู้อื่น
-        </span>
-      </label>
+      <div className="flex flex-1 flex-col gap-[13px]">
+        <label className="flex flex-col gap-1">
+          <span className="text-[14px] font-semibold leading-[21px]">ชื่อ*</span>
+          <input
+            className="input-field"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+          />
+        </label>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-semibold">เบอร์โทร (ไม่บังคับ)</span>
-        <input
-          className="input-field"
-          type="tel"
-          inputMode="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
-      </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[14px] font-semibold leading-[21px]">นามสกุล*</span>
+          <input
+            className="input-field"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+          />
+        </label>
 
-      {error && <p className="text-terracotta text-sm">{error}</p>}
+        <label className="flex flex-col gap-1">
+          <span className="text-[14px] font-semibold leading-[21px]">เบอร์โทร (ไม่บังคับ)</span>
+          <input
+            className="input-field"
+            type="tel"
+            inputMode="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+        </label>
 
-      <button type="button" onClick={handleSave} disabled={saving} className="btn-brand-primary">
-        {saving ? 'กำลังบันทึก...' : 'บันทึก'}
-      </button>
+        {error && <p className="text-terracotta text-sm">{error}</p>}
+      </div>
+
+      <div className="flex items-center gap-4">
+        <Link
+          href="/profile"
+          className="btn-brand-secondary flex h-[44px] flex-1 items-center justify-center py-0 text-[14px] font-normal"
+        >
+          ยกเลิก
+        </Link>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="btn-brand-primary h-[44px] flex-1 border border-transparent py-0 text-[14px] font-normal"
+        >
+          {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+        </button>
+      </div>
     </div>
   )
 }
