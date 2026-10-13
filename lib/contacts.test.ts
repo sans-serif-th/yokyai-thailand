@@ -21,6 +21,7 @@ function row(status: ContactRequestRow['status'], requester = 'me'): ContactRequ
     status,
     created_at: '2026-10-13T00:00:00Z',
     responded_at: null,
+    send_count: 1,
   }
 }
 
@@ -45,5 +46,13 @@ describe('toContactView', () => {
   it('reports direction relative to the viewer', () => {
     expect(toContactView(row('pending', 'me'), 'me', other).direction).toBe('outgoing')
     expect(toContactView(row('pending', 'other'), 'me', other).direction).toBe('incoming')
+  })
+})
+
+describe('toContactView sends left', () => {
+  it('counts down for the requester and stays full for the target', () => {
+    const r = { ...row('cancelled', 'me'), send_count: 2 }
+    expect(toContactView(r, 'me', other).sendsLeft).toBe(1)
+    expect(toContactView(r, 'other', other).sendsLeft).toBe(3)
   })
 })

@@ -1,5 +1,6 @@
 import type {
   ContactRequestView,
+  ContactStatus,
   Destination,
   MatchResult,
   PlatformStats,
@@ -133,18 +134,22 @@ export async function fetchContacts(idToken: string): Promise<{ contacts: Contac
   return cached('contacts', () => authedFetch('/api/contacts', idToken))
 }
 
-export async function sendContactRequest(idToken: string, teacherId: string): Promise<void> {
-  await authedFetch('/api/contacts', idToken, {
+export async function sendContactRequest(
+  idToken: string,
+  teacherId: string
+): Promise<{ status: ContactStatus; requestId: string }> {
+  const result = await authedFetch('/api/contacts', idToken, {
     method: 'POST',
     body: JSON.stringify({ teacherId }),
   })
   invalidateCache('contacts', 'matches', 'favorites')
+  return result
 }
 
 export async function respondContactRequest(
   idToken: string,
   requestId: string,
-  action: 'accept' | 'decline'
+  action: 'accept' | 'decline' | 'cancel'
 ): Promise<void> {
   await authedFetch(`/api/contacts/${requestId}`, idToken, {
     method: 'PATCH',

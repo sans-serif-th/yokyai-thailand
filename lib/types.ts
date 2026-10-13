@@ -60,7 +60,11 @@ export interface ProfilePayload {
   destinations: { province: string; district: string | null; zone: string | null }[]
 }
 
-export type ContactStatus = 'pending' | 'accepted' | 'declined'
+export type ContactStatus = 'pending' | 'accepted' | 'declined' | 'cancelled'
+
+// A requester may send a contact request to the same person at most this many
+// times (cancel + resend counts each send).
+export const MAX_CONTACT_SENDS = 3
 
 // Which way a contact request points relative to the viewer.
 export type ContactDirection = 'incoming' | 'outgoing'
@@ -70,6 +74,8 @@ export interface MatchContact {
   requestId: string
   status: ContactStatus
   direction: ContactDirection
+  // Sends the viewer has left for this person (outgoing requests only).
+  sendsLeft: number
 }
 
 export interface MatchResult {
@@ -86,6 +92,7 @@ export interface ContactRequestView {
   id: string
   status: ContactStatus
   direction: ContactDirection
+  sendsLeft: number
   createdAt: string
   teacherId: string
   summary: { position: string; teachingGroup: string | null; originProvince: string }
