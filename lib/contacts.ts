@@ -1,4 +1,5 @@
 import { findMatchesFor, maskName } from './matching'
+import { notifyContact, type ContactNotice } from './line-notify'
 import { createServiceClient } from './supabase-server'
 import type {
   ContactDirection,
@@ -80,6 +81,22 @@ function requireOwnLineId(me: Teacher) {
   if (!me.line_id) throw new Error('กรุณาเพิ่ม LINE ID ในหน้าแก้ไขโปรไฟล์ก่อน')
 }
 
+// Looks up the other teacher's LINE user id and pushes a notice. Best-effort:
+// notifyContact never throws, and a lookup failure is swallowed the same way.
+async function notifyTeacher(teacherId: string, notice: ContactNotice): Promise<void> {
+  try {
+    const supabase = createServiceClient()
+    const { data } = await supabase
+      .from('teachers')
+      .select('line_user_id')
+      .eq('id', teacherId)
+      .maybeSingle()
+    await notifyContact((data as { line_user_id: string | null } | null)?.line_user_id, notice)
+  } catch (err) {
+    console.error('contact notify lookup failed', err)
+  }
+}
+
 async function rowsFor(teacherId: string): Promise<ContactRequestRow[]> {
   const supabase = createServiceClient()
   const { data, error } = await supabase
@@ -157,6 +174,7 @@ export async function createContactRequest(
         .update({ status: 'accepted', responded_at: new Date().toISOString() })
         .eq('id', existing.id)
       if (error) throw error
+      await notifyTeacher(targetId, 'request_accepted')
       return { status: 'accepted', requestId: existing.id }
     }
     if (existing.status === 'declined') throw new Error('คำขอติดต่อนี้ถูกปฏิเสธแล้ว')
@@ -179,6 +197,7 @@ export async function createContactRequest(
         })
         .eq('id', existing.id)
       if (error) throw error
+      await notifyTeacher(targetId, 'request_received')
       return { status: 'pending', requestId: existing.id }
     }
     return { status: existing.status, requestId: existing.id }
@@ -190,6 +209,7 @@ export async function createContactRequest(
     .select('id')
     .single()
   if (error) throw error
+  await notifyTeacher(targetId, 'request_received')
   return { status: 'pending', requestId: (created as { id: string }).id }
 }
 
@@ -219,6 +239,7 @@ export async function respondToContactRequest(
     })
     .eq('id', requestId)
   if (updateError) throw updateError
+  if (accept) await notifyTeacher(row.requester_id, 'request_accepted')
 }
 
 // Only the requester can cancel, and only while the request is still pending.
