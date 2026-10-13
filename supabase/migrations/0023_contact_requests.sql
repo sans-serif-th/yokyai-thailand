@@ -1,6 +1,7 @@
 -- Contact requests: one teacher asks a matched teacher to share contact
--- details. Name + phone are revealed to BOTH sides only once the target
--- accepts (status = 'accepted'); nothing is shown while pending/declined.
+-- details. Name + LINE ID (plus phone / Facebook if filled in) are revealed to
+-- BOTH sides only once the target accepts (status = 'accepted'); nothing is
+-- shown while pending/declined.
 -- Run once in the Supabase SQL editor. See supabase/schema.sql for the
 -- equivalent fresh-install definition.
 
