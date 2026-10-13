@@ -1,4 +1,5 @@
 import { ApiError } from './api'
+import { authLog } from './auth-log'
 import { getLiffIdToken, initLiff, isIdTokenExpired, liffLogin, liffLogout } from './liff'
 
 // Several callers (page + bottom nav) can hit an expired token at once;
@@ -6,7 +7,8 @@ import { getLiffIdToken, initLiff, isIdTokenExpired, liffLogin, liffLogout } fro
 // through LINE login twice.
 let reauthStarted = false
 
-function reauthenticate(): Promise<never> {
+function reauthenticate(reason: string): Promise<never> {
+  authLog('reauth', `${reauthStarted ? 'skipped (already started)' : 'start'}: ${reason}`)
   if (!reauthStarted) {
     reauthStarted = true
     liffLogout()
@@ -26,7 +28,7 @@ export async function withAuthRetry<T>(
   await initLiff()
   // Re-login up front when the token is already dead, instead of sending a
   // request that is certain to 401 first.
-  if (isIdTokenExpired()) return reauthenticate()
+  if (isIdTokenExpired()) return reauthenticate('ID token expired before request')
   const token = getLiffIdToken()
   try {
     return { token, result: await run(token) }
@@ -42,6 +44,6 @@ export async function withAuthRetry<T>(
     // logout + login cycle. login() redirects the browser, so nothing
     // after this call runs — the page reloads fresh once LINE redirects
     // back, with a brand new token.
-    return reauthenticate()
+    return reauthenticate(`API 401: ${err.message}`)
   }
 }
