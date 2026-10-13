@@ -18,6 +18,12 @@ interface ProfileMenuProps {
   onLoggedOut: () => void
 }
 
+// Shows only the first 4 characters ("3f2a-xx.xxx"); the copy button still
+// copies the full ID.
+function maskId(id: string): string {
+  return `${id.slice(0, 4)}-xx.xxx`
+}
+
 function MenuRow({
   label,
   href,
@@ -141,7 +147,7 @@ export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
         </div>
         <div className="flex items-center gap-1 text-[12px] leading-[18px] text-zinc-500">
           <span>ID: </span>
-          <span className="break-all font-mono">{teacher.id}</span>
+          <span className="font-mono">{maskId(teacher.id)}</span>
           <button
             type="button"
             onClick={handleCopyId}
