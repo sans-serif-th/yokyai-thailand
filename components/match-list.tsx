@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { HeartIcon, HomeIcon } from './icons'
 import { TopBar } from './top-bar'
 import { RoundPill } from './round-pill'
+import { RefreshButton } from './refresh-button'
 import { SegmentedTabs } from './segmented-tabs'
 import { positionLabel } from '@/lib/positions'
 import { serviceTypeAbbr } from '@/lib/service-types'
@@ -27,6 +28,8 @@ interface MatchListProps {
   title?: string
   showSettingsLink?: boolean
   roundLabel?: string | null
+  onRefresh?: () => void
+  refreshing?: boolean
 }
 
 export function MatchList({
@@ -35,6 +38,8 @@ export function MatchList({
   title = 'ผลการจับคู่',
   showSettingsLink = false,
   roundLabel = null,
+  onRefresh,
+  refreshing = false,
 }: MatchListProps) {
   const [filterTab, setFilterTab] = useState<FilterTab>('all')
   const [subjectFilter, setSubjectFilter] = useState('')
@@ -105,7 +110,15 @@ export function MatchList({
   if (matches.length === 0) {
     return (
       <div className="mx-auto w-full max-w-lg px-4 pb-6 text-center text-zinc-600">
-        <TopBar title={title} right={<RoundPill roundLabel={roundLabel} />} />
+        <TopBar
+          title={title}
+          right={
+            <>
+              <RoundPill roundLabel={roundLabel} />
+              {onRefresh && <RefreshButton onClick={onRefresh} refreshing={refreshing} />}
+            </>
+          }
+        />
         <p className="text-lg">ยังไม่พบคู่สับเปลี่ยนในตอนนี้</p>
         <p className="text-sm mt-1">
           ลองเพิ่มจังหวัดปลายทางให้กว้างขึ้น หรือกลับมาตรวจสอบใหม่ภายหลัง
@@ -133,6 +146,7 @@ export function MatchList({
                 ตั้งค่า
               </Link>
             )}
+            {onRefresh && <RefreshButton onClick={onRefresh} refreshing={refreshing} />}
           </>
         }
       />

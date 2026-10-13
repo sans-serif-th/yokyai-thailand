@@ -9,6 +9,7 @@ import {
   fetchProfile,
   fetchRegistrationBreakdown,
   fetchRoundPhase,
+  invalidateCache,
   removeFavorite,
 } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
@@ -34,6 +35,9 @@ export default function MatchesPage() {
   const [devLoading, setDevLoading] = useState(false)
   const [breakdown, setBreakdown] = useState<RegistrationBreakdown | null>(null)
   const [roundLabel, setRoundLabel] = useState<string | null>(null)
+  // Bumped by the refresh button to re-run the bootstrap effect below.
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     async function bootstrap() {
@@ -72,10 +76,18 @@ export default function MatchesPage() {
       } catch (err) {
         setErrorMessage((err as Error).message)
         setView('error')
+      } finally {
+        setRefreshing(false)
       }
     }
     bootstrap()
-  }, [router])
+  }, [router, refreshKey])
+
+  function handleRefresh() {
+    setRefreshing(true)
+    invalidateCache('matches', 'round-phase', 'breakdown', 'profile')
+    setRefreshKey((k) => k + 1)
+  }
 
   async function handleToggleFavorite(teacherId: string, currentlyFavorited: boolean) {
     const flip = (prev: MatchResult[]) =>
@@ -124,7 +136,12 @@ export default function MatchesPage() {
 
   if (view === 'registration') {
     return breakdown ? (
-      <RegistrationBreakdownView breakdown={breakdown} roundLabel={roundLabel} />
+      <RegistrationBreakdownView
+        breakdown={breakdown}
+        roundLabel={roundLabel}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      />
     ) : null
   }
 
@@ -154,6 +171,8 @@ export default function MatchesPage() {
           onToggleFavorite={handleToggleFavorite}
           showSettingsLink
           roundLabel={roundLabel}
+          onRefresh={handleRefresh}
+          refreshing={refreshing}
         />
       )}
     </div>
