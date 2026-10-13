@@ -13,6 +13,7 @@ import {
   type DestinationDraft,
 } from './destination-fields'
 import { FREE_DESTINATION_LIMIT } from '@/lib/package-limits'
+import { LINE_ID_PATTERN } from '@/lib/profile-payload'
 import { upcomingTransferYears } from '@/lib/transfer-rounds'
 import { OnboardingWelcome } from './onboarding-welcome'
 import { StepProgress } from './step-progress'
@@ -82,6 +83,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
   )
   const [lastName, setLastName] = useState(() => splitDisplayName(initialTeacher?.display_name)[1])
   const [phone, setPhone] = useState(initialTeacher?.phone ?? '')
+  const [lineId, setLineId] = useState(initialTeacher?.line_id ?? '')
   const [termsAccepted, setTermsAccepted] = useState(false)
   // Optional marketing opt-in, not persisted anywhere (same as
   // termsAccepted, which is also purely a client-side save gate) — see
@@ -194,6 +196,9 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
 
   function validateStep3(): string | null {
     if (!firstName.trim() || !lastName.trim()) return 'กรุณากรอกชื่อและนามสกุล'
+    if (!lineId.trim()) return 'กรุณากรอก LINE ID'
+    if (!LINE_ID_PATTERN.test(lineId.trim()))
+      return 'LINE ID ไม่ถูกต้อง (4-20 ตัว ใช้ตัวอักษร ตัวเลข . - _ ได้)'
     if (phone.trim() && !/^[0-9+\-\s]{6,20}$/.test(phone.trim()))
       return 'กรุณากรอกเบอร์โทรให้ถูกต้อง'
     if (!termsAccepted) return 'กรุณายอมรับข้อกำหนดและเงื่อนไขก่อนบันทึกโปรไฟล์'
@@ -243,7 +248,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
         transferYear: transferYear ? Number(transferYear) : null,
         facebookUrl: null,
         phone: phone.trim() || null,
-        lineId: initialTeacher?.line_id ?? null,
+        lineId: lineId.trim(),
         destinations: validDestinations.map((d) => ({
           province: d.province,
           district: d.district.trim() || null,
@@ -348,6 +353,23 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
             </label>
             <p className="text-xs text-zinc-500">
               ชื่อ-นามสกุลของคุณจะถูกเก็บเป็นความลับและไม่แสดงต่อผู้อื่น
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="flex flex-col gap-1">
+              <span className="text-[14px] font-semibold">LINE ID*</span>
+              <input
+                className="input-field"
+                autoCapitalize="none"
+                autoCorrect="off"
+                value={lineId}
+                onChange={(e) => setLineId(e.target.value)}
+              />
+            </label>
+            <p className="text-xs text-zinc-500">
+              ใช้สำหรับให้อีกฝ่ายติดต่อกลับ จะแสดงเฉพาะคู่ที่คุณยอมรับคำขอติดต่อเท่านั้น
+              (LINE → หน้าหลัก → รูปโปรไฟล์ → ID)
             </p>
           </div>
 
