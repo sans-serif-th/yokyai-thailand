@@ -73,6 +73,14 @@ export function isIdTokenExpired(): boolean {
   return decoded.exp * 1000 - Date.now() < 60_000
 }
 
+// True inside the LINE app's own browser (opened from a rich menu / chat).
+// Only valid after init. There, login comes from the LINE app itself and
+// liff.logout() merely clears local state that init restores immediately —
+// the user can't log out of the app from here.
+export function isLiffInClient(): boolean {
+  return liff.isInClient()
+}
+
 export function isLiffLoggedIn(): boolean {
   return liff.isLoggedIn()
 }
