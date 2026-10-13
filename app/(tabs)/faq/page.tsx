@@ -79,7 +79,7 @@ export default function FaqPage() {
                 (item.slides ? (
                   <SlideCarousel />
                 ) : (
-                  <div className="flex flex-col gap-2 p-2.5 text-xs leading-[18px]">
+                  <div className="flex flex-col gap-2 p-2.5 text-[14px] leading-[21px]">
                     {item.qa?.map((x) => (
                       <p key={x.q}>
                         Q: {x.q}
