@@ -112,7 +112,7 @@ export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
       </div>
 
       <div className="flex flex-col gap-[13px]">
-        <MenuRow label="เกี่ยวกับเรา / คำถามที่พบบ่อย (FAQs)" href="/faq" />
+        <MenuRow label="เกี่ยวกับเรา / คำถามที่พบบ่อย (FAQs)" href="/faq?from=profile" />
         <MenuRow label="ข้อกำหนดและเงื่อนไข" href="/terms" />
         <MenuRow label="ช่วยเหลือ" href="https://lin.ee/ZwsPm2X" external />
         <MenuRow

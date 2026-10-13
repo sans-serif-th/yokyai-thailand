@@ -1,6 +1,7 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { Suspense, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icons'
 import { TopBar } from '@/components/top-bar'
 import { SLIDES, SlideIllustration } from '@/components/onboarding-welcome'
@@ -97,12 +98,16 @@ function SlideCarousel() {
   )
 }
 
-export default function FaqPage() {
+// Public page — no login, no bottom nav — so the link can be shared (e.g. in
+// support chat). The profile menu links here with ?from=profile, which adds
+// the back arrow; a shared link has nowhere in-app to go back to.
+function FaqContent() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
+  const fromProfile = useSearchParams().get('from') === 'profile'
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
-      <TopBar title="คำถามที่พบบ่อย (FAQs)" backHref="/profile" />
+      <TopBar title="คำถามที่พบบ่อย (FAQs)" backHref={fromProfile ? '/profile' : undefined} />
 
       <div className="flex flex-col gap-2">
         {FAQ_ITEMS.map((item, i) => {
@@ -140,5 +145,13 @@ export default function FaqPage() {
         })}
       </div>
     </div>
+  )
+}
+
+export default function FaqPage() {
+  return (
+    <Suspense>
+      <FaqContent />
+    </Suspense>
   )
 }
