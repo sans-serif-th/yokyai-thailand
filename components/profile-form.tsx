@@ -412,7 +412,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
                 ฉันยอมรับข้อกำหนดการใช้งาน
               </Link>
               และ
-              <Link href="/terms" target="_blank" className="underline">
+              <Link href="/privacy" target="_blank" className="underline">
                 นโยบายความเป็นส่วนตัว
               </Link>
             </span>

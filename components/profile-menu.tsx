@@ -163,6 +163,7 @@ export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
         <MenuRow label="เกี่ยวกับเรา / คำถามที่พบบ่อย (FAQs)" href="/faq?from=profile" />
         <MenuRow label="คำขอติดต่อ" href="/contacts" />
         <MenuRow label="ข้อกำหนดและเงื่อนไข" href="/terms" />
+        <MenuRow label="นโยบายความเป็นส่วนตัว" href="/privacy" />
         <MenuRow label="ติดต่อ LINE OA" href="https://lin.ee/ZwsPm2X" external />
         {canLogout && (
           <MenuRow
