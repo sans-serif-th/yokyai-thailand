@@ -139,7 +139,7 @@ export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
         </div>
         <div className="flex items-center gap-2">
           <p className="text-[18px] font-semibold leading-[27px]">
-            {lineProfile?.displayName ?? teacher.display_name}
+            {teacher.display_name}
           </p>
           <Link href="/profile/edit" aria-label="แก้ไข" className="text-foreground">
             <PencilIcon className="size-[10px]" />
