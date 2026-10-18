@@ -246,7 +246,6 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
         benefitNote: benefitNote.trim() || null,
         transferRound: transferRound || null,
         transferYear: transferYear ? Number(transferYear) : null,
-        facebookUrl: null,
         phone: phone.trim() || null,
         lineId: lineId.trim(),
         destinations: validDestinations.map((d) => ({

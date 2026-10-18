@@ -325,16 +325,6 @@ export function MatchList({
                 </p>
               )}
               {onRequestContact && <ContactAction match={m} onRequest={onRequestContact} onCancel={onCancelContact} />}
-              {m.teacher.facebook_url && (
-                <a
-                  href={m.teacher.facebook_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-fit text-xs link-accent"
-                >
-                  ติดต่อผ่าน Facebook
-                </a>
-              )}
             </li>
           ))}
         </ul>

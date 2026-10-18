@@ -9,7 +9,6 @@ import type { ProfilePayload } from './types'
 // rather than drifting across two copies.
 
 const BENEFIT_NOTE_MAX_LENGTH = 500
-const FACEBOOK_URL_MAX_LENGTH = 300
 const PHONE_PATTERN = /^[0-9+\-\s]{6,20}$/
 // LINE IDs are 4-20 characters: letters, digits, '.', '-' and '_' (an official
 // account's leading '@' is tolerated).
@@ -46,11 +45,6 @@ export function validateProfilePayload(body: unknown): body is ProfilePayload {
   ) {
     return false
   }
-  if (b.facebookUrl !== null && b.facebookUrl !== undefined) {
-    if (typeof b.facebookUrl !== 'string' || b.facebookUrl.length > FACEBOOK_URL_MAX_LENGTH) {
-      return false
-    }
-  }
   if (b.phone !== null && b.phone !== undefined) {
     if (typeof b.phone !== 'string' || !PHONE_PATTERN.test(b.phone.trim())) return false
   }
@@ -64,6 +58,8 @@ export function validateProfilePayload(body: unknown): body is ProfilePayload {
 }
 
 // Maps a validated payload onto the `teachers` row's snake_case columns.
+// facebook_url is deliberately absent: it is admin-only data (set from the
+// backoffice or by the Facebook import), so the app's upsert must never touch it.
 export function profilePayloadToTeacherRow(payload: ProfilePayload) {
   const isTeacher = requiresTeachingGroup(payload.position)
   return {
@@ -79,7 +75,6 @@ export function profilePayloadToTeacherRow(payload: ProfilePayload) {
     benefit_note: payload.benefitNote ?? null,
     transfer_round: payload.transferRound ?? null,
     transfer_year: payload.transferYear ?? null,
-    facebook_url: payload.facebookUrl?.trim() || null,
     phone: payload.phone?.trim() || null,
     line_id: payload.lineId?.trim() || null,
   }

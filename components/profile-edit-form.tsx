@@ -56,7 +56,6 @@ export function ProfileEditForm({ teacher, destinations, onSave }: ProfileEditFo
         benefitNote: teacher.benefit_note,
         transferRound: teacher.transfer_round,
         transferYear: teacher.transfer_year,
-        facebookUrl: teacher.facebook_url,
         phone: phone.trim() || null,
         lineId: lineId.trim() || null,
         destinations: destinations.map((d) => ({

@@ -54,7 +54,6 @@ export interface ProfilePayload {
   benefitNote: string | null
   transferRound: string | null
   transferYear: number | null
-  facebookUrl: string | null
   phone?: string | null
   lineId?: string | null
   destinations: { province: string; district: string | null; zone: string | null }[]
@@ -86,7 +85,7 @@ export interface MatchResult {
   contact?: MatchContact | null
 }
 
-// One row of /contacts. `name`/`phone`/`facebookUrl` are only filled once the
+// One row of /contacts. `name`/`lineId`/`phone` are only filled once the
 // request is accepted — see toContactView in lib/contacts.ts.
 export interface ContactRequestView {
   id: string
@@ -100,7 +99,6 @@ export interface ContactRequestView {
   name: string | null
   lineId: string | null
   phone: string | null
-  facebookUrl: string | null
 }
 
 export interface Round {
