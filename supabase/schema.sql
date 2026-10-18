@@ -170,8 +170,11 @@ create index idx_destinations_province on destinations (province);
 -- favorites/round_subscriptions since both reference it.
 create table rounds (
   id uuid primary key default gen_random_uuid(),
-  label text not null unique,
+  label text not null,
   is_active boolean not null default false,
+
+  -- Each role (categories.code) runs its own rounds. See 0030.
+  category text not null default 'teacher' references categories(code),
 
   -- NULL = registration/dashboard-only phase, indefinitely (or "not yet
   -- scheduled"). A timestamp <= now() = matching phase is open; a future
@@ -180,13 +183,17 @@ create table rounds (
   -- (isRoundInMatchingPhase) and lib/matching.ts (findMatchesFor).
   matching_opens_at timestamptz,
 
-  created_at timestamptz not null default now()
+  -- NULL = matching stays open until an admin sets a close time.
+  matching_closes_at timestamptz,
+
+  created_at timestamptz not null default now(),
+
+  unique (category, label),
+  check (matching_closes_at is null or matching_opens_at is null or matching_closes_at > matching_opens_at)
 );
 
--- At most one round can be active at a time — a partial unique index on a
--- boolean column that's only indexed where true works because every
--- indexed row then shares the same value, so a second true row collides.
-create unique index only_one_active_round on rounds (is_active) where is_active;
+-- At most one active round per role.
+create unique index only_one_active_round_per_category on rounds (category) where is_active;
 
 -- A teacher saving another teacher's match card for later. Direction matters
 -- (teacher_id favorited favorited_teacher_id) — favoriting is not mutual.

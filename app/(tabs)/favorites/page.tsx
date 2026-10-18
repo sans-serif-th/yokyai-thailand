@@ -23,6 +23,7 @@ type View = 'loading' | 'registration' | 'ready' | 'error'
 export default function FavoritesPage() {
   const router = useRouter()
   const [view, setView] = useState<View>('loading')
+  const [closed, setClosed] = useState(false)
   const [matches, setMatches] = useState<MatchResult[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [breakdown, setBreakdown] = useState<RegistrationBreakdown | null>(null)
@@ -41,7 +42,7 @@ export default function FavoritesPage() {
           if (!profile.teacher) return { state: 'onboarding' as const }
           if (!phase.inMatchingPhase) {
             const breakdown = await fetchRegistrationBreakdown(token)
-            return { state: 'registration' as const, breakdown, roundLabel: phase.roundLabel }
+            return { state: 'registration' as const, breakdown, roundLabel: phase.roundLabel, closed: phase.phase === 'closed' }
           }
           const { matches } = await fetchFavorites(token)
           return { state: 'ready' as const, matches, roundLabel: phase.roundLabel }
@@ -55,6 +56,7 @@ export default function FavoritesPage() {
         if (result.state === 'registration') {
           setBreakdown(result.breakdown)
           setRoundLabel(result.roundLabel)
+          setClosed(result.closed)
           setView('registration')
           return
         }
@@ -128,7 +130,7 @@ export default function FavoritesPage() {
 
   if (view === 'registration') {
     return breakdown ? (
-      <RegistrationBreakdownView breakdown={breakdown} roundLabel={roundLabel} />
+      <RegistrationBreakdownView breakdown={breakdown} roundLabel={roundLabel} closed={closed} />
     ) : null
   }
 

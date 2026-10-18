@@ -50,6 +50,7 @@ function MatchesContent() {
   // "ดูคำขอ" links on match cards can open it directly.
   const tab: MatchesTab = useSearchParams().get('tab') === 'contacts' ? 'contacts' : 'matches'
   const [view, setView] = useState<View>('loading')
+  const [closed, setClosed] = useState(false)
   const [matches, setMatches] = useState<MatchResult[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [devMode, setDevMode] = useState(false)
@@ -74,7 +75,7 @@ function MatchesContent() {
           if (!profile.teacher) return { state: 'onboarding' as const }
           if (!phase.inMatchingPhase) {
             const breakdown = await fetchRegistrationBreakdown(token)
-            return { state: 'registration' as const, breakdown, roundLabel: phase.roundLabel }
+            return { state: 'registration' as const, breakdown, roundLabel: phase.roundLabel, closed: phase.phase === 'closed' }
           }
           const { matches } = await fetchMatches(token)
           return { state: 'ready' as const, matches, roundLabel: phase.roundLabel }
@@ -88,6 +89,7 @@ function MatchesContent() {
         if (result.state === 'registration') {
           setBreakdown(result.breakdown)
           setRoundLabel(result.roundLabel)
+          setClosed(result.closed)
           setView('registration')
           return
         }
@@ -198,6 +200,7 @@ function MatchesContent() {
       <RegistrationBreakdownView
         breakdown={breakdown}
         roundLabel={roundLabel}
+        closed={closed}
         onRefresh={handleRefresh}
         refreshing={refreshing}
       />

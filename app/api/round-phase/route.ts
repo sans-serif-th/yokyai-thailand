@@ -1,16 +1,28 @@
 import { NextResponse } from 'next/server'
 import { LineAuthError, verifyRequestAuth } from '@/lib/line-auth'
-import { getActiveRound, isRoundInMatchingPhase } from '@/lib/rounds'
+import { DEFAULT_ROLE, getActiveRound, roundPhase } from '@/lib/rounds'
+import { createServiceClient } from '@/lib/supabase-server'
 
 // Cheap phase check called on every matches/favorites load — separate from
 // the heavier registration-breakdown endpoint, which is only fetched when
-// actually still in registration phase.
+// actually not in the matching phase. Rounds are per role, so the phase is
+// that of the caller's own role (no profile yet = the default role).
 export async function GET(request: Request) {
   try {
-    await verifyRequestAuth(request)
-    const round = await getActiveRound()
+    const auth = await verifyRequestAuth(request)
+    const supabase = createServiceClient()
+    const { data: teacher, error } = await supabase
+      .from('teachers')
+      .select('category')
+      .eq('line_user_id', auth.sub)
+      .maybeSingle()
+    if (error) throw error
+
+    const round = await getActiveRound(teacher?.category ?? DEFAULT_ROLE)
+    const phase = roundPhase(round)
     return NextResponse.json({
-      inMatchingPhase: isRoundInMatchingPhase(round),
+      inMatchingPhase: phase === 'matching',
+      phase,
       roundLabel: round?.label ?? null,
     })
   } catch (err) {

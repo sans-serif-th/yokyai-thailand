@@ -31,4 +31,6 @@ Notes
 - Moving a user to another role from the admin edit modal is limited to roles
   with an implementation.
 - Matching is scoped per role; roles never match each other. Rounds
-  (`rounds`, `round_subscriptions`) are still global, not per role.
+  are per role too: each role has its own `rounds` (`category`), one active at
+  a time, with its own matching open/close dates. Create the new role's first
+  round at `/admin?role=<code>` → Round tab, otherwise its matching stays closed.

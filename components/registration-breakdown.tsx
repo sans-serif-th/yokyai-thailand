@@ -12,6 +12,8 @@ type BreakdownTab = 'origin' | 'destination' | 'subject'
 interface RegistrationBreakdownViewProps {
   breakdown: RegistrationBreakdown
   roundLabel: string | null
+  // Matching window already ended for this round.
+  closed?: boolean
   onRefresh?: () => void
   refreshing?: boolean
 }
@@ -76,6 +78,7 @@ function RankedList({ title, rows }: { title: string; rows: { label: string; cou
 export function RegistrationBreakdownView({
   breakdown,
   roundLabel,
+  closed = false,
   onRefresh,
   refreshing = false,
 }: RegistrationBreakdownViewProps) {
@@ -117,11 +120,21 @@ export function RegistrationBreakdownView({
               <BarChartIcon />
             </span>
             <div className="flex flex-col">
-              <p className="text-[14px] font-semibold leading-[21px]">ยังอยู่ในช่วงลงทะเบียน</p>
+              <p className="text-[14px] font-semibold leading-[21px]">{closed ? 'ปิดการจับคู่แล้ว' : 'ยังอยู่ในช่วงลงทะเบียน'}</p>
               <p className="text-xs leading-[18px]">
-                ระบบจะเปิดให้ดูผลการจับคู่
-                <br />
-                เมื่อถึงเวลาที่กำหนด{roundLabel && ` (รอบ ${roundLabel})`}
+                {closed ? (
+                  <>
+                    รอบนี้สิ้นสุดการจับคู่แล้ว
+                    <br />
+                    โปรดรอรอบถัดไป{roundLabel && ` (รอบ ${roundLabel})`}
+                  </>
+                ) : (
+                  <>
+                    ระบบจะเปิดให้ดูผลการจับคู่
+                    <br />
+                    เมื่อถึงเวลาที่กำหนด{roundLabel && ` (รอบ ${roundLabel})`}
+                  </>
+                )}
               </p>
             </div>
           </div>

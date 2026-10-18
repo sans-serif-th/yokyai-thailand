@@ -3,32 +3,43 @@ import { createServiceClient } from './supabase-server'
 import type { PackageCode, Round, SubscriptionStatus } from './types'
 
 export { FREE_DESTINATION_LIMIT, PAID_DESTINATION_LIMIT }
+export { isRoundInMatchingPhase, roundPhase, validateRoundInput } from './round-phase'
+export type { RoundInput, RoundPhase } from './round-phase'
 
-export async function getActiveRound(): Promise<Round | null> {
+export const DEFAULT_ROLE = 'teacher'
+
+// Each role (categories.code) has its own rounds, with at most one active.
+export async function getActiveRound(category: string = DEFAULT_ROLE): Promise<Round | null> {
   const supabase = createServiceClient()
-  const { data, error } = await supabase.from('rounds').select('*').eq('is_active', true).maybeSingle()
+  const { data, error } = await supabase
+    .from('rounds')
+    .select('*')
+    .eq('is_active', true)
+    .eq('category', category)
+    .maybeSingle()
   if (error) throw error
   return data
 }
 
-// A round is in its matching phase once matching_opens_at is set and has
-// passed. NULL (not yet scheduled) or a future timestamp means the round
-// is still in its registration/dashboard-only phase — see
-// components/registration-breakdown.tsx. No active round at all -> false
-// (fail closed: never show live results without a real round context —
-// the opposite of getSubscriptionStatusFor's fail-open below, since that
-// protects a paying user's destination limit, this protects match-result
-// integrity). Pure/no I/O — takes an already-fetched Round so callers that
-// already have one never need a second round-trip.
-export function isRoundInMatchingPhase(round: Round | null): boolean {
-  return !!round?.matching_opens_at && new Date(round.matching_opens_at) <= new Date()
+async function getTeacherCategory(lineUserId: string): Promise<string> {
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from('teachers')
+    .select('category')
+    .eq('line_user_id', lineUserId)
+    .maybeSingle()
+  if (error) throw error
+  return data?.category ?? DEFAULT_ROLE
 }
 
 // No active round configured is a misconfiguration, not something a real
 // user should be blocked by — fail open at the paid limit (matches the
 // ceiling this app already used informally before packages existed).
-export async function getSubscriptionStatusFor(lineUserId: string): Promise<SubscriptionStatus> {
-  const round = await getActiveRound()
+export async function getSubscriptionStatusFor(
+  lineUserId: string,
+  category?: string
+): Promise<SubscriptionStatus> {
+  const round = await getActiveRound(category ?? (await getTeacherCategory(lineUserId)))
   if (!round) {
     return { round: null, package: 'free', verified: false, maxDestinations: PAID_DESTINATION_LIMIT, slipUploaded: false }
   }
@@ -68,7 +79,7 @@ export async function getSubscriptionStatusFor(lineUserId: string): Promise<Subs
 // round_subscription as pending ('paid' package, verified_at still null
 // until an admin checks the slip and sets it manually).
 export async function recordSlipUpload(lineUserId: string, slipPath: string): Promise<void> {
-  const round = await getActiveRound()
+  const round = await getActiveRound(await getTeacherCategory(lineUserId))
   if (!round) throw new Error('ไม่มีรอบที่เปิดใช้งานอยู่ในขณะนี้')
 
   const supabase = createServiceClient()

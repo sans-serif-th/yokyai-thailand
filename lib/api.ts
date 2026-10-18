@@ -1,4 +1,5 @@
 import type { NewsItem, NewsSummary } from './news'
+import type { RoundPhase } from './round-phase'
 import type {
   ContactRequestView,
   ContactStatus,
@@ -110,7 +111,7 @@ export async function fetchStats(idToken: string): Promise<PlatformStats> {
 
 export async function fetchRoundPhase(
   idToken: string
-): Promise<{ inMatchingPhase: boolean; roundLabel: string | null }> {
+): Promise<{ inMatchingPhase: boolean; phase: RoundPhase; roundLabel: string | null }> {
   return cached('round-phase', () => authedFetch('/api/round-phase', idToken))
 }
 
