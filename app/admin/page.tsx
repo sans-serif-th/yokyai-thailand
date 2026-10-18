@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { Suspense, useEffect, useState, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import type { AdminStatus, Round, Teacher, Destination } from '@/lib/types'
 import { serviceTypeAbbr, SERVICE_TYPES } from '@/lib/service-types'
 
@@ -62,7 +63,20 @@ function isRoundInMatchingPhase(round: Round | null) {
   return !!round?.matching_opens_at && new Date(round.matching_opens_at) <= new Date()
 }
 
+// The dashboard shows one role's data at a time, chosen from the side menu
+// (/admin?role=<code>, see app/admin/layout.tsx). Teacher is the default.
+const DEFAULT_ROLE = 'teacher'
+
 export default function AdminDashboard() {
+  return (
+    <Suspense>
+      <AdminDashboardContent />
+    </Suspense>
+  )
+}
+
+function AdminDashboardContent() {
+  const role = useSearchParams().get('role') ?? DEFAULT_ROLE
   const [authed, setAuthed] = useState(false)
   const [token, setToken] = useState<string | null>(null)
   const [username, setUsername] = useState('')
@@ -83,7 +97,6 @@ export default function AdminDashboard() {
   const [destinationFilter, setDestinationFilter] = useState('')
   const [serviceTypeFilter, setServiceTypeFilter] = useState('')
   const [roundFilter, setRoundFilter] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
   const [roles, setRoles] = useState<{ code: string; name_th: string; hasImplementation: boolean }[]>([])
 
   const [activeRound, setActiveRound] = useState<Round | null>(null)
@@ -106,7 +119,6 @@ export default function AdminDashboard() {
       if (destinationFilter && !t.destinations?.some((d) => d.province === destinationFilter)) return false
       if (serviceTypeFilter && t.service_type !== serviceTypeFilter) return false
       if (roundFilter && roundKey(t) !== roundFilter) return false
-      if (categoryFilter && t.category !== categoryFilter) return false
       return true
     })
   }, [
@@ -117,13 +129,12 @@ export default function AdminDashboard() {
     destinationFilter,
     serviceTypeFilter,
     roundFilter,
-    categoryFilter,
   ])
 
   // Reset to page 1 whenever the filtered set changes underneath the current page.
   useEffect(() => {
     setPage(1)
-  }, [sourceFilter, subjectFilter, originFilter, destinationFilter, serviceTypeFilter, roundFilter, categoryFilter])
+  }, [sourceFilter, subjectFilter, originFilter, destinationFilter, serviceTypeFilter, roundFilter])
 
   const totalPages = Math.max(1, Math.ceil(filteredTeachers.length / pageSize))
   const paginatedTeachers = useMemo(
@@ -180,9 +191,11 @@ export default function AdminDashboard() {
     if (storedToken) {
       setToken(storedToken)
       setAuthed(true)
-      loadData(storedToken)
+      // Role changes (side menu) reload the data for that role.
+      loadData(storedToken, role)
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -207,14 +220,15 @@ export default function AdminDashboard() {
       setAuthed(true)
       setPassword('')
       setUsername('')
-      loadData(newToken)
+      loadData(newToken, role)
     } catch (err) {
       setPasswordError('Login failed')
     }
   }
 
-  const loadData = async (authToken: string) => {
+  const loadData = async (authToken: string, roleCode: string) => {
     setLoading(true)
+    const scope = `token=${encodeURIComponent(authToken)}&category=${encodeURIComponent(roleCode)}`
     try {
       // Role names for the category column/filter — best-effort, the page
       // works without them (falls back to the raw code).
@@ -224,9 +238,9 @@ export default function AdminDashboard() {
         .catch(() => {})
 
       const [teachersRes, matchesRes, coverageRes, roundRes] = await Promise.all([
-        fetch(`/api/admin/teachers?token=${encodeURIComponent(authToken)}`),
-        fetch(`/api/admin/potential-matches?token=${encodeURIComponent(authToken)}`),
-        fetch(`/api/admin/all-matches?token=${encodeURIComponent(authToken)}`),
+        fetch(`/api/admin/teachers?${scope}`),
+        fetch(`/api/admin/potential-matches?${scope}`),
+        fetch(`/api/admin/all-matches?${scope}`),
         fetch(`/api/admin/round?token=${encodeURIComponent(authToken)}`),
       ])
 
@@ -442,7 +456,12 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold">
+            Admin Dashboard
+            <span className="ml-3 text-xl font-medium text-gray-500">
+              {roles.find((r) => r.code === role)?.name_th ?? role}
+            </span>
+          </h1>
         </div>
 
         {/* Tabs */}
@@ -506,18 +525,6 @@ export default function AdminDashboard() {
             {/* Filters */}
             <div className="bg-white rounded-lg shadow p-4 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">All Roles</option>
-                  {roles.map((r) => (
-                    <option key={r.code} value={r.code}>
-                      {r.name_th}
-                    </option>
-                  ))}
-                </select>
                 <select
                   value={serviceTypeFilter}
                   onChange={(e) => setServiceTypeFilter(e.target.value)}

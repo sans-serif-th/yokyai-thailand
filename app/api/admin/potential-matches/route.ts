@@ -5,6 +5,8 @@ import { checkAdminToken } from '@/lib/admin-token'
 export async function GET(request: Request) {
   const url = new URL(request.url)
   const token = url.searchParams.get('token')
+  // Role (ประเภทผู้ใช้) the dashboard is showing; omitted = every role.
+  const category = url.searchParams.get('category')
 
   if (!checkAdminToken(token)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
@@ -46,6 +48,7 @@ export async function GET(request: Request) {
         .select(SELECT_FIELDS)
         .eq('source', 'facebook_import')
         .is('claimed_at', null)
+        .match(category ? { category } : {})
         .range(from, to)
     ),
     fetchAllRows((from, to) =>
@@ -54,6 +57,7 @@ export async function GET(request: Request) {
         .select(SELECT_FIELDS)
         .eq('source', 'app')
         .not('claimed_at', 'is', null)
+        .match(category ? { category } : {})
         .range(from, to)
     ),
   ])
