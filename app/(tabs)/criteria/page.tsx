@@ -4,6 +4,8 @@ import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { fetchProfile, fetchSubscriptionStatus, saveProfile } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
+import { DynamicProfileForm } from '@/components/dynamic-profile-form'
+import { getRoleFields } from '@/lib/roles/field-registry'
 import { CriteriaForm } from '@/components/criteria-form'
 import type { OriginDestinationTab } from '@/components/origin-destination-tabs'
 import { PAID_DESTINATION_LIMIT } from '@/lib/package-limits'
@@ -70,6 +72,19 @@ function CriteriaPageContent() {
   }
 
   if (!teacher) return null
+
+  if (teacher.category !== 'teacher' && getRoleFields(teacher.category).length > 0) {
+    return (
+      <DynamicProfileForm
+        category={teacher.category}
+        initialTeacher={teacher}
+        initialDestinations={destinations}
+        onSave={handleSave}
+        maxDestinations={maxDestinations}
+        showUpgradeLink
+      />
+    )
+  }
 
   return (
     <CriteriaForm

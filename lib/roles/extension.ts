@@ -3,7 +3,15 @@ import type { ProfilePayload } from '../types'
 import { fieldsInTable, fieldsToRow, type FieldDef } from './fields'
 import type { RoleImplementation } from './types'
 
-function extensionFields(role: RoleImplementation): readonly FieldDef[] {
+// A stored extension row → profile object keyed by FieldDef.key.
+export function rowToProfile(
+  fields: readonly FieldDef[],
+  row: Record<string, unknown>
+): Record<string, unknown> {
+  return Object.fromEntries(fields.map((f) => [f.key, row[f.column] ?? null]))
+}
+
+export function extensionFields(role: RoleImplementation): readonly FieldDef[] {
   return role.extensionTable ? fieldsInTable(role.fields, role.extensionTable) : []
 }
 
@@ -38,5 +46,5 @@ export async function loadExtension(
     .maybeSingle()
   if (error) throw error
   if (!data) return null
-  return Object.fromEntries(fields.map((f) => [f.key, data[f.column] ?? null]))
+  return rowToProfile(fields, data)
 }

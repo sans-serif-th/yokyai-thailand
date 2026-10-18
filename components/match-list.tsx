@@ -7,6 +7,8 @@ import { TopBar } from './top-bar'
 import { RoundPill } from './round-pill'
 import { RefreshButton } from './refresh-button'
 import { SegmentedTabs } from './segmented-tabs'
+import { getRoleFields } from '@/lib/roles/field-registry'
+import { cardLinesFromFields } from '@/lib/roles/fields'
 import { positionLabel } from '@/lib/positions'
 import { serviceTypeAbbr } from '@/lib/service-types'
 import { subjectLabel } from '@/lib/subject-label'
@@ -306,12 +308,15 @@ export function MatchList({
                 </span>
               )}
               <p className="text-xs text-zinc-600">
-                {[
-                  positionLabel(m.teacher.position),
-                  serviceTypeAbbr(m.teacher.service_type),
-                  m.teacher.teaching_group ? teachingGroupLabel(m.teacher.teaching_group) : null,
-                  m.teacher.subject ? subjectLabel(m.teacher.subject) : null,
-                ]
+                {(m.teacher.category === 'teacher' || !getRoleFields(m.teacher.category).length
+                  ? [
+                      positionLabel(m.teacher.position),
+                      serviceTypeAbbr(m.teacher.service_type),
+                      m.teacher.teaching_group ? teachingGroupLabel(m.teacher.teaching_group) : null,
+                      m.teacher.subject ? subjectLabel(m.teacher.subject) : null,
+                    ]
+                  : cardLinesFromFields(getRoleFields(m.teacher.category), m.teacher.profile)
+                )
                   .filter(Boolean)
                   .join(' · ')}
               </p>

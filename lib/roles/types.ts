@@ -6,6 +6,8 @@ import type { MatchResult, ProfilePayload, Teacher, Destination } from '../types
 export type PairRow = Pick<Teacher, 'position' | 'service_type' | 'subject' | 'origin_province'> & {
   category?: string | null
   destinations?: Destination[]
+  // Role-specific fields (extension table), when the query selected them.
+  profile?: Record<string, unknown> | null
 }
 
 // Everything that differs per role (ประเภทผู้ใช้): what a registration looks
