@@ -291,6 +291,10 @@ create table if not exists news (
   body text,                       -- paragraphs separated by a blank line
   steps jsonb not null default '[]'::jsonb,  -- [{title, description, image_url}]
   published boolean not null default true,
+  -- Optional show-from / show-until (inclusive, Thai calendar day); migration 0029.
+  publish_start date,
+  publish_end date,
+  check (publish_start is null or publish_end is null or publish_start <= publish_end),
   sort_order int not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

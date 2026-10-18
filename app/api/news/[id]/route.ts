@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { LineAuthError, verifyRequestAuth } from '@/lib/line-auth'
-import { isNewsId } from '@/lib/news'
+import { isNewsId, todayInBangkok } from '@/lib/news'
 import { createServiceClient } from '@/lib/supabase-server'
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -10,11 +10,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     if (!isNewsId(id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     const supabase = createServiceClient()
+    const today = todayInBangkok()
     const { data, error } = await supabase
       .from('news')
       .select('*')
       .eq('id', id)
       .eq('published', true)
+      .or(`publish_start.is.null,publish_start.lte.${today}`)
+      .or(`publish_end.is.null,publish_end.gte.${today}`)
       .maybeSingle()
     if (error) throw error
     if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
