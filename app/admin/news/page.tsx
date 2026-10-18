@@ -3,7 +3,21 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { formatNewsDate, type NewsItem, type NewsPayload, type NewsStep } from '@/lib/news'
+import {
+  formatNewsDate,
+  newsVisibility,
+  type NewsItem,
+  type NewsPayload,
+  type NewsStep,
+  type NewsVisibility,
+} from '@/lib/news'
+
+const VISIBILITY_LABEL: Record<NewsVisibility, string> = {
+  draft: 'draft',
+  scheduled: 'scheduled',
+  live: 'live',
+  expired: 'expired',
+}
 
 const EMPTY_FORM: NewsPayload = {
   layout: 'article',
@@ -14,6 +28,8 @@ const EMPTY_FORM: NewsPayload = {
   body: null,
   steps: [],
   published: true,
+  publish_start: null,
+  publish_end: null,
   sort_order: 0,
 }
 
@@ -73,6 +89,8 @@ export default function AdminNewsPage() {
       body: item.body,
       steps: item.steps,
       published: item.published,
+      publish_start: item.publish_start,
+      publish_end: item.publish_end,
       sort_order: item.sort_order,
     })
   }
@@ -338,6 +356,32 @@ export default function AdminNewsPage() {
               Published (visible in the app)
             </label>
 
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-1 text-sm">
+                Show from (optional)
+                <input
+                  type="date"
+                  className={inputClass}
+                  value={form.publish_start ?? ''}
+                  max={form.publish_end ?? undefined}
+                  onChange={(e) => patchForm({ publish_start: e.target.value || null })}
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm">
+                Show until (optional, inclusive)
+                <input
+                  type="date"
+                  className={inputClass}
+                  value={form.publish_end ?? ''}
+                  min={form.publish_start ?? undefined}
+                  onChange={(e) => patchForm({ publish_end: e.target.value || null })}
+                />
+              </label>
+              <p className="text-xs text-gray-500 sm:col-span-2">
+                Leave a date empty for no limit. Days are Thai calendar days.
+              </p>
+            </div>
+
             <div className="flex gap-2">
               <button
                 type="submit"
@@ -380,7 +424,14 @@ export default function AdminNewsPage() {
                 <p className="truncate font-medium">{item.title}</p>
                 <p className="text-sm text-gray-600">
                   {formatNewsDate(item.published_date)} · {item.layout} · order {item.sort_order} ·{' '}
-                  {item.published ? 'published' : 'draft'}
+                  {VISIBILITY_LABEL[newsVisibility(item)]}
+                  {(item.publish_start || item.publish_end) && (
+                    <>
+                      {' '}
+                      ({item.publish_start ? formatNewsDate(item.publish_start) : '…'} –{' '}
+                      {item.publish_end ? formatNewsDate(item.publish_end) : '…'})
+                    </>
+                  )}
                 </p>
               </div>
               <button onClick={() => startEdit(item)} className="text-blue-600 hover:underline">

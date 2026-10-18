@@ -20,6 +20,10 @@ export interface NewsPayload {
   body: string | null
   steps: NewsStep[]
   published: boolean
+  // Optional visibility window (YYYY-MM-DD, inclusive, Thai calendar day);
+  // null = no limit on that side. Only matters while `published` is true.
+  publish_start: string | null
+  publish_end: string | null
   sort_order: number
 }
 
@@ -61,6 +65,29 @@ export function formatNewsDate(isoDate: string): string {
   const month = THAI_MONTHS_SHORT[Number(m[2]) - 1]
   if (!month) return isoDate
   return `${Number(m[3])} ${month} ${m[1].slice(2)}`
+}
+
+// Today's date in Thailand (YYYY-MM-DD) — the news window is counted in Thai
+// calendar days regardless of the server's timezone.
+export function todayInBangkok(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Bangkok',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now)
+}
+
+export type NewsVisibility = 'draft' | 'scheduled' | 'live' | 'expired'
+
+export function newsVisibility(
+  item: Pick<NewsPayload, 'published' | 'publish_start' | 'publish_end'>,
+  today: string = todayInBangkok()
+): NewsVisibility {
+  if (!item.published) return 'draft'
+  if (item.publish_start && today < item.publish_start) return 'scheduled'
+  if (item.publish_end && today > item.publish_end) return 'expired'
+  return 'live'
 }
 
 export function splitParagraphs(body: string | null): string[] {
@@ -106,6 +133,12 @@ export function validateNewsPayload(body: unknown): body is NewsPayload {
   if (!isOptionalText(b.heading, HEADING_MAX)) return false
   if (!isOptionalText(b.body, BODY_MAX)) return false
   if (typeof b.published !== 'boolean') return false
+  for (const key of ['publish_start', 'publish_end'] as const) {
+    if (b[key] !== null && b[key] !== undefined && !isValidDate(b[key])) return false
+  }
+  if (b.publish_start && b.publish_end && (b.publish_start as string) > (b.publish_end as string)) {
+    return false
+  }
   if (typeof b.sort_order !== 'number' || !Number.isInteger(b.sort_order)) return false
   if (!Array.isArray(b.steps) || b.steps.length > STEPS_MAX) return false
   return b.steps.every((s) => {
@@ -137,6 +170,8 @@ export function newsPayloadToRow(p: NewsPayload) {
       image_url: s.image_url || null,
     })),
     published: p.published,
+    publish_start: p.publish_start || null,
+    publish_end: p.publish_end || null,
     sort_order: p.sort_order,
   }
 }
