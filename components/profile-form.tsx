@@ -13,7 +13,7 @@ import {
   type DestinationDraft,
 } from './destination-fields'
 import { FREE_DESTINATION_LIMIT } from '@/lib/package-limits'
-import { LINE_ID_PATTERN } from '@/lib/profile-payload'
+import { LINE_ID_PATTERN, PHONE_PATTERN } from '@/lib/profile-payload'
 import { upcomingTransferYears } from '@/lib/transfer-rounds'
 import { OnboardingWelcome } from './onboarding-welcome'
 import { StepProgress } from './step-progress'
@@ -209,7 +209,7 @@ export function ProfileForm({
     if (!lineId.trim()) return 'กรุณากรอก LINE ID'
     if (!LINE_ID_PATTERN.test(lineId.trim()))
       return 'LINE ID ไม่ถูกต้อง (4-20 ตัว ใช้ตัวอักษร ตัวเลข . - _ ได้)'
-    if (phone.trim() && !/^[0-9+\-\s]{6,20}$/.test(phone.trim()))
+    if (phone.trim() && !PHONE_PATTERN.test(phone.trim()))
       return 'กรุณากรอกเบอร์โทรให้ถูกต้อง'
     if (!termsAccepted) return 'กรุณายอมรับข้อกำหนดและเงื่อนไขก่อนบันทึกโปรไฟล์'
     return null

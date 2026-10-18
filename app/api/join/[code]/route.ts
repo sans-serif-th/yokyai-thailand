@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { claimInvite, getInviteByCode } from '@/lib/invites'
 import { LineAuthError, verifyRequestAuth } from '@/lib/line-auth'
-import { validateProfilePayload } from '@/lib/profile-payload'
+import { getRoleImplementation } from '@/lib/roles'
 
 // Requires login — never shown to an unverified visitor, even the seed's
 // own previously-public words, until LINE has confirmed who they are.
@@ -29,11 +29,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
     const auth = await verifyRequestAuth(request)
     const body = await request.json()
 
-    if (!validateProfilePayload(body)) {
+    // The seed row already has its role; validate and map with that role's rules.
+    const invite = await getInviteByCode(code)
+    if (!invite) {
+      return NextResponse.json({ error: 'ลิงก์นี้ไม่ถูกต้องหรือถูกใช้งานไปแล้ว' }, { status: 404 })
+    }
+    const role = getRoleImplementation(invite.teacher.category)
+    if (!role || !role.validateProfile(body)) {
       return NextResponse.json({ error: 'Invalid profile payload' }, { status: 400 })
     }
 
-    const teacher = await claimInvite(code, auth.sub, body)
+    const teacher = await claimInvite(code, auth.sub, body, role)
     return NextResponse.json({ teacher })
   } catch (err) {
     if (err instanceof LineAuthError) {

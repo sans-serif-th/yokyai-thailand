@@ -1,4 +1,4 @@
-import { profilePayloadToTeacherRow } from './profile-payload'
+import type { RoleImplementation } from './roles/types'
 import { createServiceClient } from './supabase-server'
 import type { Destination, ProfilePayload, Teacher } from './types'
 
@@ -37,7 +37,8 @@ export async function getInviteByCode(code: string): Promise<InviteLookup | null
 export async function claimInvite(
   code: string,
   lineUserId: string,
-  payload: ProfilePayload
+  payload: ProfilePayload,
+  role: RoleImplementation
 ): Promise<Teacher> {
   const supabase = createServiceClient()
 
@@ -69,7 +70,7 @@ export async function claimInvite(
       source: 'app',
       invite_code: null,
       claimed_at: new Date().toISOString(),
-      ...profilePayloadToTeacherRow(payload),
+      ...role.profileToRow(payload),
     })
     .eq('id', seed.id)
     .select()

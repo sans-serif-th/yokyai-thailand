@@ -6,10 +6,10 @@ import { SERVICE_TYPES, type ServiceTypeCode } from '@/lib/service-types'
 import { POSITIONS, requiresTeachingGroup, type PositionCode } from '@/lib/positions'
 import { districtsForProvince } from '@/lib/districts'
 import { hasZoneOptions, zonesFor } from '@/lib/education-zones'
+import { BENEFIT_NOTE_MAX_LENGTH } from '@/lib/profile-payload'
 import { SectionHeader } from './section-header'
 import { BriefcaseIcon, BuildingIcon } from './icons'
 
-export const BENEFIT_NOTE_MAX_LENGTH = 500
 
 // วิชาเอก is stored as a single comma-separated column, but edited as one
 // input per subject (teachers commonly hold more than one เอก).

@@ -76,6 +76,19 @@ export async function fetchProfile(
   return cached('profile', () => authedFetch('/api/teachers', idToken))
 }
 
+// Name / LINE ID / phone only — see PATCH /api/teachers/contact.
+export async function saveContact(
+  idToken: string,
+  patch: { displayName: string; phone: string | null; lineId: string | null }
+): Promise<{ teacher: Teacher }> {
+  const res = await authedFetch('/api/teachers/contact', idToken, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  })
+  invalidateCache()
+  return res
+}
+
 export async function saveProfile(
   idToken: string,
   payload: ProfilePayload

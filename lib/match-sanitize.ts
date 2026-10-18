@@ -23,14 +23,34 @@ export function maskName(displayName: string): string {
     .join(' ')
 }
 
+// Allow-list: only these columns of another user's row may reach a match
+// result. Every other column is blanked, so a field added to `teachers` later
+// is private until it is deliberately listed here (display_name is masked and
+// admin_status reset separately below).
+export const MATCH_VISIBLE_FIELDS: ReadonlySet<string> = new Set([
+  'id',
+  'position',
+  'service_type',
+  'origin_province',
+  'origin_district',
+  'origin_zone',
+  'current_school',
+  'teaching_group',
+  'subject',
+  'benefit_note',
+  'transfer_round',
+  'transfer_year',
+  'source',
+  'claimed_at',
+  'category',
+])
+
 export function sanitizeForMatch(teacher: Teacher): Teacher {
-  return {
-    ...teacher,
-    display_name: maskName(teacher.display_name),
-    facebook_url: null,
-    phone: null,
-    line_id: null,
-    invite_code: null,
-    admin_status: 'new',
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(teacher)) {
+    out[key] = MATCH_VISIBLE_FIELDS.has(key) ? value : null
   }
+  out.display_name = maskName(teacher.display_name)
+  out.admin_status = 'new'
+  return out as unknown as Teacher
 }

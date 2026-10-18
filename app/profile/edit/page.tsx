@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { fetchProfile, saveProfile } from '@/lib/api'
+import { fetchProfile, saveContact } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { ProfileEditForm } from '@/components/profile-edit-form'
-import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
+import type { ContactPatch } from '@/lib/profile-payload'
+import type { Teacher } from '@/lib/types'
 import { PageSkeleton } from '@/components/page-skeleton'
 
 type View = 'loading' | 'ready' | 'error'
@@ -15,7 +16,6 @@ export default function ProfileEditPage() {
   const [view, setView] = useState<View>('loading')
   const [idToken, setIdToken] = useState<string | null>(null)
   const [teacher, setTeacher] = useState<Teacher | null>(null)
-  const [destinations, setDestinations] = useState<Destination[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
@@ -30,7 +30,6 @@ export default function ProfileEditPage() {
         }
 
         setTeacher(profile.teacher)
-        setDestinations(profile.destinations ?? [])
         setView('ready')
       } catch (err) {
         setErrorMessage((err as Error).message)
@@ -40,9 +39,9 @@ export default function ProfileEditPage() {
     bootstrap()
   }, [router])
 
-  async function handleSave(payload: ProfilePayload) {
+  async function handleSave(patch: ContactPatch) {
     if (!idToken) throw new Error('Not logged in')
-    await withAuthRetry((t) => saveProfile(t, payload))
+    await withAuthRetry((t) => saveContact(t, patch))
     router.push('/profile')
   }
 
@@ -56,5 +55,5 @@ export default function ProfileEditPage() {
 
   if (!teacher) return null
 
-  return <ProfileEditForm teacher={teacher} destinations={destinations} onSave={handleSave} />
+  return <ProfileEditForm teacher={teacher} onSave={handleSave} />
 }
