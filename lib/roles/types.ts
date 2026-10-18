@@ -18,6 +18,9 @@ export interface RoleImplementation {
   // Registration fields; drive validation, the admin edit whitelist and which
   // columns other users may see (lib/roles/fields.ts).
   fields: readonly FieldDef[]
+  // Table (keyed by teacher_id) holding the fields whose FieldDef.table matches.
+  // Omitted for roles that fit entirely on `teachers`.
+  extensionTable?: string
   validateProfile(body: unknown): body is ProfilePayload
   profileToRow(payload: ProfilePayload): Record<string, unknown>
   // The requester's own row is already resolved and that role's matching-phase

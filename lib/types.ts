@@ -37,6 +37,9 @@ export interface Teacher {
   claimed_at: string | null
   category: string
   admin_status: AdminStatus
+  // Role-specific fields from the role's extension table (lib/roles/extension.ts);
+  // only present on the caller's own GET /api/teachers.
+  profile?: Record<string, unknown> | null
 }
 
 export type MatchTier = 'perfect' | 'high' | 'partial'
@@ -70,6 +73,8 @@ export interface ProfilePayload {
   transferYear: number | null
   phone?: string | null
   lineId?: string | null
+  // Fields stored in the role's extension table, keyed by FieldDef.key.
+  profile?: Record<string, unknown>
   destinations: { province: string; district: string | null; zone: string | null }[]
 }
 

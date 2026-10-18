@@ -12,6 +12,9 @@ export interface FieldDef {
   // Column in the table that stores it (snake_case).
   column: string
   label: string
+  // Table holding the column. Omitted = the shared `teachers` table; otherwise
+  // the role's extension table (RoleImplementation.extensionTable).
+  table?: string
   type: FieldType
   required?: boolean
   // select: allowed values.
@@ -82,4 +85,9 @@ export function publicColumns(fields: readonly FieldDef[]): string[] {
 
 export function adminEditableFields(fields: readonly FieldDef[]): FieldDef[] {
   return fields.filter((f) => f.adminEditable)
+}
+
+// Fields stored in `table` (undefined = the shared teachers table).
+export function fieldsInTable(fields: readonly FieldDef[], table?: string): FieldDef[] {
+  return fields.filter((f) => f.table === table)
 }

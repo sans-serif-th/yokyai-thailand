@@ -1,3 +1,4 @@
+import { saveExtension } from './roles/extension'
 import type { RoleImplementation } from './roles/types'
 import { createServiceClient } from './supabase-server'
 import type { Destination, ProfilePayload, Teacher } from './types'
@@ -76,6 +77,8 @@ export async function claimInvite(
     .select()
     .single()
   if (updateError) throw updateError
+
+  await saveExtension(supabase, role, seed.id, payload)
 
   const { error: deleteError } = await supabase
     .from('destinations')

@@ -89,8 +89,9 @@ create table teachers (
   line_user_id text not null unique,
   display_name text not null,
 
-  position text not null references positions(code),
-  service_type text not null references service_types(code),
+  -- Teacher-only: null for other roles (see teachers_teacher_fields_check below).
+  position text references positions(code),
+  service_type text references service_types(code),
 
   origin_province text not null,
   origin_district text,       -- optional, informational only (not used for matching)
@@ -139,13 +140,27 @@ create table teachers (
     check (admin_status in ('new', 'contacted', 'follow_up', 'closed')),
 
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+
+  constraint teachers_teacher_fields_check
+    check (category <> 'teacher' or (position is not null and service_type is not null))
 );
 
+create index idx_teachers_category on teachers (category);
 create index idx_teachers_origin_province on teachers (origin_province);
 create index idx_teachers_teaching_group on teachers (teaching_group);
 create index idx_teachers_service_type on teachers (service_type);
 create index idx_teachers_position on teachers (position);
+
+-- Role-specific registration data: one extension table per role, keyed by the
+-- shared teachers row (docs/adding-a-role.md). 'demo' is the example role.
+create table demo_profiles (
+  teacher_id uuid primary key references teachers(id) on delete cascade,
+  specialty text,
+  years_experience integer check (years_experience between 0 and 60),
+  workplace text
+);
+alter table demo_profiles enable row level security;
 
 -- A teacher's acceptable destination provinces. Optional district/zone
 -- narrow display/filtering only; matching itself only ever compares
