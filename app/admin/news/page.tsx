@@ -19,6 +19,13 @@ const VISIBILITY_LABEL: Record<NewsVisibility, string> = {
   expired: 'expired',
 }
 
+const VISIBILITY_STYLE: Record<NewsVisibility, string> = {
+  live: 'bg-green-100 text-green-800',
+  scheduled: 'bg-blue-100 text-blue-800',
+  expired: 'bg-gray-100 text-gray-600',
+  draft: 'bg-amber-100 text-amber-800',
+}
+
 const EMPTY_FORM: NewsPayload = {
   layout: 'article',
   title: '',
@@ -171,7 +178,7 @@ export default function AdminNewsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold">News</h1>
           <div className="flex gap-2">
@@ -404,44 +411,80 @@ export default function AdminNewsPage() {
           </form>
         )}
 
-        <div className="flex flex-col gap-3">
-          {news.length === 0 && <p className="text-gray-600">No news yet.</p>}
-          {news.map((item) => (
-            <div key={item.id} className="flex items-center gap-4 rounded-lg bg-white p-3 shadow">
-              {item.cover_image_url ? (
-                <Image
-                  src={item.cover_image_url}
-                  alt=""
-                  width={64}
-                  height={64}
-                  unoptimized
-                  className="size-16 shrink-0 rounded object-cover"
-                />
-              ) : (
-                <div className="size-16 shrink-0 rounded bg-gray-200" />
+        <div className="overflow-x-auto rounded-lg bg-white shadow">
+          <table className="w-full min-w-[48rem] text-left text-sm">
+            <thead className="bg-gray-100 text-gray-700">
+              <tr>
+                <th className="w-20 px-3 py-3 font-medium">Cover</th>
+                <th className="px-3 py-3 font-medium">Title</th>
+                <th className="px-3 py-3 font-medium">Date</th>
+                <th className="px-3 py-3 font-medium">Layout</th>
+                <th className="px-3 py-3 text-right font-medium">Order</th>
+                <th className="px-3 py-3 font-medium">Status</th>
+                <th className="px-3 py-3 font-medium">Show window</th>
+                <th className="px-3 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {news.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-3 py-6 text-center text-gray-600">
+                    No news yet.
+                  </td>
+                </tr>
               )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{item.title}</p>
-                <p className="text-sm text-gray-600">
-                  {formatNewsDate(item.published_date)} · {item.layout} · order {item.sort_order} ·{' '}
-                  {VISIBILITY_LABEL[newsVisibility(item)]}
-                  {(item.publish_start || item.publish_end) && (
-                    <>
-                      {' '}
-                      ({item.publish_start ? formatNewsDate(item.publish_start) : '…'} –{' '}
-                      {item.publish_end ? formatNewsDate(item.publish_end) : '…'})
-                    </>
-                  )}
-                </p>
-              </div>
-              <button onClick={() => startEdit(item)} className="text-blue-600 hover:underline">
-                Edit
-              </button>
-              <button onClick={() => handleDelete(item)} className="text-red-600 hover:underline">
-                Delete
-              </button>
-            </div>
-          ))}
+              {news.map((item) => {
+                const visibility = newsVisibility(item)
+                return (
+                  <tr key={item.id} className="align-middle hover:bg-gray-50">
+                    <td className="px-3 py-2">
+                      {item.cover_image_url ? (
+                        <Image
+                          src={item.cover_image_url}
+                          alt=""
+                          width={48}
+                          height={48}
+                          unoptimized
+                          className="size-12 rounded object-cover"
+                        />
+                      ) : (
+                        <div className="size-12 rounded bg-gray-200" />
+                      )}
+                    </td>
+                    <td className="max-w-xs px-3 py-2 font-medium">{item.title}</td>
+                    <td className="whitespace-nowrap px-3 py-2">{formatNewsDate(item.published_date)}</td>
+                    <td className="px-3 py-2">{item.layout}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{item.sort_order}</td>
+                    <td className="px-3 py-2">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${VISIBILITY_STYLE[visibility]}`}
+                      >
+                        {VISIBILITY_LABEL[visibility]}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2 text-gray-600">
+                      {item.publish_start || item.publish_end ? (
+                        <>
+                          {item.publish_start ? formatNewsDate(item.publish_start) : '…'} –{' '}
+                          {item.publish_end ? formatNewsDate(item.publish_end) : '…'}
+                        </>
+                      ) : (
+                        '–'
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right">
+                      <button onClick={() => startEdit(item)} className="mr-3 text-blue-600 hover:underline">
+                        Edit
+                      </button>
+                      <button onClick={() => handleDelete(item)} className="text-red-600 hover:underline">
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
