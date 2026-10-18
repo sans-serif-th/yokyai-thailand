@@ -15,6 +15,8 @@ import {
 import { FREE_DESTINATION_LIMIT } from '@/lib/package-limits'
 import { LINE_ID_PATTERN, PHONE_PATTERN } from '@/lib/profile-payload'
 import { upcomingTransferYears } from '@/lib/transfer-rounds'
+import { DynamicProfileForm } from './dynamic-profile-form'
+import { getRoleFields } from '@/lib/roles/field-registry'
 import { OnboardingWelcome } from './onboarding-welcome'
 import { StepProgress } from './step-progress'
 import { SectionHeader } from './section-header'
@@ -45,12 +47,32 @@ interface ProfileFormProps {
   roles?: RoleInfo[]
 }
 
-export function ProfileForm({
+// Roles with their own field list (anything but teacher) get the generic form;
+// the teacher keeps its hand-written wizard.
+export function ProfileForm(props: ProfileFormProps) {
+  const [chosen, setChosen] = useState<string | undefined>(undefined)
+  const category = props.initialTeacher?.category ?? chosen
+  if (category && category !== 'teacher' && getRoleFields(category).length > 0) {
+    return (
+      <DynamicProfileForm
+        category={category}
+        initialTeacher={props.initialTeacher}
+        initialDestinations={props.initialDestinations}
+        onSave={props.onSave}
+        onBack={props.initialTeacher ? undefined : () => setChosen(undefined)}
+      />
+    )
+  }
+  return <TeacherProfileForm {...props} onCategoryChosen={setChosen} />
+}
+
+function TeacherProfileForm({
   initialTeacher,
   initialDestinations,
   onSave,
   roles,
-}: ProfileFormProps) {
+  onCategoryChosen,
+}: ProfileFormProps & { onCategoryChosen: (code?: string) => void }) {
   const [step, setStep] = useState<Step>(initialTeacher?.position ? 1 : -1)
   // The role picked on the welcome screen; sent only with a first registration
   // (the server ignores it for existing profiles).
@@ -278,6 +300,7 @@ export function ProfileForm({
         roles={roles}
         onContinue={(chosen) => {
           setCategory(chosen)
+          onCategoryChosen(chosen)
           setStep(1)
         }}
       />

@@ -152,3 +152,46 @@ describe('role field definitions', () => {
     for (const c of ['display_name', 'phone', 'line_id']) expect(pub).not.toContain(c)
   })
 })
+
+describe('demo role', () => {
+  it('validates core fields and the extension profile', async () => {
+    const { demoRole } = await import('./demo')
+    const ok = {
+      displayName: 'A B',
+      originProvince: 'เชียงใหม่',
+      profile: { specialty: 'icu', yearsExperience: 3, workplace: 'โรงพยาบาล' },
+      destinations: [{ province: 'ขอนแก่น', district: null, zone: null }],
+    }
+    expect(demoRole.validateProfile(ok)).toBe(true)
+    expect(demoRole.validateProfile({ ...ok, profile: { ...ok.profile, specialty: 'x' } })).toBe(false)
+    expect(demoRole.validateProfile({ ...ok, profile: undefined })).toBe(false)
+    expect(demoRole.validateProfile({ ...ok, profile: { ...ok.profile, yearsExperience: 99 } })).toBe(false)
+    expect(demoRole.profileToRow(ok as never)).toMatchObject({ display_name: 'A B', origin_province: 'เชียงใหม่' })
+    expect(demoRole.profileToRow(ok as never)).not.toHaveProperty('specialty')
+  })
+
+  it('pairs only reciprocal provinces with the same specialty', async () => {
+    const { demoRole } = await import('./demo')
+    const a = { origin_province: 'X', destinations: [{ province: 'Y' }], profile: { specialty: 'icu' } } as never
+    const b = { origin_province: 'Y', destinations: [{ province: 'X' }], profile: { specialty: 'icu' } } as never
+    const c = { origin_province: 'Y', destinations: [{ province: 'X' }], profile: { specialty: 'er' } } as never
+    expect(demoRole.isMutualPair(a, b)).toBe(true)
+    expect(demoRole.isMutualPair(a, c)).toBe(false)
+  })
+
+  it('sanitize hides non-public data but keeps public profile keys', async () => {
+    // The demo role is registered only with dev tools on.
+    vi.stubEnv('NEXT_PUBLIC_DEV_TOOLS', '1')
+    vi.resetModules()
+    const { sanitizeForMatch } = await import('../match-sanitize')
+    const out = sanitizeForMatch({
+      id: '1', category: 'demo', display_name: 'สมชาย ใจดี', phone: '0812345678', line_id: 'abc1234',
+      origin_province: 'X', profile: { specialty: 'icu', secret: 'nope' },
+    } as never) as unknown as Record<string, unknown>
+    expect(out.phone).toBeNull()
+    expect(out.line_id).toBeNull()
+    expect(out.origin_province).toBe('X')
+    expect(out.profile).toEqual({ specialty: 'icu' })
+    vi.unstubAllEnvs()
+  })
+})

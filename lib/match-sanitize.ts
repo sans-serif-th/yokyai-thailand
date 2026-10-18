@@ -1,3 +1,4 @@
+import { getRoleFields } from './roles/field-registry'
 import { publicColumns } from './roles/fields'
 import { TEACHER_FIELDS } from './roles/teacher-fields'
 import type { Teacher } from './types'
@@ -39,10 +40,20 @@ export const MATCH_VISIBLE_FIELDS: ReadonlySet<string> = new Set([
   ...publicColumns(TEACHER_FIELDS),
 ])
 
+const CORE_VISIBLE = ['id', 'source', 'claimed_at', 'category']
+
 export function sanitizeForMatch(teacher: Teacher): Teacher {
+  const fields = getRoleFields(teacher.category ?? 'teacher')
+  const visible = new Set([...CORE_VISIBLE, ...publicColumns(fields)])
   const out: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(teacher)) {
-    out[key] = MATCH_VISIBLE_FIELDS.has(key) ? value : null
+    out[key] = visible.has(key) ? value : null
+  }
+  // Role-specific fields (extension table): keep only the public keys.
+  if (teacher.profile) {
+    out.profile = Object.fromEntries(
+      fields.filter((f) => f.public && f.table && f.key in teacher.profile!).map((f) => [f.key, teacher.profile![f.key]])
+    )
   }
   out.display_name = maskName(teacher.display_name)
   out.admin_status = 'new'

@@ -17,8 +17,13 @@ export interface FieldDef {
   table?: string
   type: FieldType
   required?: boolean
-  // select: allowed values.
+  // select: allowed values, and optional Thai labels for display.
   options?: readonly string[]
+  optionLabels?: Record<string, string>
+  // number: unit shown after the value on the card.
+  suffix?: string
+  // Shown on the match card (see cardLinesFromFields).
+  card?: boolean
   // text: required format (checked against the trimmed value).
   pattern?: RegExp
   // text: maximum length.
@@ -90,4 +95,17 @@ export function adminEditableFields(fields: readonly FieldDef[]): FieldDef[] {
 // Fields stored in `table` (undefined = the shared teachers table).
 export function fieldsInTable(fields: readonly FieldDef[], table?: string): FieldDef[] {
   return fields.filter((f) => f.table === table)
+}
+
+// Display text of the `card` fields, in definition order, for roles without a
+// hand-written match card. `values` is keyed by FieldDef.key.
+export function cardLinesFromFields(fields: readonly FieldDef[], values: Record<string, unknown> | null | undefined): string[] {
+  if (!values) return []
+  const lines: string[] = []
+  for (const f of fields) {
+    const v = values[f.key]
+    if (!f.card || v === null || v === undefined || v === '') continue
+    lines.push(`${f.optionLabels?.[String(v)] ?? v}${f.type === 'number' && f.suffix ? ` ${f.suffix}` : ''}`)
+  }
+  return lines
 }
