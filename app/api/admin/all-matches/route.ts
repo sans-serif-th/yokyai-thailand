@@ -15,6 +15,8 @@ import { checkAdminToken } from '@/lib/admin-token'
 export async function GET(request: Request) {
   const url = new URL(request.url)
   const token = url.searchParams.get('token')
+  // Role (ประเภทผู้ใช้) the dashboard is showing; omitted = every role.
+  const category = url.searchParams.get('category')
 
   if (!checkAdminToken(token)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
@@ -32,6 +34,7 @@ export async function GET(request: Request) {
         *,
         destinations (*)
       `)
+      .match(category ? { category } : {})
       .range(from, to)
   )
 

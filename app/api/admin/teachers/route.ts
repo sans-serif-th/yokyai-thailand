@@ -6,6 +6,8 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const token = url.searchParams.get('token')
   const source = url.searchParams.get('source')
+  // Role (ประเภทผู้ใช้) the dashboard is showing; omitted = every role.
+  const category = url.searchParams.get('category')
   const subject = url.searchParams.get('subject')
   const originProvince = url.searchParams.get('origin_province')
   const destinationProvince = url.searchParams.get('destination_province')
@@ -24,6 +26,10 @@ export async function GET(request: Request) {
         destinations (*)
       `)
       .range(from, to)
+
+    if (category) {
+      query = query.eq('category', category)
+    }
 
     if (source) {
       query = query.eq('source', source)
