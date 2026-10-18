@@ -756,66 +756,50 @@ function AdminDashboardContent() {
                 No potential matches found.
               </div>
             ) : (
-              <div className="space-y-4">
-                {matches.map((m, idx) => (
-                  <div key={idx} className="bg-white rounded-lg shadow p-4 md:p-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {/* Unclaimed Seed */}
-                      <div className="border-l-4 border-amber-500 pl-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="font-bold text-lg">{m.seed.display_name}</h3>
-                            <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 mt-1">
-                              Unclaimed (Facebook Import)
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-sm text-gray-600 space-y-1 mt-3">
-                          <p>
-                            <span className="font-medium">Position:</span> {m.seed.subject || '–'}
-                          </p>
-                          <p>
-                            <span className="font-medium">From:</span> {m.seed.origin_province}
-                          </p>
-                          <p>
-                            <span className="font-medium">To:</span>{' '}
-                            {m.seed.destinations?.map((d) => d.province).join(', ')}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Real User */}
-                      <div className="border-l-4 border-green-500 pl-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="font-bold text-lg">{m.realUser.display_name}</h3>
-                            <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-1">
-                              ✓ Verified (App)
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-sm text-gray-600 space-y-1 mt-3">
-                          <p>
-                            <span className="font-medium">Position:</span> {m.realUser.subject || '–'}
-                          </p>
-                          <p>
-                            <span className="font-medium">From:</span> {m.realUser.origin_province}
-                          </p>
-                          <p>
-                            <span className="font-medium">To:</span>{' '}
-                            {m.realUser.destinations?.map((d) => d.province).join(', ')}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
-                      <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm">
-                        Send Invite to Seed Owner
-                      </button>
-                    </div>
-                  </div>
-                ))}
+              <div className="overflow-x-auto rounded-lg bg-white shadow">
+                <table className="w-full min-w-[64rem] text-left text-sm">
+                  <thead className="text-gray-700">
+                    <tr>
+                      <th colSpan={3} className="border-l-4 border-amber-500 bg-amber-50 px-3 py-2 font-medium">
+                        Unclaimed (Facebook Import)
+                      </th>
+                      <th colSpan={3} className="border-l-4 border-green-500 bg-green-50 px-3 py-2 font-medium">
+                        ✓ Verified (App)
+                      </th>
+                      <th rowSpan={2} className="bg-gray-100 px-3 py-2" />
+                    </tr>
+                    <tr className="bg-gray-100">
+                      <th className="px-3 py-2 font-medium">Name</th>
+                      <th className="px-3 py-2 font-medium">Subject</th>
+                      <th className="px-3 py-2 font-medium">From → To</th>
+                      <th className="border-l border-gray-200 px-3 py-2 font-medium">Name</th>
+                      <th className="px-3 py-2 font-medium">Subject</th>
+                      <th className="px-3 py-2 font-medium">From → To</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {matches.map((m, idx) => (
+                      <tr key={idx} className="align-top hover:bg-gray-50">
+                        <td className="px-3 py-3 font-medium">{m.seed.display_name}</td>
+                        <td className="px-3 py-3">{m.seed.subject || '–'}</td>
+                        <td className="px-3 py-3">
+                          {m.seed.origin_province} → {m.seed.destinations?.map((d) => d.province).join(', ')}
+                        </td>
+                        <td className="border-l border-gray-200 px-3 py-3 font-medium">{m.realUser.display_name}</td>
+                        <td className="px-3 py-3">{m.realUser.subject || '–'}</td>
+                        <td className="px-3 py-3">
+                          {m.realUser.origin_province} →{' '}
+                          {m.realUser.destinations?.map((d) => d.province).join(', ')}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-3 text-right">
+                          <button className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700">
+                            Send Invite to Seed Owner
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
@@ -849,13 +833,35 @@ function AdminDashboardContent() {
                 No mutual pairs found in the current data.
               </div>
             ) : (
-              <div className="space-y-3">
-                {coverage.pairs.map((p, idx) => (
-                  <div key={idx} className="bg-white rounded-lg shadow p-4 grid md:grid-cols-2 gap-4">
-                    <CoverageSide teacher={p.a} onStatusChange={handleStatusChange} />
-                    <CoverageSide teacher={p.b} onStatusChange={handleStatusChange} />
-                  </div>
-                ))}
+              <div className="overflow-x-auto rounded-lg bg-white shadow">
+                <table className="w-full min-w-[64rem] text-left text-sm">
+                  <thead className="text-gray-700">
+                    <tr>
+                      <th colSpan={3} className="border-l-4 border-indigo-500 bg-indigo-50 px-3 py-2 font-medium">
+                        Teacher A
+                      </th>
+                      <th colSpan={3} className="border-l-4 border-indigo-500 bg-indigo-50 px-3 py-2 font-medium">
+                        Teacher B
+                      </th>
+                    </tr>
+                    <tr className="bg-gray-100">
+                      <th className="px-3 py-2 font-medium">Name</th>
+                      <th className="px-3 py-2 font-medium">From → To</th>
+                      <th className="px-3 py-2 font-medium">Outreach / links</th>
+                      <th className="border-l border-gray-200 px-3 py-2 font-medium">Name</th>
+                      <th className="px-3 py-2 font-medium">From → To</th>
+                      <th className="px-3 py-2 font-medium">Outreach / links</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {coverage.pairs.map((p, idx) => (
+                      <tr key={idx} className="align-top hover:bg-gray-50">
+                        <CoverageCells teacher={p.a} onStatusChange={handleStatusChange} />
+                        <CoverageCells teacher={p.b} onStatusChange={handleStatusChange} divider />
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
@@ -948,21 +954,34 @@ function AdminDashboardContent() {
   )
 }
 
-function CoverageSide({
+// One teacher's three cells in a Match Coverage row: name (+ verified state and
+// subject), route, and the internal outreach status with profile/invite links.
+function CoverageCells({
   teacher: t,
   onStatusChange,
+  divider,
 }: {
   teacher: AdminTeacher
   onStatusChange: (teacherId: string, status: AdminStatus) => void
+  divider?: boolean
 }) {
   return (
-    <div className="border-l-4 border-indigo-500 pl-3 space-y-1">
-      <div className="flex items-start justify-between gap-2">
+    <>
+      <td className={`px-3 py-3 ${divider ? 'border-l border-gray-200' : ''}`}>
         <p className="font-medium">{t.display_name}</p>
+        <p className="text-xs text-gray-600">
+          {t.source === 'app' && t.claimed_at ? '✓ Verified' : 'Unclaimed'} · {t.subject || 'ไม่ระบุวิชา'}
+        </p>
+      </td>
+      <td className="px-3 py-3 text-gray-700">
+        {t.origin_province}
+        {t.origin_zone ? ` (${t.origin_zone})` : ''} → {t.destinations.map(destinationLabel).join(', ')}
+      </td>
+      <td className="px-3 py-3">
         <select
           value={t.admin_status}
           onChange={(e) => onStatusChange(t.id, e.target.value as AdminStatus)}
-          className="text-xs border border-gray-300 rounded-lg px-2 py-1 shrink-0"
+          className="mb-1 block rounded-lg border border-gray-300 px-2 py-1 text-xs"
           title="Internal outreach status"
         >
           {ADMIN_STATUS_OPTIONS.map((opt) => (
@@ -971,39 +990,31 @@ function CoverageSide({
             </option>
           ))}
         </select>
-      </div>
-      <p className="text-xs text-gray-600">
-        {t.source === 'app' && t.claimed_at ? '✓ Verified' : 'Unclaimed'} · {t.subject || 'ไม่ระบุวิชา'}
-      </p>
-      <p className="text-xs text-gray-600">
-        {t.origin_province}
-        {t.origin_zone ? ` (${t.origin_zone})` : ''} →{' '}
-        {t.destinations.map(destinationLabel).join(', ')}
-      </p>
-      <div className="flex gap-3 text-xs">
-        {t.facebook_url ? (
-          <a
-            href={t.facebook_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:underline font-medium"
-          >
-            Profile
-          </a>
-        ) : (
-          <span className="text-gray-400">No profile</span>
-        )}
-        {!t.claimed_at && t.invite_code && (
-          <button
-            onClick={() => navigator.clipboard.writeText(invitationUrl(t.invite_code!))}
-            className="text-blue-600 hover:underline font-medium"
-            title={invitationUrl(t.invite_code)}
-          >
-            Copy Invite Link
-          </button>
-        )}
-      </div>
-    </div>
+        <div className="flex gap-3 text-xs">
+          {t.facebook_url ? (
+            <a
+              href={t.facebook_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-blue-600 hover:underline"
+            >
+              Profile
+            </a>
+          ) : (
+            <span className="text-gray-400">No profile</span>
+          )}
+          {!t.claimed_at && t.invite_code && (
+            <button
+              onClick={() => navigator.clipboard.writeText(invitationUrl(t.invite_code!))}
+              className="font-medium text-blue-600 hover:underline"
+              title={invitationUrl(t.invite_code)}
+            >
+              Copy Invite Link
+            </button>
+          )}
+        </div>
+      </td>
+    </>
   )
 }
 
