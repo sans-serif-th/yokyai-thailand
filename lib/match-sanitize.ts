@@ -1,3 +1,5 @@
+import { publicColumns } from './roles/fields'
+import { TEACHER_FIELDS } from './roles/teacher-fields'
 import type { Teacher } from './types'
 
 // PDPA + invite-flow safety: every display_name is masked (see maskName). A
@@ -28,21 +30,13 @@ export function maskName(displayName: string): string {
 // is private until it is deliberately listed here (display_name is masked and
 // admin_status reset separately below).
 export const MATCH_VISIBLE_FIELDS: ReadonlySet<string> = new Set([
+  // Core columns every role shares.
   'id',
-  'position',
-  'service_type',
-  'origin_province',
-  'origin_district',
-  'origin_zone',
-  'current_school',
-  'teaching_group',
-  'subject',
-  'benefit_note',
-  'transfer_round',
-  'transfer_year',
   'source',
   'claimed_at',
   'category',
+  // Role fields marked `public` in lib/roles/teacher-fields.ts.
+  ...publicColumns(TEACHER_FIELDS),
 ])
 
 export function sanitizeForMatch(teacher: Teacher): Teacher {

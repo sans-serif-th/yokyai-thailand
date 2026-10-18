@@ -1,5 +1,6 @@
 import { requiresTeachingGroup } from '../positions'
 import { profilePayloadToTeacherRow, validateProfilePayload } from '../profile-payload'
+import { TEACHER_FIELDS } from './teacher-fields'
 import { findTeacherMatches } from './teacher-matching'
 import type { PairRow, RoleImplementation } from './types'
 
@@ -21,6 +22,7 @@ function isTeacherMutualPair(a: PairRow, b: PairRow): boolean {
 
 export const teacherRole: RoleImplementation = {
   code: 'teacher',
+  fields: TEACHER_FIELDS,
   validateProfile: validateProfilePayload,
   profileToRow: profilePayloadToTeacherRow,
   findMatches: findTeacherMatches,

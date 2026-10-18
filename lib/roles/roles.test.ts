@@ -132,3 +132,23 @@ describe('resolveRegistrationRole', () => {
     expect(await resolveRegistrationRole({})).toBeNull()
   })
 })
+
+describe('role field definitions', () => {
+  it('teacher fields expose the same public columns as before the refactor', async () => {
+    const { MATCH_VISIBLE_FIELDS } = await import('../match-sanitize')
+    expect([...MATCH_VISIBLE_FIELDS].sort()).toEqual(
+      [
+        'id', 'position', 'service_type', 'origin_province', 'origin_district', 'origin_zone',
+        'current_school', 'teaching_group', 'subject', 'benefit_note', 'transfer_round',
+        'transfer_year', 'source', 'claimed_at', 'category',
+      ].sort()
+    )
+  })
+
+  it('never makes contact details public', async () => {
+    const { publicColumns } = await import('./fields')
+    const { TEACHER_FIELDS } = await import('./teacher-fields')
+    const pub = publicColumns(TEACHER_FIELDS)
+    for (const c of ['display_name', 'phone', 'line_id']) expect(pub).not.toContain(c)
+  })
+})

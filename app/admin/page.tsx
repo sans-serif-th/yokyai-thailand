@@ -4,6 +4,8 @@ import { Suspense, useEffect, useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { AdminStatus, Round, Teacher, Destination } from '@/lib/types'
 import { RoundPanel } from './round-panel'
+import { getRoleFields } from '@/lib/roles/field-registry'
+import { adminEditableFields, type FieldType } from '@/lib/roles/fields'
 import { roundPhase, type RoundPhase } from '@/lib/round-phase'
 import { serviceTypeAbbr, SERVICE_TYPES } from '@/lib/service-types'
 
@@ -930,44 +932,56 @@ function EditTeacherModal({
   onCancel: () => void
   onSave: (updated: Partial<AdminTeacher>) => void
 }) {
-  const [form, setForm] = useState({
-    display_name: teacher.display_name,
-    category: teacher.category,
-    position: teacher.position,
-    service_type: teacher.service_type,
-    origin_province: teacher.origin_province,
-    origin_district: teacher.origin_district ?? '',
-    origin_zone: teacher.origin_zone ?? '',
-    subject: teacher.subject ?? '',
-    transfer_round: teacher.transfer_round ?? '',
-    transfer_year: teacher.transfer_year?.toString() ?? '',
-    facebook_url: teacher.facebook_url ?? '',
+  const row = teacher as unknown as Record<string, unknown>
+  // Fields come from the definitions of the role chosen in the dropdown, so a
+  // new field or role shows up here without touching this modal.
+  const [category, setCategory] = useState(teacher.category)
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = { facebook_url: teacher.facebook_url ?? '' }
+    for (const f of adminEditableFields(getRoleFields(teacher.category))) {
+      init[f.column] = row[f.column] == null ? '' : String(row[f.column])
+    }
+    return init
   })
+  const fields = adminEditableFields(getRoleFields(category))
 
-  function field(name: keyof typeof form, label: string) {
+  function input(name: string, label: string, type: FieldType = 'text', options?: readonly string[]) {
+    const cls =
+      'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+    const set = (v: string) => setValues((prev) => ({ ...prev, [name]: v }))
+    const value = values[name] ?? (row[name] == null ? '' : String(row[name]))
     return (
-      <label className="block text-sm">
+      <label key={name} className="block text-sm">
         <span className="block font-medium mb-1">{label}</span>
-        <input
-          value={form[name]}
-          onChange={(e) => setForm((f) => ({ ...f, [name]: e.target.value }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        {type === 'select' ? (
+          <select value={value} onChange={(e) => set(e.target.value)} className={cls}>
+            <option value="" />
+            {options?.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type={type === 'number' ? 'number' : 'text'}
+            value={value}
+            onChange={(e) => set(e.target.value)}
+            className={cls}
+          />
+        )}
       </label>
     )
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    onSave({
-      ...form,
-      transfer_year: form.transfer_year ? Number(form.transfer_year) : null,
-      origin_district: form.origin_district || null,
-      origin_zone: form.origin_zone || null,
-      subject: form.subject || null,
-      transfer_round: form.transfer_round || null,
-      facebook_url: form.facebook_url || null,
-    } as Partial<AdminTeacher>)
+    const out: Record<string, unknown> = { category, facebook_url: values.facebook_url || null }
+    for (const f of fields) {
+      const v = values[f.column] ?? (row[f.column] == null ? '' : String(row[f.column]))
+      out[f.column] = v === '' ? null : f.type === 'number' ? Number(v) : v
+    }
+    onSave(out as Partial<AdminTeacher>)
   }
 
   return (
@@ -975,45 +989,31 @@ function EditTeacherModal({
       <div className="bg-white rounded-lg shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
         <h2 className="text-lg font-bold mb-4">Edit {teacher.display_name}</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
-          {field('display_name', 'Name')}
-          <div className="grid grid-cols-2 gap-3">
+          <div>
             <label className="block text-sm">
               <span className="block font-medium mb-1">Role</span>
               <select
-                value={form.category}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {/* Only roles with code behind them: moving someone to a role
                     without one would break their matching and profile edits. */}
                 {roles
-                  .filter((r) => r.hasImplementation || r.code === form.category)
+                  .filter((r) => r.hasImplementation || r.code === category)
                   .map((r) => (
                     <option key={r.code} value={r.code}>
                       {r.name_th}
                     </option>
                   ))}
-                {!roles.some((r) => r.code === form.category) && (
-                  <option value={form.category}>{form.category}</option>
+                {!roles.some((r) => r.code === category) && (
+                  <option value={category}>{category}</option>
                 )}
               </select>
             </label>
-            {field('position', 'Position')}
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {field('service_type', 'สพฐ (service type code)')}
-            {field('subject', 'Subject')}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {field('origin_province', 'Origin Province')}
-            {field('origin_zone', 'เขต (zone)')}
-          </div>
-          {field('origin_district', 'District')}
-          <div className="grid grid-cols-2 gap-3">
-            {field('transfer_round', 'Round')}
-            {field('transfer_year', 'Year')}
-          </div>
-          {field('facebook_url', 'Facebook URL')}
+          {fields.map((f) => input(f.column, f.label, f.type, f.options))}
+          {input('facebook_url', 'Facebook URL')}
 
           <div className="flex gap-2 pt-2">
             <button
