@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { LineAuthError, verifyRequestAuth } from '@/lib/line-auth'
 import { resolveRegistrationRole } from '@/lib/roles/server'
 import { getRoleImplementation } from '@/lib/roles'
+import { loadExtension, saveExtension } from '@/lib/roles/extension'
 import { getSubscriptionStatusFor } from '@/lib/rounds'
 import { createServiceClient } from '@/lib/supabase-server'
 
@@ -26,7 +27,8 @@ export async function GET(request: Request) {
 
     if (destError) throw destError
 
-    return NextResponse.json({ teacher, destinations })
+    const profile = await loadExtension(supabase, getRoleImplementation(teacher.category), teacher.id)
+    return NextResponse.json({ teacher: profile ? { ...teacher, profile } : teacher, destinations })
   } catch (err) {
     if (err instanceof LineAuthError) {
       return NextResponse.json({ error: err.message }, { status: 401 })
@@ -98,6 +100,8 @@ export async function PUT(request: Request) {
       .single()
 
     if (upsertError) throw upsertError
+
+    await saveExtension(supabase, role, teacher.id, body)
 
     // Replace destinations wholesale — simplest correct behavior for a
     // small, user-edited list.
