@@ -63,6 +63,19 @@ export function ContactRequests() {
     )
   }
 
+  return <ContactRequestsView contacts={contacts} busyId={busyId} onRespond={respond} />
+}
+
+// Presentational half, split out so the tab can be previewed with mock data.
+export function ContactRequestsView({
+  contacts,
+  busyId,
+  onRespond: respond,
+}: {
+  contacts: ContactRequestView[]
+  busyId: string | null
+  onRespond: (id: string, action: 'accept' | 'decline' | 'cancel') => void
+}) {
   const incoming = contacts.filter((c) => c.direction === 'incoming' && c.status === 'pending')
   const connected = contacts.filter((c) => c.status === 'accepted')
   const sent = contacts.filter((c) => c.direction === 'outgoing' && c.status !== 'accepted')
