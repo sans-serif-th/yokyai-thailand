@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { LineAuthError, verifyRequestAuth } from '@/lib/line-auth'
-import { profilePayloadToTeacherRow, validateProfilePayload } from '@/lib/profile-payload'
+import { resolveRegistrationRole } from '@/lib/roles/server'
+import { getRoleImplementation } from '@/lib/roles'
 import { getSubscriptionStatusFor } from '@/lib/rounds'
 import { createServiceClient } from '@/lib/supabase-server'
 
@@ -40,7 +41,22 @@ export async function PUT(request: Request) {
     const auth = await verifyRequestAuth(request)
     const body = await request.json()
 
-    if (!validateProfilePayload(body)) {
+    // The role is fixed when the profile is first created (see `existing`
+    // below); an edit re-validates against the role the row already has.
+    const supabase = createServiceClient()
+    const { data: existing } = await supabase
+      .from('teachers')
+      .select('id, category')
+      .eq('line_user_id', auth.sub)
+      .maybeSingle()
+
+    const role = existing
+      ? getRoleImplementation(existing.category)
+      : await resolveRegistrationRole(body)
+    if (!role) {
+      return NextResponse.json({ error: 'Invalid or unavailable role' }, { status: 400 })
+    }
+    if (!role.validateProfile(body)) {
       return NextResponse.json({ error: 'Invalid profile payload' }, { status: 400 })
     }
 
@@ -54,23 +70,17 @@ export async function PUT(request: Request) {
       )
     }
 
-    const supabase = createServiceClient()
-
     // First registration vs. an edit to an existing profile — only the
-    // former should set claimed_at, since an upsert can't otherwise tell
-    // the two apart and an unconditional set would clobber the real
-    // registration timestamp on every single profile edit.
-    const { data: existing } = await supabase
-      .from('teachers')
-      .select('id')
-      .eq('line_user_id', auth.sub)
-      .maybeSingle()
-
+    // former should set claimed_at (an upsert can't otherwise tell the two
+    // apart and an unconditional set would clobber the real registration
+    // timestamp on every profile edit) and category (the edit form doesn't
+    // know the role, so writing it would reset it).
     const row = {
       line_user_id: auth.sub,
-      ...profilePayloadToTeacherRow(body),
+      ...role.profileToRow(body),
       ...(!existing
         ? {
+            category: role.code,
             // Fixes a bug where self-registered 'app' rows never got
             // claimed_at set (only the invite-claim flow in lib/invites.ts
             // did), making every organic signup permanently invisible as a

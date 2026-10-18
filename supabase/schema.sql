@@ -49,14 +49,19 @@ alter table service_types enable row level security;
 create table categories (
   code text primary key,
   name_th text not null,
-  name_en text not null
+  name_en text not null,
+  -- 'active' = selectable at sign-up, 'coming_soon' = listed as "เร็วๆนี้",
+  -- 'hidden' = not shown. 'active' needs code in lib/roles (migration 0028).
+  status text not null default 'hidden'
+    check (status in ('active', 'coming_soon', 'hidden')),
+  sort_order int not null default 0
 );
 
-insert into categories (code, name_th, name_en) values
-  ('teacher',    'ครู',        'Teacher'),
-  ('nurse',      'พยาบาล',    'Nurse'),
-  ('physician',  'แพทย์',     'Physician'),
-  ('pharmacist', 'เภสัชกร',   'Pharmacist')
+insert into categories (code, name_th, name_en, status, sort_order) values
+  ('teacher',    'ครูผู้สอน',  'Teacher',    'active',      0),
+  ('nurse',      'พยาบาล',    'Nurse',      'coming_soon', 1),
+  ('pharmacist', 'เภสัชกร',   'Pharmacist', 'coming_soon', 2),
+  ('physician',  'แพทย์',     'Physician',  'hidden',      3)
 on conflict (code) do nothing;
 
 alter table categories enable row level security;

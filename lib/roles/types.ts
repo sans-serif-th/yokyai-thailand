@@ -1,0 +1,25 @@
+import type { MatchResult, ProfilePayload, Teacher, Destination } from '../types'
+
+// The slice of a teachers row (+ destinations) that mutual-pair counting
+// needs — shared by stats and the admin coverage views.
+export type PairRow = Pick<Teacher, 'position' | 'service_type' | 'subject' | 'origin_province'> & {
+  category?: string | null
+  destinations?: Destination[]
+}
+
+// Everything that differs per role (ประเภทผู้ใช้): what a registration looks
+// like, how it maps onto a row, who matches whom. The admin page
+// (/admin/roles) only manages a role's metadata (name, status, order); a role
+// can be switched on there only once an implementation is registered here —
+// see lib/roles/index.ts and docs/adding-a-role.md.
+export interface RoleImplementation {
+  code: string
+  validateProfile(body: unknown): body is ProfilePayload
+  profileToRow(payload: ProfilePayload): Record<string, unknown>
+  // The requester's own row is already resolved and the global matching-phase
+  // gate already applied by lib/matching.ts findMatchesFor.
+  findMatches(requester: Teacher): Promise<MatchResult[]>
+  // Reciprocal-pair predicate between two rows of this role, used for
+  // aggregate counts (stats) and the admin coverage views.
+  isMutualPair(a: PairRow, b: PairRow): boolean
+}

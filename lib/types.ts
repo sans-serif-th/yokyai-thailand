@@ -41,7 +41,21 @@ export interface Teacher {
 
 export type MatchTier = 'perfect' | 'high' | 'partial'
 
+// A role (ประเภทผู้ใช้) as stored in the `categories` table; see lib/roles.
+export type RoleStatus = 'active' | 'coming_soon' | 'hidden'
+
+export interface RoleInfo {
+  code: string
+  name_th: string
+  name_en: string
+  status: RoleStatus
+  sort_order: number
+}
+
 export interface ProfilePayload {
+  // Role chosen on the welcome screen. Only honored when the profile is first
+  // created; omitted = 'teacher' (older clients).
+  category?: string
   displayName: string
   position: string
   serviceType: string

@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { fetchProfile, saveProfile } from '@/lib/api'
+import { fetchProfile, fetchRoles, saveProfile } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { ProfileForm } from '@/components/profile-form'
-import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
+import type { Destination, ProfilePayload, RoleInfo, Teacher } from '@/lib/types'
 
 type View = 'loading' | 'onboarding' | 'error'
 
@@ -15,6 +15,7 @@ export default function Home() {
   const [idToken, setIdToken] = useState<string | null>(null)
   const [teacher, setTeacher] = useState<Teacher | null>(null)
   const [destinations, setDestinations] = useState<Destination[]>([])
+  const [roles, setRoles] = useState<RoleInfo[] | undefined>(undefined)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
@@ -27,6 +28,11 @@ export default function Home() {
           router.replace('/matches')
           return
         }
+
+        // Best-effort: the welcome screen falls back to a static list.
+        try {
+          setRoles((await fetchRoles(token)).roles)
+        } catch {}
 
         setTeacher(profile.teacher)
         setDestinations(profile.destinations ?? [])
@@ -60,6 +66,7 @@ export default function Home() {
         initialTeacher={teacher}
         initialDestinations={destinations}
         onSave={handleSaveProfile}
+        roles={roles}
       />
     </div>
   )

@@ -1,4 +1,4 @@
-import { requiresTeachingGroup } from './positions'
+import { countMutualPairs } from './roles/pairs'
 import { createServiceClient, fetchAllRows } from './supabase-server'
 import type { Destination, PlatformStats, RegistrationBreakdown, Teacher } from './types'
 
@@ -6,38 +6,8 @@ import type { Destination, PlatformStats, RegistrationBreakdown, Teacher } from 
 // Teacher row (unlike app/api/admin/all-matches/route.ts, which needs
 // every field to display the pairs; this only ever returns aggregate
 // counts).
-type StatsRow = Pick<Teacher, 'position' | 'service_type' | 'subject' | 'origin_province'> & {
+type StatsRow = Pick<Teacher, 'position' | 'service_type' | 'subject' | 'origin_province' | 'category'> & {
   destinations: Destination[]
-}
-
-// Same reciprocal-pair definition used by the admin "Match Coverage" view
-// (app/api/admin/all-matches/route.ts): position, service_type, the exact
-// same subject (where the position has one at all — an unspecified subject
-// can't count as a match), and each side wanting the other's origin
-// province — counted across the *entire* dataset regardless of
-// claimed/verified status, since this only ever surfaces as an aggregate
-// count, never as the underlying pairs.
-export function countMutualPairs(all: StatsRow[]): number {
-  let count = 0
-  for (let i = 0; i < all.length; i++) {
-    const a = all[i]
-    if (!a.destinations?.length) continue
-
-    for (let j = i + 1; j < all.length; j++) {
-      const b = all[j]
-      if (!b.destinations?.length) continue
-
-      if (a.position !== b.position) continue
-      if (a.service_type !== b.service_type) continue
-      if (requiresTeachingGroup(a.position) && (!a.subject || a.subject !== b.subject)) continue
-
-      const aWantsBOrigin = a.destinations.some((d) => d.province === b.origin_province)
-      const bWantsAOrigin = b.destinations.some((d) => d.province === a.origin_province)
-
-      if (aWantsBOrigin && bWantsAOrigin) count++
-    }
-  }
-  return count
 }
 
 // Builds descending-by-count entries from a list of nullable strings,
@@ -107,6 +77,7 @@ async function computeFullStats(): Promise<FullStats> {
       .from('teachers')
       .select(
         `
+        category,
         position,
         service_type,
         subject,
@@ -140,6 +111,8 @@ async function computeFullStats(): Promise<FullStats> {
     totalRegistered: all.length,
     originProvinceCount: originProvinces.size,
     destinationProvinceCount: destinationProvinces.size,
+    // Pairs are counted per role (see lib/roles/pairs.ts) — roles never pair
+    // with each other.
     matchCount: countMutualPairs(all),
     subjectCount: subjects.size,
   }
