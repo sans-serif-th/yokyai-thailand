@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   addFavorite,
   fetchAllImportedForDev,
@@ -15,7 +16,11 @@ import {
   sendContactRequest,
 } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
+import { ContactRequests } from '@/components/contact-requests'
 import { MatchList } from '@/components/match-list'
+import { RoundPill } from '@/components/round-pill'
+import { SegmentedTabs } from '@/components/segmented-tabs'
+import { TopBar } from '@/components/top-bar'
 import { RegistrationBreakdownView } from '@/components/registration-breakdown'
 import { MAX_CONTACT_SENDS, type MatchContact } from '@/lib/types'
 import type { MatchResult, RegistrationBreakdown } from '@/lib/types'
@@ -28,8 +33,22 @@ type View = 'loading' | 'registration' | 'ready' | 'error'
 // cosmetic (no point rendering a button that 404s).
 const DEV_TOOLS_ENABLED = process.env.NEXT_PUBLIC_DEV_TOOLS === '1'
 
+type MatchesTab = 'matches' | 'contacts'
+
+// useSearchParams needs a Suspense boundary during prerender.
 export default function MatchesPage() {
+  return (
+    <Suspense fallback={<PageSkeleton title="ผลการจับคู่" />}>
+      <MatchesContent />
+    </Suspense>
+  )
+}
+
+function MatchesContent() {
   const router = useRouter()
+  // The tab lives in the URL (?tab=contacts) so LINE notification links and the
+  // "ดูคำขอ" links on match cards can open it directly.
+  const tab: MatchesTab = useSearchParams().get('tab') === 'contacts' ? 'contacts' : 'matches'
   const [view, setView] = useState<View>('loading')
   const [matches, setMatches] = useState<MatchResult[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -185,6 +204,29 @@ export default function MatchesPage() {
     ) : null
   }
 
+  const viewTabs = (
+    <SegmentedTabs<MatchesTab>
+      value={tab}
+      onChange={(next) =>
+        router.replace(next === 'contacts' ? '/matches?tab=contacts' : '/matches', { scroll: false })
+      }
+      options={[
+        { value: 'matches', label: 'ผลจับคู่' },
+        { value: 'contacts', label: 'คำขอติดต่อ' },
+      ]}
+    />
+  )
+
+  if (tab === 'contacts') {
+    return (
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
+        <TopBar title="ผลการจับคู่" right={<RoundPill roundLabel={roundLabel} />} />
+        {viewTabs}
+        <ContactRequests />
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-2">
       {DEV_TOOLS_ENABLED && (
@@ -209,6 +251,7 @@ export default function MatchesPage() {
         <MatchList
           matches={devMode ? (devMatches ?? []) : matches}
           onToggleFavorite={handleToggleFavorite}
+          viewTabs={viewTabs}
           onRequestContact={devMode ? undefined : handleRequestContact}
           onCancelContact={devMode ? undefined : handleCancelContact}
           showSettingsLink

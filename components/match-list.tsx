@@ -57,7 +57,7 @@ function ContactAction({
   }
   if (c.status === 'accepted') {
     return (
-      <Link href="/contacts" className={`${base} bg-[#f0fdf4] text-[#15803d]`}>
+      <Link href="/matches?tab=contacts" className={`${base} bg-[#f0fdf4] text-[#15803d]`}>
         ดูข้อมูลติดต่อ
       </Link>
     )
@@ -67,7 +67,7 @@ function ContactAction({
   }
   if (c.direction === 'incoming') {
     return (
-      <Link href="/contacts" className={`${base} btn-brand-primary`}>
+      <Link href="/matches?tab=contacts" className={`${base} btn-brand-primary`}>
         มีคำขอติดต่อ — ตอบกลับ
       </Link>
     )
@@ -100,6 +100,8 @@ interface MatchListProps {
   onRequestContact?: (teacherId: string) => void
   onCancelContact?: (requestId: string) => void
   title?: string
+  // Rendered right under the top bar (the matches page puts its ผลจับคู่ / คำขอติดต่อ switch here).
+  viewTabs?: React.ReactNode
   showSettingsLink?: boolean
   roundLabel?: string | null
   onRefresh?: () => void
@@ -112,6 +114,7 @@ export function MatchList({
   onRequestContact,
   onCancelContact,
   title = 'ผลการจับคู่',
+  viewTabs,
   showSettingsLink = false,
   roundLabel = null,
   onRefresh,
@@ -195,7 +198,8 @@ export function MatchList({
             </>
           }
         />
-        <div className="text-center">
+        {viewTabs}
+        <div className="mt-5 text-center">
           <p className="text-lg">ยังไม่พบคู่สับเปลี่ยนในตอนนี้</p>
           <p className="text-sm mt-1">
             ลองเพิ่มจังหวัดปลายทางให้กว้างขึ้น หรือกลับมาตรวจสอบใหม่ภายหลัง
@@ -228,6 +232,8 @@ export function MatchList({
           </>
         }
       />
+
+      {viewTabs}
 
       <SegmentedTabs
         value={filterTab}
