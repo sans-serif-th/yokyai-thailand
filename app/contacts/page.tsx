@@ -128,16 +128,6 @@ export default function ContactsPage() {
                   โทร {c.phone}
                 </a>
               )}
-              {c.facebookUrl && (
-                <a
-                  href={c.facebookUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-fit text-xs link-accent"
-                >
-                  ติดต่อผ่าน Facebook
-                </a>
-              )}
             </div>
           ))}
         </section>

@@ -31,16 +31,15 @@ describe('toContactView', () => {
     expect(v.name).toBeNull()
     expect(v.lineId).toBeNull()
     expect(v.phone).toBeNull()
-    expect(v.facebookUrl).toBeNull()
     expect(v.maskedName).toBe('ส***** ใ*****')
   })
 
-  it('reveals name, LINE ID, phone and facebook only when accepted', () => {
+  it('reveals name, LINE ID and phone only when accepted, never facebook', () => {
     const v = toContactView(row('accepted'), 'me', other)
     expect(v.name).toBe('สมชาย ใจดี')
     expect(v.lineId).toBe('somchai.j')
     expect(v.phone).toBe('081-234-5678')
-    expect(v.facebookUrl).toBe('https://facebook.com/x')
+    expect(v).not.toHaveProperty('facebookUrl')
   })
 
   it('reports direction relative to the viewer', () => {

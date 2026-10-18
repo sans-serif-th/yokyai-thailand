@@ -14,7 +14,6 @@ const base = {
   benefitNote: null,
   transferRound: '1',
   transferYear: 2027,
-  facebookUrl: null,
   phone: null,
   lineId: null,
   destinations: [{ province: 'กรุงเทพมหานคร', district: null, zone: null }],

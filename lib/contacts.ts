@@ -60,7 +60,6 @@ export function toContactView(
     name: accepted ? other.display_name : null,
     lineId: accepted ? other.line_id : null,
     phone: accepted ? other.phone : null,
-    facebookUrl: accepted ? other.facebook_url : null,
   }
 }
 

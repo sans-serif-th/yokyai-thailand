@@ -43,10 +43,10 @@ describe('sanitizeForMatch', () => {
     expect(s.line_id).toBeNull()
     expect(s.invite_code).toBeNull()
     expect(s.admin_status).toBe('new')
-    expect(s.facebook_url).toBe('https://facebook.com/x')
+    expect(s.facebook_url).toBeNull()
   })
 
-  it('drops the facebook link for imported rows', () => {
+  it('drops the facebook link for imported rows too', () => {
     expect(sanitizeForMatch({ ...teacher, source: 'facebook_import' }).facebook_url).toBeNull()
   })
 })

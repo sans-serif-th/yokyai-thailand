@@ -55,10 +55,11 @@ async function fetchDestinationsForTeacherIds(
 //            no subject (e.g. นักจัดการงานทั่วไป), since subjectMatch is then
 //            always false
 // PDPA + invite-flow safety: every display_name is masked (see maskName). A
-// facebook_import row was never entered by the person it names, so its
-// Facebook link is also
-// hidden before this ever leaves the server — contact happens only via an
-// admin-delivered invite link (see lib/invites.ts), never shown here.
+// facebook_import row was never entered by the person it names, and the
+// Facebook link is admin-only data for every row, so facebook_url is
+// stripped before this ever leaves the server — contact happens only via a
+// contact request (see lib/contacts.ts) or an admin-delivered invite link
+// (see lib/invites.ts), never shown here.
 // invite_code is stripped unconditionally (not just for imports) since no
 // match result should ever carry another teacher's claim code. admin_status
 // is reset to the neutral default for the same reason — it's an internal
@@ -77,11 +78,10 @@ export function maskName(displayName: string): string {
 }
 
 export function sanitizeForMatch(teacher: Teacher): Teacher {
-  const imported = teacher.source === 'facebook_import'
   return {
     ...teacher,
     display_name: maskName(teacher.display_name),
-    facebook_url: imported ? null : teacher.facebook_url,
+    facebook_url: null,
     phone: null,
     line_id: null,
     invite_code: null,
