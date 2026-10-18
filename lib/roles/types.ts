@@ -1,3 +1,4 @@
+import type { FieldDef } from './fields'
 import type { MatchResult, ProfilePayload, Teacher, Destination } from '../types'
 
 // The slice of a teachers row (+ destinations) that mutual-pair counting
@@ -14,6 +15,9 @@ export type PairRow = Pick<Teacher, 'position' | 'service_type' | 'subject' | 'o
 // see lib/roles/index.ts and docs/adding-a-role.md.
 export interface RoleImplementation {
   code: string
+  // Registration fields; drive validation, the admin edit whitelist and which
+  // columns other users may see (lib/roles/fields.ts).
+  fields: readonly FieldDef[]
   validateProfile(body: unknown): body is ProfilePayload
   profileToRow(payload: ProfilePayload): Record<string, unknown>
   // The requester's own row is already resolved and that role's matching-phase

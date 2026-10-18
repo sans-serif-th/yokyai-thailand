@@ -2,27 +2,14 @@ import { createServiceClient } from '@/lib/supabase-server'
 import type { AdminStatus } from '@/lib/types'
 import { checkAdminToken } from '@/lib/admin-token'
 import { hasRoleImplementation } from '@/lib/roles'
+import { getRoleFields } from '@/lib/roles/field-registry'
+import { adminEditableFields, validateFieldValue } from '@/lib/roles/fields'
 
 const ADMIN_STATUSES: AdminStatus[] = ['new', 'contacted', 'follow_up', 'closed']
 
-const EDITABLE_FIELDS = [
-  'display_name',
-  'position',
-  'service_type',
-  'origin_province',
-  'origin_district',
-  'origin_zone',
-  'current_school',
-  'teaching_group',
-  'subject',
-  'benefit_note',
-  'transfer_round',
-  'transfer_year',
-  'facebook_url',
-  'phone',
-  'category',
-  'admin_status',
-] as const
+// Columns every role shares; a role's own editable columns come from its
+// field definitions (lib/roles).
+const CORE_EDITABLE_COLUMNS = ['facebook_url', 'category', 'admin_status']
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -34,9 +21,31 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const body = await request.json()
+  const supabase = createServiceClient()
+
+  const { data: current, error: currentError } = await supabase
+    .from('teachers')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+  if (currentError) return Response.json({ error: currentError.message }, { status: 500 })
+  if (!current) return Response.json({ error: 'Not found' }, { status: 404 })
+
+  // Validate against the role the row will have after this edit.
+  const fields = adminEditableFields(getRoleFields(body.category ?? current.category))
   const update: Record<string, unknown> = {}
-  for (const field of EDITABLE_FIELDS) {
-    if (field in body) update[field] = body[field]
+  for (const column of CORE_EDITABLE_COLUMNS) {
+    if (column in body) update[column] = body[column]
+  }
+  for (const field of fields) {
+    if (!(field.column in body)) continue
+    const value = body[field.column]
+    // Legacy values (e.g. old Facebook imports) the admin didn't touch are
+    // saved back unchanged rather than rejected.
+    if (value !== current[field.column] && !validateFieldValue(field, value)) {
+      return Response.json({ error: `Invalid value for ${field.label}` }, { status: 400 })
+    }
+    update[field.column] = value
   }
 
   if (Object.keys(update).length === 0) {
@@ -53,7 +62,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return Response.json({ error: 'That role has no implementation yet' }, { status: 400 })
   }
 
-  const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('teachers')
     .update(update)
