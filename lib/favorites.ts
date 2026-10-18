@@ -63,7 +63,9 @@ export async function getFavoritedMatchesFor(lineUserId: string): Promise<MatchR
 // supabase/migrations/0018_favorites_round.sql). Re-favoriting in a later
 // round updates round_id to that round via the upsert below.
 export async function addFavorite(lineUserId: string, favoritedTeacherId: string): Promise<void> {
-  const [teacherId, activeRound] = await Promise.all([getTeacherId(lineUserId), getActiveRound()])
+  const teacher = await getTeacher(lineUserId)
+  const teacherId = teacher.id
+  const activeRound = await getActiveRound(teacher.category)
   const supabase = createServiceClient()
   const { error } = await supabase
     .from('favorites')

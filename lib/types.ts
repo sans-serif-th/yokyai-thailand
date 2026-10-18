@@ -119,7 +119,9 @@ export interface Round {
   id: string
   label: string
   is_active: boolean
+  category: string
   matching_opens_at: string | null
+  matching_closes_at: string | null
 }
 
 export type PackageCode = 'free' | 'paid'

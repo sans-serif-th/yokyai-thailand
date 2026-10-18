@@ -13,21 +13,13 @@ export { maskName, sanitizeForMatch } from './match-sanitize'
 // (e.g. getFavoritedMatchesFor, which needs it anyway to resolve favorite
 // ids) skip a second identical lookup here.
 //
-// Role-agnostic entry point: applies the global matching-phase gate, resolves
-// the requester and hands off to that role's matcher (lib/roles/). The
+// Role-agnostic entry point: resolves the requester, applies that role's
+// matching-phase gate and hands off to that role's matcher (lib/roles/). The
 // teacher algorithm itself lives in lib/roles/teacher-matching.ts.
 export async function findMatchesFor(
   lineUserId: string,
   preloadedRequester?: Teacher
 ): Promise<MatchResult[]> {
-  // Global registration-period / matching-phase gate (see lib/rounds.ts):
-  // nobody's search resolves into a real result until the active round
-  // reaches its matching phase, regardless of how this function is called
-  // (page component or a direct API request) — this is the authoritative
-  // check, not just a UI-level one.
-  const activeRound = await getActiveRound()
-  if (!isRoundInMatchingPhase(activeRound)) return []
-
   const supabase = createServiceClient()
 
   let requester = preloadedRequester
@@ -43,6 +35,14 @@ export async function findMatchesFor(
     }
     requester = data as Teacher
   }
+
+  // Per-role registration-period / matching-phase gate (see lib/rounds.ts):
+  // nobody's search resolves into a real result until their role's active
+  // round is in its matching phase, regardless of how this function is called
+  // (page component or a direct API request) — this is the authoritative
+  // check, not just a UI-level one.
+  const activeRound = await getActiveRound(requester.category)
+  if (!isRoundInMatchingPhase(activeRound)) return []
 
   const role = getRoleImplementation(requester.category)
   if (!role) return []

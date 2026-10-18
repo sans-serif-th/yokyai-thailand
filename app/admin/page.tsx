@@ -3,7 +3,15 @@
 import { Suspense, useEffect, useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { AdminStatus, Round, Teacher, Destination } from '@/lib/types'
+import { RoundPanel } from './round-panel'
+import { roundPhase, type RoundPhase } from '@/lib/round-phase'
 import { serviceTypeAbbr, SERVICE_TYPES } from '@/lib/service-types'
+
+const PHASE_BADGE: Record<RoundPhase, string> = {
+  registration: '🟡 Registration',
+  matching: '🟢 Matching',
+  closed: '🔴 Closed',
+}
 
 type TabType = 'teachers' | 'matches' | 'coverage' | 'round'
 
@@ -53,16 +61,6 @@ function invitationUrl(inviteCode: string) {
 
 // ISO timestamp -> the local "YYYY-MM-DDTHH:mm" string <input
 // type="datetime-local"> expects, in the browser's own timezone.
-function toDatetimeLocal(iso: string) {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-function isRoundInMatchingPhase(round: Round | null) {
-  return !!round?.matching_opens_at && new Date(round.matching_opens_at) <= new Date()
-}
-
 // The dashboard shows one role's data at a time, chosen from the side menu
 // (/admin?role=<code>, see app/admin/layout.tsx). Teacher is the default.
 const DEFAULT_ROLE = 'teacher'
@@ -100,8 +98,6 @@ function AdminDashboardContent() {
   const [roles, setRoles] = useState<{ code: string; name_th: string; hasImplementation: boolean }[]>([])
 
   const [activeRound, setActiveRound] = useState<Round | null>(null)
-  const [matchingOpensAtInput, setMatchingOpensAtInput] = useState('')
-  const [savingRound, setSavingRound] = useState(false)
 
   const [page, setPage] = useState(1)
   const pageSize = 25
@@ -237,12 +233,17 @@ function AdminDashboardContent() {
         .then(setRoles)
         .catch(() => {})
 
-      const [teachersRes, matchesRes, coverageRes, roundRes] = await Promise.all([
+      const [teachersRes, matchesRes, coverageRes] = await Promise.all([
         fetch(`/api/admin/teachers?${scope}`),
         fetch(`/api/admin/potential-matches?${scope}`),
         fetch(`/api/admin/all-matches?${scope}`),
-        fetch(`/api/admin/round?token=${encodeURIComponent(authToken)}`),
       ])
+
+      // Best-effort: only feeds the Round tab badge (the tab itself loads the list).
+      fetch(`/api/admin/round?${scope}`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then((list: Round[]) => setActiveRound(list.find((r) => r.is_active) ?? null))
+        .catch(() => {})
 
       // Expired (or pre-upgrade) token: drop it and go back to the login form.
       if (teachersRes.status === 401) {
@@ -272,15 +273,6 @@ function AdminDashboardContent() {
       setMatches(matches)
       setCoverage(coverage)
 
-      // A 404 here just means no round is configured yet — not a hard
-      // error, since round management is a separate, optional concern.
-      if (roundRes.ok) {
-        const round = await roundRes.json()
-        setActiveRound(round)
-        setMatchingOpensAtInput(round.matching_opens_at ? toDatetimeLocal(round.matching_opens_at) : '')
-      } else {
-        console.error('Round API error:', roundRes.status)
-      }
     } catch (err) {
       console.error('Error loading data:', err)
     } finally {
@@ -381,35 +373,6 @@ function AdminDashboardContent() {
     }
   }
 
-  // Registration-period / matching-phase gate on the active round (see
-  // lib/rounds.ts, app/api/admin/round/route.ts). value is null to revert
-  // to the registration phase, or an ISO string to schedule/open matching.
-  const handleSaveRoundPhase = async (value: string | null) => {
-    if (!token) return
-
-    setActionError(null)
-    setSavingRound(true)
-    try {
-      const res = await fetch(`/api/admin/round?token=${encodeURIComponent(token)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matching_opens_at: value }),
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        setActionError(body.error || 'Failed to update round')
-        return
-      }
-      const round = (await res.json()) as Round
-      setActiveRound(round)
-      setMatchingOpensAtInput(round.matching_opens_at ? toDatetimeLocal(round.matching_opens_at) : '')
-    } catch (err) {
-      setActionError((err as Error).message)
-    } finally {
-      setSavingRound(false)
-    }
-  }
-
   if (!authed) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -504,7 +467,7 @@ function AdminDashboardContent() {
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
-            Round {isRoundInMatchingPhase(activeRound) ? '🟢 Matching' : '🟡 Registration'}
+            Round {PHASE_BADGE[roundPhase(activeRound)]}
           </button>
         </div>
 
@@ -867,76 +830,14 @@ function AdminDashboardContent() {
           </div>
         )}
 
-        {tab === 'round' && (
-          <div className="bg-white rounded-lg shadow p-6 max-w-lg">
-            <h2 className="text-lg font-bold mb-1">
-              {activeRound ? `รอบ ${activeRound.label}` : 'ไม่มีรอบที่เปิดใช้งานอยู่'}
-            </h2>
-            {activeRound && (
-              <>
-                <p className="text-sm text-gray-600 mb-2">
-                  สถานะปัจจุบัน:{' '}
-                  <span className="font-medium">
-                    {isRoundInMatchingPhase(activeRound)
-                      ? '🟢 เปิดให้ดูผลการจับคู่แล้ว'
-                      : '🟡 ยังอยู่ในช่วงลงทะเบียน'}
-                  </span>
-                </p>
-
-                {/* Quick toggle for testing — flips the phase in one click
-                    without touching the scheduled time below. */}
-                <button
-                  onClick={() =>
-                    handleSaveRoundPhase(
-                      isRoundInMatchingPhase(activeRound) ? null : new Date().toISOString()
-                    )
-                  }
-                  disabled={savingRound}
-                  className="text-xs rounded-full px-3 py-1 border border-dashed border-gray-400 text-gray-600 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 mb-4"
-                >
-                  🔧 Debug: สลับเป็น{' '}
-                  {isRoundInMatchingPhase(activeRound) ? 'ช่วงลงทะเบียน' : 'ช่วงจับคู่'}
-                </button>
-
-                <label className="block text-sm font-medium mb-1">
-                  เวลาที่จะเปิดให้ดูผลการจับคู่ (matching_opens_at)
-                </label>
-                <input
-                  type="datetime-local"
-                  value={matchingOpensAtInput}
-                  onChange={(e) => setMatchingOpensAtInput(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-                />
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() =>
-                      handleSaveRoundPhase(
-                        matchingOpensAtInput ? new Date(matchingOpensAtInput).toISOString() : null
-                      )
-                    }
-                    disabled={savingRound}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {savingRound ? 'กำลังบันทึก...' : 'บันทึกเวลา'}
-                  </button>
-                  <button
-                    onClick={() => handleSaveRoundPhase(new Date().toISOString())}
-                    disabled={savingRound}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    เปิดทันที
-                  </button>
-                  <button
-                    onClick={() => handleSaveRoundPhase(null)}
-                    disabled={savingRound}
-                    className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    ย้อนกลับเป็นช่วงลงทะเบียน
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+        {tab === 'round' && token && (
+          <RoundPanel
+            key={role}
+            token={token}
+            role={role}
+            roleName={roles.find((r) => r.code === role)?.name_th ?? role}
+            onActiveChange={setActiveRound}
+          />
         )}
           </>
         )}

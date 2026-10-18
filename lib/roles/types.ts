@@ -16,7 +16,7 @@ export interface RoleImplementation {
   code: string
   validateProfile(body: unknown): body is ProfilePayload
   profileToRow(payload: ProfilePayload): Record<string, unknown>
-  // The requester's own row is already resolved and the global matching-phase
+  // The requester's own row is already resolved and that role's matching-phase
   // gate already applied by lib/matching.ts findMatchesFor.
   findMatches(requester: Teacher): Promise<MatchResult[]>
   // Reciprocal-pair predicate between two rows of this role, used for

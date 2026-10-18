@@ -1,6 +1,6 @@
 // Top-right "รอบ 1 / 2570" chip beside the matching-tab page titles
-// (Figma Filter/Year, node 173:3603). Display-only: there is a single
-// active round at a time, so there's nothing to switch between yet.
+// (Figma Filter/Year, node 173:3603). Display-only: a user only sees
+// their own role's active round, so there's nothing to switch between.
 export function RoundPill({ roundLabel }: { roundLabel: string | null }) {
   if (!roundLabel) return null
   return (

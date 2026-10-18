@@ -60,7 +60,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Invalid profile payload' }, { status: 400 })
     }
 
-    const { maxDestinations } = await getSubscriptionStatusFor(auth.sub)
+    const { maxDestinations } = await getSubscriptionStatusFor(auth.sub, role.code)
     if (body.destinations.length > maxDestinations) {
       return NextResponse.json(
         {
