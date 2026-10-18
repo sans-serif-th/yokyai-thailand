@@ -38,16 +38,18 @@ interface FullStats {
 // first load noticeably faster. getPlatformStats() and
 // getRegistrationBreakdown() share this one cache/one table scan.
 const STATS_CACHE_TTL_MS = 5 * 60_000
-let statsCache: { result: FullStats; cachedUntil: number } | null = null
+// Keyed by role code; '' = all roles (the Home tab's platform-wide numbers).
+const statsCache = new Map<string, { result: FullStats; cachedUntil: number }>()
 
-async function getFullStats(): Promise<FullStats> {
+async function getFullStats(category = ''): Promise<FullStats> {
   const now = Date.now()
-  if (statsCache && statsCache.cachedUntil > now) {
-    return statsCache.result
+  const hit = statsCache.get(category)
+  if (hit && hit.cachedUntil > now) {
+    return hit.result
   }
 
-  const result = await computeFullStats()
-  statsCache = { result, cachedUntil: now + STATS_CACHE_TTL_MS }
+  const result = await computeFullStats(category)
+  statsCache.set(category, { result, cachedUntil: now + STATS_CACHE_TTL_MS })
   return result
 }
 
@@ -63,11 +65,12 @@ export async function getPlatformStats(): Promise<PlatformStats> {
 // on the matches/favorites tabs in place of match results while the active
 // round is still in its registration phase — see
 // components/registration-breakdown.tsx and lib/rounds.ts.
-export async function getRegistrationBreakdown(): Promise<RegistrationBreakdown> {
-  return (await getFullStats()).breakdown
+// Scoped to one role: each role has its own registration period and pool.
+export async function getRegistrationBreakdown(category: string): Promise<RegistrationBreakdown> {
+  return (await getFullStats(category)).breakdown
 }
 
-async function computeFullStats(): Promise<FullStats> {
+async function computeFullStats(category: string): Promise<FullStats> {
   const supabase = createServiceClient()
 
   // Page through with .range() — a plain select silently caps at 1000 rows
@@ -89,7 +92,7 @@ async function computeFullStats(): Promise<FullStats> {
   )
 
   if (error) throw new Error(error.message)
-  const all = data ?? []
+  const all = (data ?? []).filter((t) => !category || t.category === category)
 
   const originProvinces = new Set<string>()
   const destinationProvinces = new Set<string>()

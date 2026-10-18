@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { LineAuthError, verifyRequestAuth } from '@/lib/line-auth'
+import { DEFAULT_ROLE } from '@/lib/rounds'
+import { createServiceClient } from '@/lib/supabase-server'
 import { getRegistrationBreakdown } from '@/lib/stats'
 
 // Shown on matches/favorites in place of match results while the active
@@ -8,8 +10,15 @@ import { getRegistrationBreakdown } from '@/lib/stats'
 // never an individual teacher record.
 export async function GET(request: Request) {
   try {
-    await verifyRequestAuth(request)
-    const breakdown = await getRegistrationBreakdown()
+    const auth = await verifyRequestAuth(request)
+    // Counts cover the caller's own role only (no profile yet = default role).
+    const { data: teacher, error } = await createServiceClient()
+      .from('teachers')
+      .select('category')
+      .eq('line_user_id', auth.sub)
+      .maybeSingle()
+    if (error) throw error
+    const breakdown = await getRegistrationBreakdown(teacher?.category ?? DEFAULT_ROLE)
     return NextResponse.json(breakdown)
   } catch (err) {
     if (err instanceof LineAuthError) {
