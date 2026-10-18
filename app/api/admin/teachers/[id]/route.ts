@@ -1,17 +1,8 @@
 import { createServiceClient } from '@/lib/supabase-server'
 import type { AdminStatus } from '@/lib/types'
+import { checkAdminToken } from '@/lib/admin-token'
 
 const ADMIN_STATUSES: AdminStatus[] = ['new', 'contacted', 'follow_up', 'closed']
-
-function checkAdminToken(token: string | null): boolean {
-  if (!token) return false
-  try {
-    const decoded = Buffer.from(token, 'base64').toString('utf-8')
-    return decoded.startsWith('admin:')
-  } catch {
-    return false
-  }
-}
 
 const EDITABLE_FIELDS = [
   'display_name',

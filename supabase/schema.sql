@@ -306,3 +306,13 @@ alter table news enable row level security;
 insert into storage.buckets (id, name, public)
 values ('news-images', 'news-images', true)
 on conflict (id) do nothing;
+
+-- Back-office logins (username + scrypt password hash); see migration 0027.
+create table if not exists admin_users (
+  id uuid primary key default gen_random_uuid(),
+  username text not null unique check (username ~ '^[a-z0-9._-]{3,32}$'),
+  password_hash text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table admin_users enable row level security;
