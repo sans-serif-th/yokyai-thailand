@@ -1,6 +1,7 @@
 import { createServiceClient, fetchAllRows } from '@/lib/supabase-server'
 import { requiresTeachingGroup } from '@/lib/positions'
 import type { Destination, Teacher } from '@/lib/types'
+import { checkAdminToken } from '@/lib/admin-token'
 
 // Admin-only view of match *density* across the entire dataset — every
 // mutual pair that satisfies the real matching criteria (position,
@@ -15,16 +16,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const token = url.searchParams.get('token')
 
-  if (!token) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  try {
-    const decoded = Buffer.from(token, 'base64').toString('utf-8')
-    if (!decoded.startsWith('admin:')) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-  } catch {
+  if (!checkAdminToken(token)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

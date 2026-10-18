@@ -65,6 +65,7 @@ function isRoundInMatchingPhase(round: Round | null) {
 export default function AdminDashboard() {
   const [authed, setAuthed] = useState(false)
   const [token, setToken] = useState<string | null>(null)
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [passwordError, setPasswordError] = useState('')
   const [teachers, setTeachers] = useState<AdminTeacher[]>([])
@@ -187,11 +188,11 @@ export default function AdminDashboard() {
       const response = await fetch('/api/admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username, password }),
       })
 
       if (!response.ok) {
-        setPasswordError('Invalid password')
+        setPasswordError('Invalid username or password')
         return
       }
 
@@ -201,6 +202,7 @@ export default function AdminDashboard() {
       setToken(newToken)
       setAuthed(true)
       setPassword('')
+      setUsername('')
       loadData(newToken)
     } catch (err) {
       setPasswordError('Login failed')
@@ -217,6 +219,14 @@ export default function AdminDashboard() {
         fetch(`/api/admin/round?token=${encodeURIComponent(authToken)}`),
       ])
 
+      // Expired (or pre-upgrade) token: drop it and go back to the login form.
+      if (teachersRes.status === 401) {
+        localStorage.removeItem('admin_token')
+        window.dispatchEvent(new Event('admin-auth-change'))
+        setToken(null)
+        setAuthed(false)
+        return
+      }
       if (!teachersRes.ok) {
         console.error('Teachers API error:', teachersRes.status)
         return
@@ -382,14 +392,26 @@ export default function AdminDashboard() {
           <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Admin Password</label>
+              <label className="block text-sm font-medium mb-1">Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter username"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter password"
-                autoFocus
               />
             </div>
             {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}

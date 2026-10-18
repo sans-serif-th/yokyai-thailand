@@ -1,14 +1,5 @@
 import { createServiceClient } from '@/lib/supabase-server'
-
-function checkAdminToken(token: string | null): boolean {
-  if (!token) return false
-  try {
-    const decoded = Buffer.from(token, 'base64').toString('utf-8')
-    return decoded.startsWith('admin:')
-  } catch {
-    return false
-  }
-}
+import { checkAdminToken } from '@/lib/admin-token'
 
 // Unlike subjects, service_type codes ('primary'/'secondary'/'vocational')
 // are a fixed union baked into matching logic (lib/service-types.ts,
