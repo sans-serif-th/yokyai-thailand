@@ -87,7 +87,7 @@ export default function AdminRolesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-6xl">
         <h1 className="mb-2 text-3xl font-bold">Roles</h1>
         <p className="mb-6 text-sm text-gray-600">
           Types of users (ครู, พยาบาล, …). A role can only be set to Active once code for its
