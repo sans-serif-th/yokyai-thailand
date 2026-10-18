@@ -1,38 +1,50 @@
 import { TopBar } from '@/components/top-bar'
+import {
+  TERMS_EFFECTIVE_DATE,
+  TERMS_INTRO,
+  TERMS_PROVIDER,
+  TERMS_SECTIONS,
+  TERMS_SITE,
+} from '@/lib/terms-content'
 
 export default function TermsPage() {
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 pb-6">
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-8">
       <TopBar title="ข้อกำหนดและเงื่อนไข" />
 
-      <p className="text-sm text-zinc-800 bg-sungold/25 border border-sungold rounded-2xl p-3">
-        ฉบับร่าง — ข้อความนี้เป็นเพียงตัวอย่างเบื้องต้น ยังไม่ผ่านการตรวจสอบทางกฎหมาย
-      </p>
+      <header className="flex flex-col gap-1 text-sm text-zinc-600">
+        <h1 className="text-base font-semibold text-zinc-900">ข้อกำหนดและเงื่อนไขการใช้บริการ</h1>
+        <p>เว็บไซต์โยกย้าย: {TERMS_SITE}</p>
+        <p>ผู้ให้บริการ: {TERMS_PROVIDER}</p>
+        <p>วันที่มีผลบังคับใช้: {TERMS_EFFECTIVE_DATE}</p>
+      </header>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="font-medium">ข้อมูลที่เราเก็บ</h2>
-        <p className="text-sm text-zinc-600">
-          เมื่อเข้าสู่ระบบผ่าน LINE เราจะเก็บชื่อ-นามสกุล, ตำแหน่ง, หน่วยงานต้นสังกัด,
-          จังหวัด/อำเภอ/เขตพื้นที่ต้นทางและปลายทาง, กลุ่มสาระการเรียนรู้และวิชาเอก (ถ้ามี),
-          และข้อมูลเพิ่มเติมที่ท่านกรอกเอง (เช่น ข้อมูลสวัสดิการ)
-        </p>
-      </section>
+      <div className="flex flex-col gap-2 text-sm text-zinc-600">
+        {TERMS_INTRO.map((p) => (
+          <p key={p}>{p}</p>
+        ))}
+      </div>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="font-medium">วัตถุประสงค์การใช้ข้อมูล</h2>
-        <p className="text-sm text-zinc-600">
-          ข้อมูลของท่านจะถูกใช้เพื่อค้นหาและแสดงผลการจับคู่ผู้ที่ต้องการย้ายสับเปลี่ยนตำแหน่งซึ่งกันและกันเท่านั้น
-          ระบบไม่ได้ดำเนินการอนุมัติการย้าย — ขั้นตอนอนุมัติเป็นไปตามกระบวนการของหน่วยงานต้นสังกัดตามปกติ
-        </p>
-      </section>
-
-      <section className="flex flex-col gap-2">
-        <h2 className="font-medium">การติดต่อ</h2>
-        <p className="text-sm text-zinc-600">
-          เมื่อพบคู่ที่จับคู่กันได้ ระบบจะให้ท่านติดต่อกันผ่าน LINE โดยตรง เราไม่ขอเบอร์โทรศัพท์
-          และไม่แชร์ข้อมูลของท่านให้บุคคลอื่นนอกเหนือจากคู่ที่จับคู่กันได้
-        </p>
-      </section>
+      {TERMS_SECTIONS.map((section) => (
+        <section key={section.heading} className="flex flex-col gap-2">
+          <h2 className="font-medium">{section.heading}</h2>
+          {section.clauses.map((clause) => (
+            <div key={clause.no || section.heading} className="flex flex-col gap-1 text-sm text-zinc-600">
+              {clause.title && <h3 className="font-medium text-zinc-800">{clause.no} {clause.title}</h3>}
+              {clause.paragraphs.map((p, i) => (
+                <p key={p}>{!clause.title && i === 0 && clause.no ? `${clause.no} ` : ''}{p}</p>
+              ))}
+              {clause.items && (
+                <ol className="ml-5 flex list-decimal flex-col gap-0.5">
+                  {clause.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          ))}
+        </section>
+      ))}
     </div>
   )
 }
