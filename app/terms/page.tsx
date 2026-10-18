@@ -7,10 +7,16 @@ import {
   TERMS_SITE,
 } from '@/lib/terms-content'
 
-export default function TermsPage() {
+export default async function TermsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>
+}) {
+  // See app/privacy/page.tsx for why the back arrow is conditional.
+  const { from } = await searchParams
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-8">
-      <TopBar title="ข้อกำหนดและเงื่อนไข" />
+      <TopBar title="ข้อกำหนดและเงื่อนไข" backHref={from === 'profile' ? '/profile' : undefined} />
 
       <header className="flex flex-col gap-1 text-sm text-zinc-600">
         <h1 className="text-base font-semibold text-zinc-900">ข้อกำหนดและเงื่อนไขการใช้บริการ</h1>

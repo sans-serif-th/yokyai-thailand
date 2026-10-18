@@ -3,14 +3,16 @@ import type { LegalDocumentContent } from '@/lib/legal-types'
 
 export function LegalDocument({
   barTitle,
+  backHref,
   doc,
 }: {
   barTitle: string
+  backHref?: string
   doc: LegalDocumentContent
 }) {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-8">
-      <TopBar title={barTitle} />
+      <TopBar title={barTitle} backHref={backHref} />
 
       <header className="flex flex-col gap-1 text-sm text-zinc-600">
         <h1 className="text-base font-semibold text-zinc-900">{doc.title}</h1>
