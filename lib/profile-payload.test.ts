@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { profilePayloadToTeacherRow, validateProfilePayload } from './profile-payload'
+import {
+  contactPatchToRow,
+  profilePayloadToTeacherRow,
+  validateContactPatch,
+  validateProfilePayload,
+} from './profile-payload'
 
 const base = {
   displayName: 'สมชาย ใจดี',
@@ -96,5 +101,28 @@ describe('profilePayloadToTeacherRow', () => {
     expect(row.phone).toBeNull()
     expect(row.teaching_group).toBeNull()
     expect(row.subject).toBeNull()
+  })
+})
+
+describe('contact patch', () => {
+  it('accepts name with optional phone / LINE ID, incl. blanks that clear them', () => {
+    expect(validateContactPatch({ displayName: 'สมชาย ใจดี' })).toBe(true)
+    expect(validateContactPatch({ displayName: 'x', phone: '081-234-5678', lineId: 'somchai.j' })).toBe(true)
+    expect(validateContactPatch({ displayName: 'x', phone: '  ', lineId: '' })).toBe(true)
+  })
+
+  it('rejects blank names and malformed contacts', () => {
+    expect(validateContactPatch({ displayName: '  ' })).toBe(false)
+    expect(validateContactPatch({ displayName: 'x', phone: 'abc' })).toBe(false)
+    expect(validateContactPatch({ displayName: 'x', lineId: 'a b' })).toBe(false)
+    expect(validateContactPatch(null)).toBe(false)
+  })
+
+  it('maps only name, phone and LINE ID (blank -> null)', () => {
+    expect(contactPatchToRow({ displayName: ' สมชาย ', phone: ' ', lineId: ' abc.def ' })).toEqual({
+      display_name: 'สมชาย',
+      phone: null,
+      line_id: 'abc.def',
+    })
   })
 })

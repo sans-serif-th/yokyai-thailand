@@ -46,6 +46,21 @@ describe('sanitizeForMatch', () => {
     expect(s.facebook_url).toBeNull()
   })
 
+  it('blanks every column that is not on the visible allow-list', () => {
+    const s = sanitizeForMatch({ ...teacher, future_field: 'secret' } as Teacher)
+    expect((s as unknown as Record<string, unknown>).future_field).toBeNull()
+    expect(s.line_user_id).toBeNull()
+  })
+
+  it('keeps the columns match cards need', () => {
+    const s = sanitizeForMatch(teacher)
+    expect(s.id).toBe('t1')
+    expect(s.position).toBe('teacher')
+    expect(s.origin_province).toBe('เชียงใหม่')
+    expect(s.teaching_group).toBe('math')
+    expect(s.category).toBe('teacher')
+  })
+
   it('drops the facebook link for imported rows too', () => {
     expect(sanitizeForMatch({ ...teacher, source: 'facebook_import' }).facebook_url).toBeNull()
   })

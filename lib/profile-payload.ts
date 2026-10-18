@@ -8,11 +8,41 @@ import type { ProfilePayload } from './types'
 // same shape and must apply identical rules, so this lives in one place
 // rather than drifting across two copies.
 
-const BENEFIT_NOTE_MAX_LENGTH = 500
-const PHONE_PATTERN = /^[0-9+\-\s]{6,20}$/
+export const BENEFIT_NOTE_MAX_LENGTH = 500
+export const PHONE_PATTERN = /^[0-9+\-\s]{6,20}$/
 // LINE IDs are 4-20 characters: letters, digits, '.', '-' and '_' (an official
 // account's leading '@' is tolerated).
 export const LINE_ID_PATTERN = /^@?[A-Za-z0-9._-]{4,20}$/
+
+export interface ContactPatch {
+  displayName: string
+  phone: string | null
+  lineId: string | null
+}
+
+// Body of PATCH /api/teachers/contact: the only fields a user edits on the
+// profile-edit screen. Kept separate from the full-profile PUT so that screen
+// never has to re-send (and risk wiping) the rest of the profile.
+export function validateContactPatch(body: unknown): body is ContactPatch {
+  if (!body || typeof body !== 'object') return false
+  const b = body as Record<string, unknown>
+  if (typeof b.displayName !== 'string' || !b.displayName.trim()) return false
+  if (b.phone !== null && b.phone !== undefined) {
+    if (typeof b.phone !== 'string' || (b.phone.trim() && !PHONE_PATTERN.test(b.phone.trim()))) return false
+  }
+  if (b.lineId !== null && b.lineId !== undefined) {
+    if (typeof b.lineId !== 'string' || (b.lineId.trim() && !LINE_ID_PATTERN.test(b.lineId.trim()))) return false
+  }
+  return true
+}
+
+export function contactPatchToRow(patch: ContactPatch) {
+  return {
+    display_name: patch.displayName.trim(),
+    phone: patch.phone?.trim() || null,
+    line_id: patch.lineId?.trim() || null,
+  }
+}
 
 export function validateProfilePayload(body: unknown): body is ProfilePayload {
   if (!body || typeof body !== 'object') return false
