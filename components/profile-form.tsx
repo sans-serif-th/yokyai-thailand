@@ -19,7 +19,7 @@ import { OnboardingWelcome } from './onboarding-welcome'
 import { StepProgress } from './step-progress'
 import { SectionHeader } from './section-header'
 import { TransferFields } from './transfer-fields'
-import type { Destination, ProfilePayload, Teacher } from '@/lib/types'
+import type { Destination, ProfilePayload, RoleInfo, Teacher } from '@/lib/types'
 
 // -1 is the welcome screen (professional-category gate, see
 // onboarding-welcome.tsx) — shown once, before the numbered steps.
@@ -41,10 +41,20 @@ interface ProfileFormProps {
   initialTeacher: Teacher | null
   initialDestinations: Destination[]
   onSave: (payload: ProfilePayload) => Promise<void>
+  // Admin-managed roles for the welcome screen (see /admin/roles); optional.
+  roles?: RoleInfo[]
 }
 
-export function ProfileForm({ initialTeacher, initialDestinations, onSave }: ProfileFormProps) {
+export function ProfileForm({
+  initialTeacher,
+  initialDestinations,
+  onSave,
+  roles,
+}: ProfileFormProps) {
   const [step, setStep] = useState<Step>(initialTeacher?.position ? 1 : -1)
+  // The role picked on the welcome screen; sent only with a first registration
+  // (the server ignores it for existing profiles).
+  const [category, setCategory] = useState<string | undefined>(undefined)
 
   // Step 1 — ข้อมูลต้นทาง
   const [position, setPosition] = useState<PositionCode | ''>(initialTeacher?.position ?? '')
@@ -234,6 +244,7 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
     setSaving(true)
     try {
       await onSave({
+        ...(category ? { category } : {}),
         displayName: `${firstName.trim()} ${lastName.trim()}`.trim(),
         position,
         serviceType,
@@ -261,7 +272,17 @@ export function ProfileForm({ initialTeacher, initialDestinations, onSave }: Pro
     }
   }
 
-  if (step === -1) return <OnboardingWelcome onContinue={() => setStep(1)} />
+  if (step === -1) {
+    return (
+      <OnboardingWelcome
+        roles={roles}
+        onContinue={(chosen) => {
+          setCategory(chosen)
+          setStep(1)
+        }}
+      />
+    )
+  }
 
   return (
     <div className="flex w-full flex-col gap-5 max-w-lg mx-auto p-4 pb-24">

@@ -1,5 +1,5 @@
 import { createServiceClient, fetchAllRows } from '@/lib/supabase-server'
-import { requiresTeachingGroup } from '@/lib/positions'
+import { listMutualPairs } from '@/lib/roles/pairs'
 import type { Destination, Teacher } from '@/lib/types'
 import { checkAdminToken } from '@/lib/admin-token'
 
@@ -41,33 +41,9 @@ export async function GET(request: Request) {
 
   const all = (teachers || []) as (Teacher & { destinations: Destination[] })[]
 
-  const pairs: {
-    a: Teacher & { destinations: Destination[] }
-    b: Teacher & { destinations: Destination[] }
-  }[] = []
-
-  for (let i = 0; i < all.length; i++) {
-    const a = all[i]
-    if (!a.destinations?.length) continue
-
-    for (let j = i + 1; j < all.length; j++) {
-      const b = all[j]
-      if (!b.destinations?.length) continue
-
-      if (a.position !== b.position) continue
-      if (a.service_type !== b.service_type) continue
-      // The exact subject must match — not just the broader teaching_group
-      // — and an unspecified subject on either side can't count as a match.
-      if (requiresTeachingGroup(a.position) && (!a.subject || a.subject !== b.subject)) continue
-
-      const aWantsBOrigin = a.destinations.some((d) => d.province === b.origin_province)
-      const bWantsAOrigin = b.destinations.some((d) => d.province === a.origin_province)
-
-      if (aWantsBOrigin && bWantsAOrigin) {
-        pairs.push({ a, b })
-      }
-    }
-  }
+  // Counted per role — see lib/roles/pairs.ts. The teacher rule (exact subject,
+  // reciprocal provinces) lives in lib/roles/teacher.ts.
+  const pairs = listMutualPairs(all)
 
   return Response.json({
     totalTeachers: all.length,

@@ -1,6 +1,7 @@
 import { createServiceClient } from '@/lib/supabase-server'
 import type { AdminStatus } from '@/lib/types'
 import { checkAdminToken } from '@/lib/admin-token'
+import { hasRoleImplementation } from '@/lib/roles'
 
 const ADMIN_STATUSES: AdminStatus[] = ['new', 'contacted', 'follow_up', 'closed']
 
@@ -44,6 +45,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   if ('admin_status' in update && !ADMIN_STATUSES.includes(update.admin_status as AdminStatus)) {
     return Response.json({ error: 'Invalid admin_status' }, { status: 400 })
+  }
+
+  // Moving a user to a role with no code behind it would break their matching
+  // and profile edits (lib/roles).
+  if ('category' in update && !hasRoleImplementation(String(update.category))) {
+    return Response.json({ error: 'That role has no implementation yet' }, { status: 400 })
   }
 
   const supabase = createServiceClient()

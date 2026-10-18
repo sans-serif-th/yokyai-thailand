@@ -1,4 +1,4 @@
-import { requiresTeachingGroup } from '@/lib/positions'
+import { listCrossPairs } from '@/lib/roles/pairs'
 import { createServiceClient, fetchAllRows } from '@/lib/supabase-server'
 import { checkAdminToken } from '@/lib/admin-token'
 
@@ -15,6 +15,7 @@ export async function GET(request: Request) {
   const SELECT_FIELDS = `
     id,
     line_user_id,
+    category,
     display_name,
     position,
     service_type,
@@ -67,40 +68,12 @@ export async function GET(request: Request) {
   const unclaimed = unclaimedRes.data || []
   const realUsers = realUsersRes.data || []
 
-  // Find matches where:
-  // - Real user wants to go to seed's origin province
-  // - Seed wants to go to real user's origin province
-  const potentialMatches = []
-  for (const seed of unclaimed) {
-    for (const realUser of realUsers) {
-      if (realUser.position !== seed.position) continue
-      if (realUser.service_type !== seed.service_type) continue
-      // The exact subject must match — not just the broader teaching_group
-      // — and an unspecified subject on either side can't count as a match.
-      if (requiresTeachingGroup(seed.position) && (!seed.subject || seed.subject !== realUser.subject))
-        continue
-
-      const seedWantsRealUserOrigin = seed.destinations?.some(
-        (d: any) => d.province === realUser.origin_province
-      )
-      const realUserWantsSeedOrigin = realUser.destinations?.some(
-        (d: any) => d.province === seed.origin_province
-      )
-
-      if (seedWantsRealUserOrigin && realUserWantsSeedOrigin) {
-        potentialMatches.push({
-          seed: {
-            ...seed,
-            destinations: seed.destinations || [],
-          },
-          realUser: {
-            ...realUser,
-            destinations: realUser.destinations || [],
-          },
-        })
-      }
-    }
-  }
+  // A seed and a real user pair up when each wants the other's origin
+  // province (plus the role's own rules — lib/roles/pairs.ts).
+  const potentialMatches = listCrossPairs(unclaimed, realUsers).map(({ left: seed, right: realUser }) => ({
+    seed: { ...seed, destinations: seed.destinations || [] },
+    realUser: { ...realUser, destinations: realUser.destinations || [] },
+  }))
 
   return Response.json(potentialMatches)
 }

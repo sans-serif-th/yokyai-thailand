@@ -7,6 +7,7 @@ import type {
   PlatformStats,
   ProfilePayload,
   RegistrationBreakdown,
+  RoleInfo,
   SubscriptionStatus,
   Teacher,
 } from './types'
@@ -93,6 +94,10 @@ export async function fetchNews(idToken: string): Promise<{ news: NewsSummary[] 
 
 export async function fetchNewsItem(idToken: string, id: string): Promise<{ news: NewsItem }> {
   return cached(`news:${id}`, () => authedFetch(`/api/news/${id}`, idToken))
+}
+
+export async function fetchRoles(idToken: string): Promise<{ roles: RoleInfo[] }> {
+  return cached('roles', () => authedFetch('/api/roles', idToken))
 }
 
 export async function fetchMatches(idToken: string): Promise<{ matches: MatchResult[] }> {

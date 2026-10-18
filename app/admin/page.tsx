@@ -83,6 +83,8 @@ export default function AdminDashboard() {
   const [destinationFilter, setDestinationFilter] = useState('')
   const [serviceTypeFilter, setServiceTypeFilter] = useState('')
   const [roundFilter, setRoundFilter] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
+  const [roles, setRoles] = useState<{ code: string; name_th: string; hasImplementation: boolean }[]>([])
 
   const [activeRound, setActiveRound] = useState<Round | null>(null)
   const [matchingOpensAtInput, setMatchingOpensAtInput] = useState('')
@@ -104,6 +106,7 @@ export default function AdminDashboard() {
       if (destinationFilter && !t.destinations?.some((d) => d.province === destinationFilter)) return false
       if (serviceTypeFilter && t.service_type !== serviceTypeFilter) return false
       if (roundFilter && roundKey(t) !== roundFilter) return false
+      if (categoryFilter && t.category !== categoryFilter) return false
       return true
     })
   }, [
@@ -114,12 +117,13 @@ export default function AdminDashboard() {
     destinationFilter,
     serviceTypeFilter,
     roundFilter,
+    categoryFilter,
   ])
 
   // Reset to page 1 whenever the filtered set changes underneath the current page.
   useEffect(() => {
     setPage(1)
-  }, [sourceFilter, subjectFilter, originFilter, destinationFilter, serviceTypeFilter, roundFilter])
+  }, [sourceFilter, subjectFilter, originFilter, destinationFilter, serviceTypeFilter, roundFilter, categoryFilter])
 
   const totalPages = Math.max(1, Math.ceil(filteredTeachers.length / pageSize))
   const paginatedTeachers = useMemo(
@@ -212,6 +216,13 @@ export default function AdminDashboard() {
   const loadData = async (authToken: string) => {
     setLoading(true)
     try {
+      // Role names for the category column/filter — best-effort, the page
+      // works without them (falls back to the raw code).
+      fetch(`/api/admin/roles?token=${encodeURIComponent(authToken)}`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then(setRoles)
+        .catch(() => {})
+
       const [teachersRes, matchesRes, coverageRes, roundRes] = await Promise.all([
         fetch(`/api/admin/teachers?token=${encodeURIComponent(authToken)}`),
         fetch(`/api/admin/potential-matches?token=${encodeURIComponent(authToken)}`),
@@ -496,6 +507,18 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-lg shadow p-4 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All Roles</option>
+                  {roles.map((r) => (
+                    <option key={r.code} value={r.code}>
+                      {r.name_th}
+                    </option>
+                  ))}
+                </select>
+                <select
                   value={serviceTypeFilter}
                   onChange={(e) => setServiceTypeFilter(e.target.value)}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -605,10 +628,7 @@ export default function AdminDashboard() {
                       <td className="px-4 py-3 font-medium">{t.display_name}</td>
                       <td className="px-4 py-3">
                         <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          {t.category === 'teacher' && 'ครู'}
-                          {t.category === 'nurse' && 'พยาบาล'}
-                          {t.category === 'physician' && 'แพทย์'}
-                          {!['teacher', 'nurse', 'physician'].includes(t.category) && t.category}
+                          {roles.find((r) => r.code === t.category)?.name_th ?? t.category}
                         </span>
                       </td>
                       <td className="px-4 py-3">{serviceTypeAbbr(t.service_type)}</td>
@@ -911,6 +931,7 @@ export default function AdminDashboard() {
 
       {editingTeacher && (
         <EditTeacherModal
+          roles={roles}
           teacher={editingTeacher}
           onCancel={() => setEditingTeacher(null)}
           onSave={handleSaveEdit}
@@ -980,10 +1001,12 @@ function CoverageSide({
 }
 
 function EditTeacherModal({
+  roles,
   teacher,
   onCancel,
   onSave,
 }: {
+  roles: { code: string; name_th: string; hasImplementation: boolean }[]
   teacher: AdminTeacher
   onCancel: () => void
   onSave: (updated: Partial<AdminTeacher>) => void
@@ -1035,7 +1058,27 @@ function EditTeacherModal({
         <form onSubmit={handleSubmit} className="space-y-3">
           {field('display_name', 'Name')}
           <div className="grid grid-cols-2 gap-3">
-            {field('category', 'Category')}
+            <label className="block text-sm">
+              <span className="block font-medium mb-1">Role</span>
+              <select
+                value={form.category}
+                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {/* Only roles with code behind them: moving someone to a role
+                    without one would break their matching and profile edits. */}
+                {roles
+                  .filter((r) => r.hasImplementation || r.code === form.category)
+                  .map((r) => (
+                    <option key={r.code} value={r.code}>
+                      {r.name_th}
+                    </option>
+                  ))}
+                {!roles.some((r) => r.code === form.category) && (
+                  <option value={form.category}>{form.category}</option>
+                )}
+              </select>
+            </label>
             {field('position', 'Position')}
           </div>
           <div className="grid grid-cols-2 gap-3">

@@ -3,10 +3,23 @@
 import Image from 'next/image'
 import { useState } from 'react'
 import { CATEGORIES } from '@/lib/categories'
+import type { RoleInfo } from '@/lib/types'
 import { ArrowLeftIcon, CheckIcon } from './icons'
 
 interface OnboardingWelcomeProps {
-  onContinue: () => void
+  // Roles from /api/roles (admin-managed, see /admin/roles). Falls back to the
+  // static list in lib/categories.ts when they couldn't be loaded.
+  roles?: Pick<RoleInfo, 'code' | 'name_th' | 'status'>[]
+  // The chosen role's code — undefined when there was nothing to choose from.
+  onContinue: (category?: string) => void
+}
+
+function fallbackRoles(): Pick<RoleInfo, 'code' | 'name_th' | 'status'>[] {
+  return CATEGORIES.map((c) => ({
+    code: c.code,
+    name_th: c.nameTh,
+    status: c.comingSoon ? ('coming_soon' as const) : ('active' as const),
+  }))
 }
 
 export interface Slide {
@@ -76,14 +89,19 @@ export function SlideIllustration({ index }: { index: number }) {
 // The wizard's entry screen — a 3-slide illustrated explainer (Figma
 // "Onboarding-step-2" frames 164:3004 / 164:2957 / 164:2907) with the
 // supported/coming-soon professional categories listed under each slide.
-// Category isn't persisted anywhere (see lib/categories.ts) — this screen
-// is purely an explainer before the numbered form steps.
-export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps) {
+// Active roles are listed under "รองรับ"; with more than one the user picks
+// theirs here (it is saved with the profile), with just one it is implied.
+export function OnboardingWelcome({ roles, onContinue }: OnboardingWelcomeProps) {
   const [index, setIndex] = useState(0)
   const slide = SLIDES[index]
   const isLast = index === SLIDES.length - 1
-  const supported = CATEGORIES.filter((c) => !c.comingSoon)
-  const comingSoon = CATEGORIES.filter((c) => c.comingSoon)
+  const list = roles ?? fallbackRoles()
+  const supported = list.filter((r) => r.status === 'active')
+  const comingSoon = list.filter((r) => r.status === 'coming_soon')
+  const mustChoose = supported.length > 1
+  const [selected, setSelected] = useState<string | null>(
+    supported.length === 1 ? supported[0].code : null
+  )
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col gap-5 px-4 py-6">
@@ -113,19 +131,34 @@ export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps) {
       <div className="flex flex-1 flex-col">
         <div className="flex flex-col gap-2 px-4 py-2">
           <p className="text-[10px] font-semibold leading-[15px]">รองรับ</p>
-          {supported.map((c) => (
-            <div key={c.code} className="flex items-center gap-1 text-[14px] leading-[21px]">
-              <span className="flex-1">{c.nameTh}</span>
-              <CheckIcon className="text-[#15803d]" />
-            </div>
-          ))}
+          {supported.map((c) =>
+            mustChoose ? (
+              <button
+                key={c.code}
+                type="button"
+                onClick={() => setSelected(c.code)}
+                aria-pressed={selected === c.code}
+                className={`flex items-center gap-1 rounded-lg border px-3 py-2 text-left text-[14px] leading-[21px] ${
+                  selected === c.code ? 'border-brand-red' : 'border-zinc-200'
+                }`}
+              >
+                <span className="flex-1">{c.name_th}</span>
+                {selected === c.code && <CheckIcon className="text-[#15803d]" />}
+              </button>
+            ) : (
+              <div key={c.code} className="flex items-center gap-1 text-[14px] leading-[21px]">
+                <span className="flex-1">{c.name_th}</span>
+                <CheckIcon className="text-[#15803d]" />
+              </div>
+            )
+          )}
         </div>
         <div className="flex flex-col gap-2 px-4 py-2">
           <p className="text-[10px] font-semibold leading-[15px]">เร็วๆนี้</p>
           <div className="flex flex-col gap-1">
             {comingSoon.map((c) => (
               <div key={c.code} className="flex items-center gap-1 text-[14px] leading-[21px]">
-                <span className="flex-1">{c.nameTh}</span>
+                <span className="flex-1">{c.name_th}</span>
                 <CheckIcon className="text-zinc-300" />
               </div>
             ))}
@@ -146,8 +179,9 @@ export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps) {
         )}
         <button
           type="button"
-          onClick={() => (isLast ? onContinue() : setIndex(index + 1))}
-          className="btn-brand-primary flex-1"
+          onClick={() => (isLast ? onContinue(selected ?? undefined) : setIndex(index + 1))}
+          disabled={isLast && mustChoose && !selected}
+          className="btn-brand-primary flex-1 disabled:opacity-50"
         >
           {isLast ? 'เริ่มใช้งาน' : 'ถัดไป'}
         </button>
