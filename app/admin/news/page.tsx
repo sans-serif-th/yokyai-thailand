@@ -157,9 +157,6 @@ export default function AdminNewsPage() {
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold">News</h1>
           <div className="flex gap-2">
-            <Link href="/admin" className="rounded-lg border border-gray-300 bg-white px-4 py-2 hover:bg-gray-100">
-              Dashboard
-            </Link>
             <button onClick={startCreate} className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
               Add news
             </button>
