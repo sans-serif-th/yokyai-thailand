@@ -9,8 +9,8 @@ export interface AdminRole extends RoleInfo {
 }
 
 const STATUS_LABEL: Record<RoleStatus, string> = {
-  active: 'Active — selectable at sign-up',
-  coming_soon: 'Coming soon — listed as "เร็วๆนี้"',
+  active: 'Active',
+  coming_soon: 'Coming soon',
   hidden: 'Hidden',
 }
 
@@ -20,8 +20,8 @@ interface RolesTableProps {
   onDelete: (role: AdminRole) => void
 }
 
-const inputClass =
-  'w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
+const cellInput =
+  'w-full rounded border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500'
 
 function RoleRow({ role, onSave, onDelete }: { role: AdminRole } & Omit<RolesTableProps, 'roles'>) {
   const [nameTh, setNameTh] = useState(role.name_th)
@@ -30,80 +30,100 @@ function RoleRow({ role, onSave, onDelete }: { role: AdminRole } & Omit<RolesTab
   const dirty = nameTh !== role.name_th || nameEn !== role.name_en || order !== String(role.sort_order)
 
   return (
-    <li className="p-4">
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="font-mono text-sm text-gray-600">{role.code}</span>
+    <tr className="align-middle hover:bg-gray-50">
+      <td className="px-3 py-2">
+        <input
+          type="number"
+          aria-label={`Order of ${role.code}`}
+          value={order}
+          onChange={(e) => setOrder(e.target.value)}
+          className={`${cellInput} w-16`}
+        />
+      </td>
+      <td className="px-3 py-2 font-mono text-sm text-gray-700">{role.code}</td>
+      <td className="px-3 py-2">
+        <input
+          aria-label={`Thai name of ${role.code}`}
+          value={nameTh}
+          onChange={(e) => setNameTh(e.target.value)}
+          className={cellInput}
+        />
+      </td>
+      <td className="px-3 py-2">
+        <input
+          aria-label={`English name of ${role.code}`}
+          value={nameEn}
+          onChange={(e) => setNameEn(e.target.value)}
+          className={cellInput}
+        />
+      </td>
+      <td className="px-3 py-2">
+        <select
+          aria-label={`Status of ${role.code}`}
+          value={role.status}
+          onChange={(e) => onSave(role.code, { status: e.target.value as RoleStatus })}
+          className={cellInput}
+        >
+          {(Object.keys(STATUS_LABEL) as RoleStatus[]).map((status) => (
+            <option key={status} value={status} disabled={status === 'active' && !role.hasImplementation}>
+              {STATUS_LABEL[status]}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td className="px-3 py-2 text-right tabular-nums">{role.userCount}</td>
+      <td className="px-3 py-2">
         <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+          className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${
             role.hasImplementation ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
           }`}
         >
           {role.hasImplementation ? 'Has code' : 'No code yet'}
         </span>
-        <span className="text-xs text-gray-500">{role.userCount} user(s)</span>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-[1fr_1fr_5rem]">
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium">Thai name</span>
-          <input value={nameTh} onChange={(e) => setNameTh(e.target.value)} className={inputClass} />
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium">English name</span>
-          <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} className={inputClass} />
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium">Order</span>
-          <input
-            type="number"
-            value={order}
-            onChange={(e) => setOrder(e.target.value)}
-            className={inputClass}
-          />
-        </label>
-      </div>
-
-      <div className="mt-3 flex flex-wrap items-end gap-3">
-        <label className="block flex-1 text-sm">
-          <span className="mb-1 block font-medium">Status</span>
-          <select
-            value={role.status}
-            onChange={(e) => onSave(role.code, { status: e.target.value as RoleStatus })}
-            className={inputClass}
-          >
-            {(Object.keys(STATUS_LABEL) as RoleStatus[]).map((status) => (
-              <option key={status} value={status} disabled={status === 'active' && !role.hasImplementation}>
-                {STATUS_LABEL[status]}
-              </option>
-            ))}
-          </select>
-        </label>
+      </td>
+      <td className="whitespace-nowrap px-3 py-2 text-right">
         <button
           disabled={!dirty}
           onClick={() =>
             onSave(role.code, { name_th: nameTh, name_en: nameEn, sort_order: Number(order) })
           }
-          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-40"
+          className="mr-2 rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700 disabled:opacity-40"
         >
           Save
         </button>
         <button
           onClick={() => onDelete(role)}
-          className="rounded-lg border border-red-300 px-4 py-2 text-red-700 hover:bg-red-50"
+          className="rounded border border-red-300 px-3 py-1 text-sm text-red-700 hover:bg-red-50"
         >
           Delete
         </button>
-      </div>
-    </li>
+      </td>
+    </tr>
   )
 }
 
 export function RolesTable({ roles, onSave, onDelete }: RolesTableProps) {
   return (
-    <ul className="divide-y divide-gray-200 rounded-lg bg-white shadow">
-      {roles.map((role) => (
-        <RoleRow key={role.code} role={role} onSave={onSave} onDelete={onDelete} />
-      ))}
-    </ul>
+    <div className="overflow-x-auto rounded-lg bg-white shadow">
+      <table className="w-full min-w-[56rem] text-left text-sm">
+        <thead className="bg-gray-100 text-gray-700">
+          <tr>
+            <th className="px-3 py-3 font-medium">Order</th>
+            <th className="px-3 py-3 font-medium">Code</th>
+            <th className="min-w-40 px-3 py-3 font-medium">Thai name</th>
+            <th className="min-w-40 px-3 py-3 font-medium">English name</th>
+            <th className="w-40 px-3 py-3 font-medium">Status</th>
+            <th className="px-3 py-3 text-right font-medium">Users</th>
+            <th className="px-3 py-3 font-medium">Implementation</th>
+            <th className="px-3 py-3" />
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {roles.map((role) => (
+            <RoleRow key={role.code} role={role} onSave={onSave} onDelete={onDelete} />
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
