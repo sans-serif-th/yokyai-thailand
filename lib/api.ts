@@ -1,3 +1,4 @@
+import type { NewsItem, NewsSummary } from './news'
 import type {
   ContactRequestView,
   ContactStatus,
@@ -84,6 +85,14 @@ export async function saveProfile(
   // Profile changes alter matches, stats and the registration breakdown too.
   invalidateCache()
   return res
+}
+
+export async function fetchNews(idToken: string): Promise<{ news: NewsSummary[] }> {
+  return cached('news', () => authedFetch('/api/news', idToken))
+}
+
+export async function fetchNewsItem(idToken: string, id: string): Promise<{ news: NewsItem }> {
+  return cached(`news:${id}`, () => authedFetch(`/api/news/${id}`, idToken))
 }
 
 export async function fetchMatches(idToken: string): Promise<{ matches: MatchResult[] }> {

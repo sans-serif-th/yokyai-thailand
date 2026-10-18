@@ -421,6 +421,12 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <div className="flex gap-2">
             <a
+              href="/admin/news"
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-100"
+            >
+              News
+            </a>
+            <a
               href="/admin/master-data"
               className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-100"
             >

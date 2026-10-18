@@ -1,27 +1,142 @@
-// Home ("อัพเดท") news cards. Hardcoded for now (no CMS) — the two entries
-// below carry the Figma's placeholder title/date/body; replace the text (and
-// add banners under /public) as real announcements are published.
-export interface NewsItem {
-  id: string
-  image: string
+// Home ("อัพเดท") news. Rows live in the `news` table (0026_news.sql) and are
+// edited from /admin/news; this file holds the shared types plus the pure
+// helpers (date label, payload validation) so they can be unit-tested.
+export type NewsLayout = 'article' | 'steps'
+
+export interface NewsStep {
   title: string
-  date: string
-  body: string
+  description: string
+  image_url: string | null
 }
 
-export const NEWS: NewsItem[] = [
-  {
-    id: 'news-1',
-    image: '/news-1.png',
-    title: 'ประกาศข่าวสาร',
-    date: '14 sep 26',
-    body: 'Lorem ipsum dolor sit amet consectetur. Enim.',
-  },
-  {
-    id: 'news-2',
-    image: '/news-2.png',
-    title: 'ประกาศข่าวสาร',
-    date: '14 sep 26',
-    body: 'Lorem ipsum dolor sit amet consectetur. Enim.',
-  },
+export interface NewsPayload {
+  layout: NewsLayout
+  title: string
+  // YYYY-MM-DD
+  published_date: string
+  cover_image_url: string | null
+  heading: string | null
+  // Paragraphs separated by a blank line.
+  body: string | null
+  steps: NewsStep[]
+  published: boolean
+  sort_order: number
+}
+
+export interface NewsItem extends NewsPayload {
+  id: string
+}
+
+// What the home list needs — the detail fields load on the detail page.
+export type NewsSummary = Pick<NewsItem, 'id' | 'title' | 'published_date' | 'cover_image_url'>
+
+export const NEWS_SUMMARY_COLUMNS = 'id, title, published_date, cover_image_url'
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+export const isNewsId = (v: string) => UUID_PATTERN.test(v)
+
+const THAI_MONTHS_SHORT = [
+  'ม.ค.',
+  'ก.พ.',
+  'มี.ค.',
+  'เม.ย.',
+  'พ.ค.',
+  'มิ.ย.',
+  'ก.ค.',
+  'ส.ค.',
+  'ก.ย.',
+  'ต.ค.',
+  'พ.ย.',
+  'ธ.ค.',
 ]
+
+const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
+
+// "2026-10-31" -> "31 ต.ค. 26" (Figma: Thai month abbreviation, 2-digit
+// Gregorian year). Parsed from the string, not via Date, so the label never
+// shifts with the viewer's timezone.
+export function formatNewsDate(isoDate: string): string {
+  const m = DATE_PATTERN.exec(isoDate)
+  if (!m) return isoDate
+  const month = THAI_MONTHS_SHORT[Number(m[2]) - 1]
+  if (!month) return isoDate
+  return `${Number(m[3])} ${month} ${m[1].slice(2)}`
+}
+
+export function splitParagraphs(body: string | null): string[] {
+  if (!body) return []
+  return body
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+}
+
+const TITLE_MAX = 200
+const HEADING_MAX = 300
+const BODY_MAX = 5000
+const STEP_DESCRIPTION_MAX = 500
+const URL_MAX = 1000
+const STEPS_MAX = 10
+
+function isImageUrl(v: unknown): v is string {
+  return typeof v === 'string' && v.length <= URL_MAX && (v.startsWith('/') || v.startsWith('https://'))
+}
+
+function isValidDate(v: unknown): v is string {
+  if (typeof v !== 'string') return false
+  const m = DATE_PATTERN.exec(v)
+  if (!m) return false
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])))
+  return d.getUTCMonth() === Number(m[2]) - 1 && d.getUTCDate() === Number(m[3])
+}
+
+function isOptionalText(v: unknown, max: number) {
+  return v === null || v === undefined || (typeof v === 'string' && v.length <= max)
+}
+
+export function validateNewsPayload(body: unknown): body is NewsPayload {
+  if (!body || typeof body !== 'object') return false
+  const b = body as Record<string, unknown>
+  if (b.layout !== 'article' && b.layout !== 'steps') return false
+  if (typeof b.title !== 'string' || !b.title.trim() || b.title.length > TITLE_MAX) return false
+  if (!isValidDate(b.published_date)) return false
+  if (b.cover_image_url !== null && b.cover_image_url !== undefined && !isImageUrl(b.cover_image_url)) {
+    return false
+  }
+  if (!isOptionalText(b.heading, HEADING_MAX)) return false
+  if (!isOptionalText(b.body, BODY_MAX)) return false
+  if (typeof b.published !== 'boolean') return false
+  if (typeof b.sort_order !== 'number' || !Number.isInteger(b.sort_order)) return false
+  if (!Array.isArray(b.steps) || b.steps.length > STEPS_MAX) return false
+  return b.steps.every((s) => {
+    if (!s || typeof s !== 'object') return false
+    const step = s as Record<string, unknown>
+    return (
+      typeof step.title === 'string' &&
+      !!step.title.trim() &&
+      step.title.length <= TITLE_MAX &&
+      typeof step.description === 'string' &&
+      step.description.length <= STEP_DESCRIPTION_MAX &&
+      (step.image_url === null || step.image_url === undefined || isImageUrl(step.image_url))
+    )
+  })
+}
+
+// Normalises a validated payload into the column values to write.
+export function newsPayloadToRow(p: NewsPayload) {
+  return {
+    layout: p.layout,
+    title: p.title.trim(),
+    published_date: p.published_date,
+    cover_image_url: p.cover_image_url || null,
+    heading: p.heading?.trim() || null,
+    body: p.body?.trim() || null,
+    steps: p.steps.map((s) => ({
+      title: s.title.trim(),
+      description: s.description.trim(),
+      image_url: s.image_url || null,
+    })),
+    published: p.published,
+    sort_order: p.sort_order,
+  }
+}

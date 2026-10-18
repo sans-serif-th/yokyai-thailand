@@ -272,3 +272,37 @@ create index if not exists idx_contact_requests_target on contact_requests (targ
 
 -- Default-deny RLS: only the service-role API routes touch this table.
 alter table contact_requests enable row level security;
+
+-- Home ("อัพเดท") news, edited from /admin/news. `layout` picks the detail
+-- page template: 'article' (heading + paragraphs) or 'steps' (numbered
+-- step cards, each optionally with an illustration).
+create table if not exists news (
+  id uuid primary key default gen_random_uuid(),
+  layout text not null default 'article' check (layout in ('article', 'steps')),
+  title text not null,
+  published_date date not null default current_date,
+  cover_image_url text,
+  heading text,
+  body text,                       -- paragraphs separated by a blank line
+  steps jsonb not null default '[]'::jsonb,  -- [{title, description, image_url}]
+  published boolean not null default true,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_news_published_order on news (published, sort_order, published_date desc);
+
+drop trigger if exists news_set_updated_at on news;
+create trigger news_set_updated_at
+  before update on news
+  for each row execute function set_updated_at();
+
+-- Default-deny like every other table: only the Next.js API routes (service
+-- role) read or write it.
+alter table news enable row level security;
+
+-- Public bucket for news cover / step images (uploaded by the admin API).
+insert into storage.buckets (id, name, public)
+values ('news-images', 'news-images', true)
+on conflict (id) do nothing;
