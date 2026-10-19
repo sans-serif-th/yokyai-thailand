@@ -8,6 +8,7 @@ export default function AuthDebugPage() {
   const [entries, setEntries] = useState<AuthLogEntry[] | null>(null)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is client-only
     setEntries(readAuthLog())
   }, [])
 

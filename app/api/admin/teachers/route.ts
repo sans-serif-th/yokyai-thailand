@@ -1,5 +1,4 @@
 import { createServiceClient, fetchAllRows } from '@/lib/supabase-server'
-import { Teacher } from '@/lib/types'
 import { checkAdminToken } from '@/lib/admin-token'
 
 export async function GET(request: Request) {
@@ -59,7 +58,7 @@ export async function GET(request: Request) {
   // Filter by destination province if provided
   if (destinationProvince) {
     filtered = filtered.filter((t) =>
-      t.destinations?.some((d: any) => d.province === destinationProvince)
+      t.destinations?.some((d: { province: string }) => d.province === destinationProvince)
     )
   }
 

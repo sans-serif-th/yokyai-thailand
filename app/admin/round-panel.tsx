@@ -75,6 +75,7 @@ export function RoundPanel({
   }, [token, role, onActiveChange])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount; load sets loading state
     load()
   }, [load])
 
