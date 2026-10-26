@@ -68,19 +68,23 @@ function MatchesContent() {
   useEffect(() => {
     async function bootstrap() {
       try {
-        // Sequential, not parallel with fetchMatches: while the active
-        // round is still in its registration phase, this should never
-        // trigger the real (more expensive) findMatchesFor query at all —
-        // that query already returns [] itself during registration phase,
-        // but skipping the call entirely avoids the wasted round-trip.
+        // fetchMatches runs alongside the profile/phase calls instead of
+        // after them: that chain was two full round-trips deep, which is what
+        // made this tab wait seconds. The server gates matching by round
+        // itself (findMatchesFor returns [] outside the matching phase), so
+        // the early request is cheap when it isn't needed and its result is
+        // simply ignored. A failure (e.g. no profile yet) is ignored here
+        // too; fetchProfile reports the real error.
         const { result } = await withAuthRetry(async (token) => {
+          const matchesEarly = fetchMatches(token).catch(() => null)
           const [profile, phase] = await Promise.all([fetchProfile(token), fetchRoundPhase(token)])
           if (!profile.teacher) return { state: 'onboarding' as const }
           if (!phase.inMatchingPhase) {
             const breakdown = await fetchRegistrationBreakdown(token)
             return { state: 'registration' as const, breakdown, roundLabel: phase.roundLabel, closed: phase.phase === 'closed' }
           }
-          const { matches } = await fetchMatches(token)
+          const early = await matchesEarly
+          const { matches } = early ?? (await fetchMatches(token))
           return { state: 'ready' as const, matches, roundLabel: phase.roundLabel }
         })
 
