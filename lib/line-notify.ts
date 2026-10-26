@@ -18,12 +18,63 @@ function contactsLink(): string {
   return liffId ? `https://liff.line.me/${liffId}/contacts` : ''
 }
 
+const NOTICE_COPY: Record<ContactNotice, { title: string; body: string; button: string }> = {
+  request_received: {
+    title: 'มีคำขอติดต่อใหม่',
+    body: 'มีครูส่งคำขอติดต่อถึงคุณใน “โยกย้าย” เปิดดูและเลือกตอบรับหรือปฏิเสธได้เลย',
+    button: 'เปิดดูคำขอ',
+  },
+  request_accepted: {
+    title: 'คำขอติดต่อได้รับการยอมรับ',
+    body: 'คำขอติดต่อของคุณใน “โยกย้าย” ได้รับการยอมรับแล้ว ดูชื่อและ LINE ID ได้ที่หน้าคำขอติดต่อ',
+    button: 'ดูข้อมูลติดต่อ',
+  },
+}
+
+// Plain-text form of the notice. Used as the Flex message's altText, which is
+// what LINE shows in the push banner and the chat list.
 export function contactNoticeText(notice: ContactNotice): string {
+  const { title, body } = NOTICE_COPY[notice]
+  return `${title}: ${body}`
+}
+
+// A card with a button that opens the contacts page in LIFF. Without a LIFF id
+// configured the button is omitted rather than pointing nowhere.
+export function contactNoticeMessage(notice: ContactNotice) {
+  const { title, body, button } = NOTICE_COPY[notice]
   const link = contactsLink()
-  const tail = link ? `\n${link}` : ''
-  return notice === 'request_received'
-    ? `มีคำขอติดต่อใหม่ใน “โยกย้าย” เปิดดูและตอบกลับได้ที่หน้าคำขอติดต่อ${tail}`
-    : `คำขอติดต่อของคุณใน “โยกย้าย” ได้รับการยอมรับแล้ว ดูชื่อและ LINE ID ได้ที่หน้าคำขอติดต่อ${tail}`
+  return {
+    type: 'flex' as const,
+    altText: contactNoticeText(notice),
+    contents: {
+      type: 'bubble',
+      size: 'kilo',
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        contents: [
+          { type: 'text', text: 'โยกย้าย', size: 'xs', color: '#df8c7c', weight: 'bold' },
+          { type: 'text', text: title, size: 'lg', weight: 'bold', wrap: true },
+          { type: 'text', text: body, size: 'sm', color: '#555555', wrap: true },
+        ],
+      },
+      ...(link && {
+        footer: {
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'button',
+              style: 'primary',
+              color: '#db1e34',
+              action: { type: 'uri', label: button, uri: link },
+            },
+          ],
+        },
+      }),
+    },
+  }
 }
 
 export async function notifyContact(
@@ -38,7 +89,7 @@ export async function notifyContact(
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         to: lineUserId,
-        messages: [{ type: 'text', text: contactNoticeText(notice) }],
+        messages: [contactNoticeMessage(notice)],
       }),
     })
     if (!res.ok) {
