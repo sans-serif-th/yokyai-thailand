@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { HeartIcon, HomeIcon } from './icons'
 import { TopBar } from './top-bar'
@@ -61,18 +62,22 @@ function ContactAction({
       </Link>
     )
   }
+  // Figma 202:2142: cancel and the pending badge share the row 50/50.
   return (
-    <div className="flex items-center gap-3">
-      <span className={`${muted} min-w-0 flex-1`}>รอยืนยัน</span>
+    <div className="flex items-center gap-4">
       {onCancel && (
         <button
           type="button"
           onClick={() => onCancel(c.requestId)}
-          className="shrink-0 text-xs underline"
+          className={`${box} min-w-0 flex-1 border border-[#d4d4d4] bg-white px-[3px]`}
         >
           ยกเลิกคำขอ
         </button>
       )}
+      <span className={`${box} min-w-0 flex-1 gap-1 bg-[#fff7ed] px-[3px] text-[#c2410c]`}>
+        <Image src="/acute.svg" alt="" width={24} height={24} />
+        รอยืนยัน
+      </span>
     </div>
   )
 }
