@@ -17,6 +17,8 @@ import { RegistrationBreakdownView } from '@/components/registration-breakdown'
 import { MAX_CONTACT_SENDS, type MatchContact } from '@/lib/types'
 import type { MatchResult, RegistrationBreakdown } from '@/lib/types'
 import { PageSkeleton } from '@/components/page-skeleton'
+import { TopBar } from '@/components/top-bar'
+import { RoundPill } from '@/components/round-pill'
 
 type View = 'loading' | 'registration' | 'ready' | 'error'
 
@@ -125,7 +127,12 @@ export default function FavoritesPage() {
   }
 
   if (view === 'error') {
-    return <p className="text-center p-8 text-terracotta">{errorMessage}</p>
+    return (
+      <div className="mx-auto w-full max-w-lg px-4 pb-6">
+        <TopBar title="รายการโปรด" />
+        <p className="p-8 text-center text-terracotta">{errorMessage}</p>
+      </div>
+    )
   }
 
   if (view === 'registration') {
@@ -136,9 +143,10 @@ export default function FavoritesPage() {
 
   if (matches.length === 0) {
     return (
-      <div className="max-w-lg mx-auto p-4 text-center text-zinc-600">
-        <p className="text-lg">ยังไม่มีรายการโปรด</p>
-        <p className="text-sm mt-1">กดรูปหัวใจที่การ์ดในหน้าค้นหา เพื่อบันทึกไว้ดูภายหลัง</p>
+      <div className="mx-auto w-full max-w-lg px-4 pb-6 text-center text-zinc-600">
+        <TopBar title="รายการโปรด" right={<RoundPill roundLabel={roundLabel} />} />
+        <p className="mt-5 text-lg">ยังไม่มีรายการโปรด</p>
+        <p className="mt-1 text-sm">กดรูปหัวใจที่การ์ดในหน้าค้นหา เพื่อบันทึกไว้ดูภายหลัง</p>
       </div>
     )
   }
