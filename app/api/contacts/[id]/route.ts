@@ -3,7 +3,8 @@ import { cancelContactRequest, respondToContactRequest } from '@/lib/contacts'
 import { LineAuthError, verifyRequestAuth } from '@/lib/line-auth'
 
 // Body: { action: 'accept' | 'decline' | 'cancel' } — only the target may
-// accept/decline; only the requester may cancel.
+// accept/decline; the requester may cancel a pending request, and either side
+// may cancel an accepted connection.
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   try {
