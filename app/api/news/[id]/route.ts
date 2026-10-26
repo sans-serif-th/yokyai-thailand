@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { LineAuthError, verifyRequestAuth } from '@/lib/line-auth'
 import { isNewsId, todayInBangkok } from '@/lib/news'
+import { sanitizeNewsBody } from '@/lib/news-html'
 import { createServiceClient } from '@/lib/supabase-server'
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -21,7 +22,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       .maybeSingle()
     if (error) throw error
     if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    return NextResponse.json({ news: data })
+    return NextResponse.json({ news: { ...data, body: sanitizeNewsBody(data.body) } })
   } catch (err) {
     if (err instanceof LineAuthError) {
       return NextResponse.json({ error: err.message }, { status: 401 })

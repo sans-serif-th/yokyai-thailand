@@ -1,5 +1,6 @@
 import { checkAdminToken } from '@/lib/admin-token'
-import { newsPayloadToRow, validateNewsPayload } from '@/lib/news'
+import { validateNewsPayload } from '@/lib/news'
+import { newsRowForWrite } from '@/lib/news-html'
 import { createServiceClient } from '@/lib/supabase-server'
 
 // All news, including unpublished drafts, for /admin/news.
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
   }
 
   const supabase = createServiceClient()
-  const { data, error } = await supabase.from('news').insert(newsPayloadToRow(body)).select().single()
+  const { data, error } = await supabase.from('news').insert(newsRowForWrite(body)).select().single()
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json(data, { status: 201 })
 }

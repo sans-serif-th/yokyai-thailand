@@ -10,7 +10,7 @@ const EXTENSIONS: Record<string, string> = {
 }
 
 // multipart/form-data with a single `file` field; returns the public URL to
-// store in news.cover_image_url / steps[].image_url.
+// store in news.cover_image_url or inline in the body.
 export async function POST(request: Request) {
   if (!checkAdminToken(new URL(request.url).searchParams.get('token'))) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })

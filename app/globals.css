@@ -98,3 +98,49 @@ body {
     @apply text-link underline;
   }
 }
+
+/* News body written in the admin editor (HTML). Shared by the reader
+   (components/news-detail.tsx) and the editor itself so they look alike. */
+.news-html {
+  font-size: 14px;
+  line-height: 21px;
+}
+.news-html > * + * {
+  margin-top: 21px;
+}
+.news-html h2 {
+  font-size: 18px;
+  line-height: 27px;
+  font-weight: 600;
+}
+.news-html h3 {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+.news-html ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+.news-html ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+.news-html blockquote {
+  border-left: 3px solid #d4d4d4;
+  padding-left: 0.75rem;
+  color: #525252;
+}
+.news-html a {
+  color: #db1e34;
+  text-decoration: underline;
+}
+.news-html img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.news-html hr {
+  border: 0;
+  border-top: 1px solid #d4d4d4;
+}
