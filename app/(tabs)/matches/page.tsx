@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -17,6 +17,7 @@ import {
 } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { ContactRequests } from '@/components/contact-requests'
+import { RefreshButton } from '@/components/refresh-button'
 import { MatchList } from '@/components/match-list'
 import { RoundPill } from '@/components/round-pill'
 import { SegmentedTabs } from '@/components/segmented-tabs'
@@ -61,6 +62,8 @@ function MatchesContent() {
   // Bumped by the refresh button to re-run the bootstrap effect below.
   const [refreshKey, setRefreshKey] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
+  const [contactsRefreshKey, setContactsRefreshKey] = useState(0)
+  const [contactsRefreshing, setContactsRefreshing] = useState(false)
 
   useEffect(() => {
     async function bootstrap() {
@@ -112,6 +115,14 @@ function MatchesContent() {
     invalidateCache('matches', 'round-phase', 'breakdown', 'profile')
     setRefreshKey((k) => k + 1)
   }
+
+  function handleRefreshContacts() {
+    setContactsRefreshing(true)
+    invalidateCache('contacts')
+    setContactsRefreshKey((k) => k + 1)
+  }
+
+  const handleContactsLoaded = useCallback(() => setContactsRefreshing(false), [])
 
   async function handleToggleFavorite(teacherId: string, currentlyFavorited: boolean) {
     const flip = (prev: MatchResult[]) =>
@@ -223,9 +234,17 @@ function MatchesContent() {
   if (tab === 'contacts') {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
-        <TopBar title="ผลการจับคู่" right={<RoundPill roundLabel={roundLabel} />} />
+        <TopBar
+          title="ผลการจับคู่"
+          right={
+            <>
+              <RoundPill roundLabel={roundLabel} />
+              <RefreshButton onClick={handleRefreshContacts} refreshing={contactsRefreshing} />
+            </>
+          }
+        />
         {viewTabs}
-        <ContactRequests />
+        <ContactRequests refreshKey={contactsRefreshKey} onLoaded={handleContactsLoaded} />
       </div>
     )
   }

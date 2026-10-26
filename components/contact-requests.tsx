@@ -21,7 +21,14 @@ function summaryText(c: ContactRequestView) {
 
 // The "คำขอติดต่อ" tab of the matches page: requests waiting on you,
 // connections you can now contact, and the ones you sent.
-export function ContactRequests() {
+export function ContactRequests({
+  refreshKey = 0,
+  onLoaded,
+}: {
+  // Bumped by the page's refresh button to reload the list.
+  refreshKey?: number
+  onLoaded?: () => void
+}) {
   const [contacts, setContacts] = useState<ContactRequestView[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -32,13 +39,16 @@ export function ContactRequests() {
       setContacts(result.contacts)
     } catch (err) {
       setError((err as Error).message)
+    } finally {
+      onLoaded?.()
     }
-  }, [])
+  }, [onLoaded])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
-  }, [load])
+    // refreshKey is the trigger: a new value reloads the list.
+  }, [load, refreshKey])
 
   async function respond(id: string, action: 'accept' | 'decline' | 'cancel') {
     setBusyId(id)
