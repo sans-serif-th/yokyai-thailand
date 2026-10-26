@@ -51,8 +51,10 @@ export default function MasterDataPage() {
   useEffect(() => {
     const storedToken = localStorage.getItem('admin_token')
     if (storedToken) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off mount read of localStorage
       setToken(storedToken)
       setAuthed(true)
+      // eslint-disable-next-line react-hooks/immutability -- loadData is a hoisted function declared below
       loadData(storedToken)
     }
   }, [])

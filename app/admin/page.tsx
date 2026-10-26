@@ -132,6 +132,7 @@ function AdminDashboardContent() {
 
   // Reset to page 1 whenever the filtered set changes underneath the current page.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset page when filters change
     setPage(1)
   }, [sourceFilter, subjectFilter, originFilter, destinationFilter, serviceTypeFilter, roundFilter])
 
@@ -188,12 +189,13 @@ function AdminDashboardContent() {
   useEffect(() => {
     const storedToken = localStorage.getItem('admin_token')
     if (storedToken) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off mount read of localStorage
       setToken(storedToken)
       setAuthed(true)
       // Role changes (side menu) reload the data for that role.
+      // eslint-disable-next-line react-hooks/immutability -- loadData is a hoisted function declared below
       loadData(storedToken, role)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -220,7 +222,7 @@ function AdminDashboardContent() {
       setPassword('')
       setUsername('')
       loadData(newToken, role)
-    } catch (err) {
+    } catch {
       setPasswordError('Login failed')
     }
   }

@@ -76,6 +76,7 @@ export function ProfileMenu({ teacher, onLoggedOut }: ProfileMenuProps) {
 
   useEffect(() => {
     try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only check, cannot run during SSR
       setCanLogout(!isLiffInClient())
     } catch {
       setCanLogout(false)
