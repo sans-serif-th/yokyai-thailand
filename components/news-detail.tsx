@@ -2,7 +2,7 @@ import Image from 'next/image'
 import { isHtmlBody, splitParagraphs, type NewsItem } from '@/lib/news'
 import { TopBar } from './top-bar'
 
-// Figma news detail: 191:1409. A square cover, the heading, then the body
+// Figma news detail: 191:1409. A square cover, then the body
 // (HTML from the admin editor, or plain paragraphs for older news).
 export function NewsDetail({ item }: { item: NewsItem }) {
   const paragraphs = splitParagraphs(item.body)
@@ -17,9 +17,6 @@ export function NewsDetail({ item }: { item: NewsItem }) {
         )}
       </div>
 
-      {/* The title isn't in the top bar any more, so news without a separate
-          heading shows its title here. */}
-      <h2 className="whitespace-pre-line text-base font-semibold leading-6">{item.heading || item.title}</h2>
       {isHtmlBody(item.body) ? (
         // Sanitized server-side on save and again by /api/news/[id].
         <div className="news-html" dangerouslySetInnerHTML={{ __html: item.body ?? '' }} />

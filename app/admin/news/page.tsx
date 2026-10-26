@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { RichTextEditor } from '@/components/rich-text-editor'
+import { shrinkImageForUpload } from '@/lib/image-resize'
 import {
   formatNewsDate,
   NEWS_CATEGORIES,
@@ -33,7 +34,6 @@ const EMPTY_FORM: NewsPayload = {
   title: '',
   published_date: new Date().toISOString().slice(0, 10),
   cover_image_url: null,
-  heading: null,
   body: null,
   published: true,
   publish_start: null,
@@ -95,7 +95,6 @@ export default function AdminNewsPage() {
       title: item.title,
       published_date: item.published_date,
       cover_image_url: item.cover_image_url,
-      heading: item.heading,
       body: item.body,
       published: item.published,
       publish_start: item.publish_start,
@@ -107,7 +106,7 @@ export default function AdminNewsPage() {
   async function upload(file: File): Promise<string | null> {
     setError(null)
     const data = new FormData()
-    data.append('file', file)
+    data.append('file', await shrinkImageForUpload(file))
     const res = await fetch(`/api/admin/news/upload${q}`, { method: 'POST', body: data })
     const body = await res.json().catch(() => ({}))
     if (!res.ok) {
@@ -184,7 +183,11 @@ export default function AdminNewsPage() {
           </div>
         </div>
 
-        {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+        {error && (
+          <p role="alert" className="sticky top-2 z-10 mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 shadow">
+            {error}
+          </p>
+        )}
 
         {form && (
           <form onSubmit={handleSave} className="mb-8 flex flex-col gap-4 rounded-lg bg-white p-6 shadow">
@@ -237,7 +240,7 @@ export default function AdminNewsPage() {
             </label>
 
             <div className="flex flex-col gap-2 text-sm">
-              Cover image (PNG / JPEG / WebP, up to 5 MB)
+              Cover image (PNG / JPEG / WebP — large images are resized automatically)
               {form.cover_image_url && (
                 <Image
                   src={form.cover_image_url}
@@ -259,20 +262,19 @@ export default function AdminNewsPage() {
                   e.target.value = ''
                 }}
               />
+              {form.cover_image_url && (
+                <button
+                  type="button"
+                  className="w-fit text-gray-600 hover:underline"
+                  onClick={() => patchForm({ cover_image_url: null })}
+                >
+                  Remove cover image
+                </button>
+              )}
             </div>
 
-            <label className="flex flex-col gap-1 text-sm">
-              Heading on the detail page
-              <textarea
-                rows={2}
-                className={inputClass}
-                value={form.heading ?? ''}
-                onChange={(e) => patchForm({ heading: e.target.value })}
-              />
-            </label>
-
             <div className="flex flex-col gap-1 text-sm">
-              Body
+              Content (title heading, text and images)
               <RichTextEditor
                 key={formVersion}
                 value={form.body}
