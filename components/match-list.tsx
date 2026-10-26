@@ -6,20 +6,14 @@ import { HeartIcon, HomeIcon } from './icons'
 import { TopBar } from './top-bar'
 import { RoundPill } from './round-pill'
 import { RefreshButton } from './refresh-button'
-import { SegmentedTabs } from './segmented-tabs'
+import { UnderlineTabs } from './underline-tabs'
 import { getRoleFields } from '@/lib/roles/field-registry'
 import { cardLinesFromFields } from '@/lib/roles/fields'
 import { positionLabel } from '@/lib/positions'
 import { serviceTypeAbbr } from '@/lib/service-types'
 import { subjectLabel } from '@/lib/subject-label'
 import { teachingGroupLabel } from '@/lib/teaching-groups'
-import type { MatchResult } from '@/lib/types'
-
-const TIER_BADGE: Record<MatchResult['tier'], { label: string; className: string }> = {
-  perfect: { label: 'ตรงที่สุด', className: 'bg-[#f0fdf4] text-[#15803d]' },
-  high: { label: 'ตรงวิชาเอก', className: 'bg-[#fff7ed] text-[#c2410c]' },
-  partial: { label: 'ตรงตำแหน่ง', className: 'bg-zinc-100 text-zinc-600' },
-}
+import { MAX_CONTACT_SENDS, type MatchResult } from '@/lib/types'
 
 function ContactAction({
   match,
@@ -32,6 +26,7 @@ function ContactAction({
 }) {
   const c = match.contact
   const base = 'mt-1 w-fit rounded-lg px-3 py-1.5 text-xs'
+  const send = 'mt-1 flex h-8 w-full items-center justify-center rounded-lg bg-brand-red px-5 text-base font-bold text-white'
   if (c?.status === 'cancelled') {
     if (c.sendsLeft <= 0) {
       return <span className={`${base} bg-zinc-100 text-zinc-500`}>ส่งคำขอครบ 3 ครั้งแล้ว</span>
@@ -40,7 +35,7 @@ function ContactAction({
       <button
         type="button"
         onClick={() => onRequest(match.teacher.id)}
-        className={`${base} btn-brand-secondary`}
+        className={send}
       >
         ส่งคำขออีกครั้ง (เหลือ {c.sendsLeft} ครั้ง)
       </button>
@@ -51,9 +46,9 @@ function ContactAction({
       <button
         type="button"
         onClick={() => onRequest(match.teacher.id)}
-        className={`${base} btn-brand-secondary`}
+        className={send}
       >
-        ขอติดต่อ
+        ส่งคำขอ
       </button>
     )
   }
@@ -237,13 +232,13 @@ export function MatchList({
 
       {viewTabs}
 
-      <SegmentedTabs
+      <UnderlineTabs
         value={filterTab}
         onChange={handleTabChange}
         options={[
           { value: 'all', label: 'ทั้งหมด' },
-          { value: 'subject', label: 'วิชาเอก' },
-          { value: 'destination', label: 'จังหวัด' },
+          { value: 'subject', label: 'แยกตามวิชาเอก' },
+          { value: 'destination', label: 'แยกตามจังหวัด' },
         ]}
       />
 
@@ -287,26 +282,19 @@ export function MatchList({
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold">{m.teacher.display_name}</span>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span
-                    className={`rounded-lg px-2 py-1 text-[10px] leading-[15px] ${TIER_BADGE[m.tier].className}`}
-                  >
-                    {TIER_BADGE[m.tier].label}
+                  <span className="flex h-6 items-center rounded-lg bg-zinc-100 px-[5px] text-[10px] leading-[15px]">
+                    ส่งคำขอ: {m.contact ? MAX_CONTACT_SENDS - m.contact.sendsLeft : 0}/{MAX_CONTACT_SENDS}
                   </span>
                   <button
                     type="button"
                     onClick={() => onToggleFavorite(m.teacher.id, m.favorited)}
                     aria-label={m.favorited ? 'เอาออกจากรายการโปรด' : 'เพิ่มในรายการโปรด'}
-                    className={m.favorited ? 'text-brand-red' : 'text-zinc-400'}
+                    className={m.favorited ? 'text-brand-red' : 'text-foreground'}
                   >
                     <HeartIcon filled={m.favorited} />
                   </button>
                 </div>
               </div>
-              {m.teacher.claimed_at && (
-                <span className="inline-block w-fit rounded-full bg-sage/20 px-2 py-0.5 text-[10px] text-sage-dark">
-                  ✓ ยืนยันตัวตน
-                </span>
-              )}
               <p className="text-xs text-zinc-600">
                 {(m.teacher.category === 'teacher' || !getRoleFields(m.teacher.category).length
                   ? [

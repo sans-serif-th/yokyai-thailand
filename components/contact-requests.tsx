@@ -1,22 +1,43 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Image from 'next/image'
 import { fetchContacts, respondContactRequest } from '@/lib/api'
 import { withAuthRetry } from '@/lib/session'
 import { positionLabel } from '@/lib/positions'
+import { serviceTypeAbbr } from '@/lib/service-types'
+import { subjectLabel } from '@/lib/subject-label'
 import { teachingGroupLabel } from '@/lib/teaching-groups'
+import { UnderlineTabs } from './underline-tabs'
 import type { ContactRequestView } from '@/lib/types'
 
 function summaryText(c: ContactRequestView) {
   return [
     positionLabel(c.summary.position as Parameters<typeof positionLabel>[0]),
+    serviceTypeAbbr(c.summary.serviceType),
     c.summary.teachingGroup
       ? teachingGroupLabel(c.summary.teachingGroup as Parameters<typeof teachingGroupLabel>[0])
       : null,
-    `ต้นทาง ${c.summary.originProvince}`,
+    c.summary.subject ? subjectLabel(c.summary.subject) : null,
   ]
     .filter(Boolean)
     .join(' · ')
+}
+
+function originText(c: ContactRequestView) {
+  const { originProvince, originZone, originDistrict } = c.summary
+  return `${originProvince}${originZone ? ` ${originZone}` : ''}${originDistrict ? ` (${originDistrict})` : ''}`
+}
+
+function destinationText(c: ContactRequestView) {
+  return c.summary.destinations.map((d) => d.province + (d.zone ? ` ${d.zone}` : '')).join(', ')
+}
+
+// dd/mm/yyyy hh:mm in the viewer's local time.
+function sentAtText(iso: string) {
+  const d = new Date(iso)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
 // The "คำขอติดต่อ" tab of the matches page: requests waiting on you,
@@ -76,6 +97,44 @@ export function ContactRequests({
   return <ContactRequestsView contacts={contacts} busyId={busyId} onRespond={respond} />
 }
 
+type Filter = 'all' | 'pending' | 'accepted' | 'declined'
+
+const NOTICE_KEY = 'yokyai:contact-notice-dismissed'
+
+const STATUS_BADGE: Record<'pending' | 'accepted' | 'declined', { label: string; className: string }> = {
+  pending: { label: 'รอยืนยัน', className: 'bg-[#fff7ed] text-[#c2410c]' },
+  accepted: { label: 'ยืนยันแล้ว', className: 'bg-[#f0fdf4] text-[#15803d]' },
+  declined: { label: 'ปฏิเสธ', className: 'bg-[rgba(185,22,43,0.1)] text-[#c2410c]' },
+}
+
+const outlineButton =
+  'flex h-8 items-center justify-center rounded-lg border border-[#d4d4d4] bg-white px-5 text-base font-bold disabled:opacity-50'
+
+function SafetyNotice({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div className="flex flex-col gap-[5px] rounded-lg border-2 border-brand-red bg-white px-3 py-2 shadow-[0_0_0_3px_rgba(219,30,52,0.2)]">
+      <p className="text-base font-bold">โปรดทราบก่อนติดต่อคู่จับคู่</p>
+      <p className="text-xs leading-[18px]">
+        แอปโยกย้ายทำหน้าที่ช่วยจับคู่ผู้ที่สนใจย้ายตำแหน่งในเบื้องต้นเท่านั้น
+        ไม่ได้เป็นผู้ดำเนินการย้ายตำแหน่งหรือประสานงานแทนท่าน เมื่อจับคู่สำเร็จ ท่านต้องติดต่อ
+        และประสานงานกับคู่จับคู่โดยตรง นอกระบบ
+      </p>
+      <p className="text-sm font-bold leading-5">ข้อควรระวังด้านความปลอดภัย</p>
+      <p className="text-xs leading-[18px]">
+        <span className="font-bold text-[#b9162b]">
+          ในช่วงทดสอบระบบ แอปยังไม่มีระบบยืนยันตัวตนผู้ใช้งาน ณ ขณะนี้
+          โปรดตรวจสอบตัวตนของคู่จับคู่ให้แน่ใจก่อนติดต่อ หรือแลกเปลี่ยนข้อมูลสำคัญ
+        </span>{' '}
+        และหลีกเลี่ยงการเปิดเผยข้อมูลส่วนบุคคลที่มีความเสี่ยง เรามีแผนพัฒนาระบบยืนยันตัวตนเพื่อเพิ่มความน่าเชื่อถือ
+        และความปลอดภัยในการใช้งานในอนาคต
+      </p>
+      <button type="button" onClick={onDismiss} className={`${outlineButton} w-full`}>
+        เข้าใจแล้ว
+      </button>
+    </div>
+  )
+}
+
 // Presentational half, split out so the tab can be previewed with mock data.
 export function ContactRequestsView({
   contacts,
@@ -86,124 +145,141 @@ export function ContactRequestsView({
   busyId: string | null
   onRespond: (id: string, action: 'accept' | 'decline' | 'cancel') => void
 }) {
-  const incoming = contacts.filter((c) => c.direction === 'incoming' && c.status === 'pending')
-  const connected = contacts.filter((c) => c.status === 'accepted')
-  const sent = contacts.filter((c) => c.direction === 'outgoing' && c.status !== 'accepted')
+  const [filter, setFilter] = useState<Filter>('all')
+  // Remembered per browser; starts dismissed so a returning user never sees it flash.
+  const [noticeDismissed, setNoticeDismissed] = useState(true)
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setNoticeDismissed(localStorage.getItem(NOTICE_KEY) === '1')
+    } catch {
+      setNoticeDismissed(false)
+    }
+  }, [])
+
+  function dismissNotice() {
+    setNoticeDismissed(true)
+    try {
+      localStorage.setItem(NOTICE_KEY, '1')
+    } catch {
+      // storage blocked: the notice just comes back next visit
+    }
+  }
+
+  // Cancelled requests aren't listed here — they reappear on the match card,
+  // where the requester can send again.
+  const listed = contacts.filter(
+    (c): c is ContactRequestView & { status: 'pending' | 'accepted' | 'declined' } =>
+      c.status !== 'cancelled'
+  )
+  const shown = filter === 'all' ? listed : listed.filter((c) => c.status === filter)
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-xs text-zinc-500">
-        ชื่อและ LINE ID จะแสดงให้ทั้งสองฝ่ายเห็นก็ต่อเมื่ออีกฝ่ายกดยอมรับเท่านั้น
-      </p>
+      <UnderlineTabs<Filter>
+        value={filter}
+        onChange={setFilter}
+        options={[
+          { value: 'all', label: 'ทั้งหมด' },
+          { value: 'pending', label: 'รอยืนยัน' },
+          { value: 'accepted', label: 'ยืนยันแล้ว' },
+          { value: 'declined', label: 'ปฏิเสธ' },
+        ]}
+      />
 
-      {contacts.length === 0 && (
+      {!noticeDismissed && <SafetyNotice onDismiss={dismissNotice} />}
+
+      {shown.length === 0 && (
         <p className="py-8 text-center text-zinc-600">
-          ยังไม่มีคำขอติดต่อ กด “ขอติดต่อ” ที่การ์ดคู่ในหน้าค้นหาเพื่อเริ่ม
+          {listed.length === 0
+            ? 'ยังไม่มีคำขอติดต่อ กด “ส่งคำขอ” ที่การ์ดคู่ในหน้าผลจับคู่เพื่อเริ่ม'
+            : 'ไม่มีรายการในหมวดนี้'}
         </p>
       )}
 
-      {incoming.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold">รอคุณตอบ</h2>
-          {incoming.map((c) => (
-            <div key={c.id} className="flex flex-col gap-2 rounded-2xl bg-white p-3">
-              <span className="text-sm font-semibold">{c.maskedName}</span>
-              <p className="text-xs text-zinc-600">{summaryText(c)}</p>
-              <p className="text-xs text-zinc-500">
-                ถ้ายอมรับ เขาจะเห็นชื่อและ LINE ID ของคุณ และคุณจะเห็นของเขา
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  disabled={busyId === c.id}
-                  onClick={() => respond(c.id, 'decline')}
-                  className="btn-brand-secondary h-[36px] flex-1 rounded-lg text-xs"
-                >
+      {shown.map((c) => {
+        const badge = STATUS_BADGE[c.status]
+        const busy = busyId === c.id
+        const incomingPending = c.status === 'pending' && c.direction === 'incoming'
+        return (
+          <div key={c.id} className="flex flex-col gap-4 rounded-2xl bg-white p-3">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold leading-[21px]">{c.name ?? c.maskedName}</span>
+                <span className={`flex h-6 items-center rounded-lg px-[5px] text-[10px] leading-[15px] ${badge.className}`}>
+                  {badge.label}
+                </span>
+              </div>
+              <p className="text-sm leading-5 tracking-[0.14px] text-zinc-600">{summaryText(c)}</p>
+              <p className="text-sm leading-5 tracking-[0.14px]">ต้นทาง: {originText(c)}</p>
+              <p className="text-sm leading-5 tracking-[0.14px]">ปลายทาง: {destinationText(c)}</p>
+            </div>
+
+            {incomingPending && (
+              <div className="flex items-center gap-4">
+                <button type="button" disabled={busy} onClick={() => respond(c.id, 'decline')} className={outlineButton}>
                   ปฏิเสธ
                 </button>
                 <button
                   type="button"
-                  disabled={busyId === c.id}
+                  disabled={busy}
                   onClick={() => respond(c.id, 'accept')}
-                  className="btn-brand-primary h-[36px] flex-1 rounded-lg border border-transparent py-0 text-xs"
+                  className="flex h-8 min-w-0 flex-1 items-center justify-center rounded-lg bg-brand-red px-5 text-base font-bold text-white disabled:opacity-50"
                 >
-                  ยอมรับ
+                  ยืนยันให้ช่องทางการติดต่อ
                 </button>
               </div>
-            </div>
-          ))}
-        </section>
-      )}
+            )}
 
-      {connected.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold">เชื่อมต่อแล้ว</h2>
-          {connected.map((c) => (
-            <div key={c.id} className="flex flex-col gap-1 rounded-2xl bg-white p-3">
-              <span className="text-sm font-semibold">{c.name}</span>
-              <p className="text-xs text-zinc-600">{summaryText(c)}</p>
-              {c.lineId && (
-                <a
-                  href={`https://line.me/ti/p/~${c.lineId.replace(/^@/, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-fit text-sm link-accent"
-                >
-                  LINE ID: {c.lineId}
-                </a>
-              )}
-              {c.phone && (
-                <a href={`tel:${c.phone}`} className="w-fit text-xs link-accent">
-                  โทร {c.phone}
-                </a>
-              )}
-              <button
-                type="button"
-                disabled={busyId === c.id}
-                onClick={() => {
-                  if (window.confirm(`ยกเลิกการเชื่อมต่อกับ ${c.name ?? 'คู่นี้'}? ข้อมูลติดต่อของทั้งสองฝ่ายจะถูกซ่อน`)) {
-                    respond(c.id, 'cancel')
-                  }
-                }}
-                className="mt-1 w-fit text-xs text-zinc-500 underline"
-              >
-                ยกเลิกการเชื่อมต่อ
-              </button>
-            </div>
-          ))}
-        </section>
-      )}
+            {c.status === 'accepted' && (
+              <>
+                {c.lineId && (
+                  <a
+                    href={`https://line.me/ti/p/~${c.lineId.replace(/^@/, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-8 items-center gap-1 rounded-lg border border-[#d4d4d4] bg-white px-3 text-xs font-bold text-zinc-600"
+                  >
+                    <Image src="/line-icon.png" alt="" width={16} height={16} />
+                    <span className="min-w-0 flex-1 truncate">LINE ID: {c.lineId}</span>
+                    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden className="shrink-0">
+                      <path d="M10 17l5-5-5-5v10z" fill="currentColor" />
+                    </svg>
+                  </a>
+                )}
+                {c.phone && (
+                  <a href={`tel:${c.phone}`} className="w-fit text-xs link-accent">
+                    โทร {c.phone}
+                  </a>
+                )}
+              </>
+            )}
 
-      {sent.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold">คำขอที่คุณส่ง</h2>
-          {sent.map((c) => (
-            <div key={c.id} className="flex flex-col gap-1 rounded-2xl bg-white p-3">
-              <span className="text-sm font-semibold">{c.maskedName}</span>
-              <p className="text-xs text-zinc-600">{summaryText(c)}</p>
-              <p className="text-xs text-zinc-500">
-                {c.status === 'pending'
-                  ? 'รออีกฝ่ายตอบ'
-                  : c.status === 'cancelled'
-                    ? c.wasConnected
-                      ? 'ยกเลิกการเชื่อมต่อแล้ว'
-                      : 'ยกเลิกคำขอแล้ว'
-                    : 'อีกฝ่ายไม่สะดวกติดต่อ'}
-              </p>
-              {c.status === 'pending' && (
+            <div className="flex items-center justify-between text-[10px] leading-[15px]">
+              <span>ส่งเมื่อ: {sentAtText(c.createdAt)}</span>
+              {c.status === 'accepted' && (
                 <button
                   type="button"
-                  disabled={busyId === c.id}
-                  onClick={() => respond(c.id, 'cancel')}
-                  className="w-fit text-xs text-zinc-500 underline"
+                  disabled={busy}
+                  onClick={() => {
+                    if (window.confirm('ลบรายชื่อนี้จากผลการจับคู่? อีกฝ่ายจะไม่เห็นข้อมูลติดต่อของกันและกันอีก')) {
+                      respond(c.id, 'cancel')
+                    }
+                  }}
+                  className="underline"
                 >
+                  ลบรายชื่อนี้จากผลการจับคู่
+                </button>
+              )}
+              {c.status === 'pending' && c.direction === 'outgoing' && (
+                <button type="button" disabled={busy} onClick={() => respond(c.id, 'cancel')} className="underline">
                   ยกเลิกคำขอ
                 </button>
               )}
             </div>
-          ))}
-        </section>
-      )}
+          </div>
+        )
+      })}
     </div>
   )
 }

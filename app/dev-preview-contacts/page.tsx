@@ -56,7 +56,16 @@ const MATCHES: MatchResult[] = [
 
 const base = {
   createdAt: '2026-10-18T00:00:00Z',
-  summary: { position: 'teacher', teachingGroup: 'math', originProvince: 'กรุงเทพมหานคร' },
+  summary: {
+    position: 'teacher',
+    serviceType: 'primary',
+    teachingGroup: 'math',
+    subject: 'เอกคณิตศาสตร์',
+    originProvince: 'หนองคาย',
+    originDistrict: 'เมืองหนองคาย',
+    originZone: 'เขต 1',
+    destinations: [{ province: 'เชียงใหม่', zone: 'เขต 1' }],
+  },
   name: null,
   lineId: null,
   phone: null,
