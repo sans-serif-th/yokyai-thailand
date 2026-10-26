@@ -2,7 +2,9 @@ import { checkAdminToken } from '@/lib/admin-token'
 import { createServiceClient } from '@/lib/supabase-server'
 
 const BUCKET = 'news-images'
-const MAX_BYTES = 5 * 1024 * 1024
+// Vercel rejects request bodies over ~4.5 MB before they reach this route;
+// the admin page shrinks larger images first (lib/image-resize.ts).
+const MAX_BYTES = 4 * 1024 * 1024
 const EXTENSIONS: Record<string, string> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
@@ -26,7 +28,7 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Only PNG, JPEG or WebP images are allowed' }, { status: 400 })
   }
   if (file.size > MAX_BYTES) {
-    return Response.json({ error: 'Image must be 5 MB or smaller' }, { status: 400 })
+    return Response.json({ error: 'Image must be 4 MB or smaller' }, { status: 400 })
   }
 
   const supabase = createServiceClient()

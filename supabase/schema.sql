@@ -310,7 +310,7 @@ create table if not exists news (
   title text not null,
   published_date date not null default current_date,
   cover_image_url text,
-  heading text,
+  heading text,                    -- unused since migration 0033 (the heading is the first line of `body`)
   body text,                       -- HTML (sanitized on save)
   published boolean not null default true,
   -- Optional show-from / show-until (inclusive, Thai calendar day); migration 0029.

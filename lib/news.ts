@@ -19,7 +19,6 @@ export interface NewsPayload {
   // YYYY-MM-DD
   published_date: string
   cover_image_url: string | null
-  heading: string | null
   // Paragraphs separated by a blank line.
   body: string | null
   published: boolean
@@ -108,7 +107,6 @@ export function splitParagraphs(body: string | null): string[] {
 }
 
 const TITLE_MAX = 200
-const HEADING_MAX = 300
 // HTML from the editor is longer than the plain paragraphs it replaces.
 const BODY_MAX = 50000
 const URL_MAX = 1000
@@ -138,7 +136,6 @@ export function validateNewsPayload(body: unknown): body is NewsPayload {
   if (b.cover_image_url !== null && b.cover_image_url !== undefined && !isImageUrl(b.cover_image_url)) {
     return false
   }
-  if (!isOptionalText(b.heading, HEADING_MAX)) return false
   if (!isOptionalText(b.body, BODY_MAX)) return false
   if (typeof b.published !== 'boolean') return false
   for (const key of ['publish_start', 'publish_end'] as const) {
@@ -158,7 +155,6 @@ export function newsPayloadToRow(p: NewsPayload) {
     title: p.title.trim(),
     published_date: p.published_date,
     cover_image_url: p.cover_image_url || null,
-    heading: p.heading?.trim() || null,
     body: p.body?.trim() || null,
     published: p.published,
     publish_start: p.publish_start || null,

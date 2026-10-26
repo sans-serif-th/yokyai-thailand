@@ -13,7 +13,6 @@ const base = {
   title: 'ข่าว',
   published_date: '2026-10-31',
   cover_image_url: '/news-1.png',
-  heading: 'หัวข้อ',
   body: 'a\n\nb',
   published: true,
   publish_start: null,
@@ -64,11 +63,9 @@ describe('newsPayloadToRow', () => {
     const row = newsPayloadToRow({
       ...(base as Parameters<typeof newsPayloadToRow>[0]),
       title: '  ข่าว ',
-      heading: '  ',
       cover_image_url: '',
     })
     expect(row.title).toBe('ข่าว')
-    expect(row.heading).toBeNull()
     expect(row.cover_image_url).toBeNull()
   })
 })

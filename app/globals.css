@@ -109,13 +109,13 @@ body {
   margin-top: 21px;
 }
 .news-html h2 {
-  font-size: 18px;
-  line-height: 27px;
+  font-size: 16px; /* Figma 191:1409 title */
+  line-height: 24px;
   font-weight: 600;
 }
 .news-html h3 {
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 14px;
+  line-height: 21px;
   font-weight: 600;
 }
 .news-html ul {
