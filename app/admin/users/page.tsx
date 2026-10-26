@@ -166,7 +166,7 @@ export default function AdminUsersPage() {
                     {u.username}
                     {u.username === me && <span className="ml-2 text-xs text-gray-500">(you)</span>}
                   </p>
-                  <p className="text-xs text-gray-500">Created {new Date(u.created_at).toLocaleDateString()}</p>
+                  <p className="text-xs text-gray-500">Created {new Date(u.created_at).toLocaleDateString('th-TH')}</p>
                 </div>
                 <div className="flex gap-2">
                   <button

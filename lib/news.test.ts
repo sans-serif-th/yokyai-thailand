@@ -24,8 +24,8 @@ const base = {
 
 describe('formatNewsDate', () => {
   it('formats as day, Thai month abbreviation and 2-digit year', () => {
-    expect(formatNewsDate('2026-10-31')).toBe('31 ต.ค. 26')
-    expect(formatNewsDate('2027-01-05')).toBe('5 ม.ค. 27')
+    expect(formatNewsDate('2026-10-31')).toBe('31 ต.ค. 2569')
+    expect(formatNewsDate('2027-01-05')).toBe('5 ม.ค. 2570')
   })
 
   it('returns malformed input unchanged', () => {
