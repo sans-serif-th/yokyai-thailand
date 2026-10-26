@@ -36,7 +36,7 @@ export function NewsDetail({ item }: { item: NewsItem }) {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
-      <TopBar title={item.title} backHref="/home" />
+      <TopBar title="กลับ" backHref="/home" />
 
       <div className="relative aspect-square w-full bg-zinc-200">
         {item.cover_image_url && (
@@ -46,19 +46,19 @@ export function NewsDetail({ item }: { item: NewsItem }) {
 
       {item.layout === 'steps' ? (
         <>
-          {item.heading && (
-            <h2 className="p-[10px] text-center text-xl font-bold">{item.heading}</h2>
-          )}
+          <h2 className="p-[10px] text-center text-xl font-bold">{item.heading || item.title}</h2>
           {item.steps.map((step, i) => (
             <StepCard key={i} index={i} step={step} />
           ))}
         </>
       ) : (
         <>
-          {item.heading && (
-            <h2 className="whitespace-pre-line text-[18px] font-semibold leading-[27px]">{item.heading}</h2>
-          )}
-          <div className="flex flex-col gap-[18px] text-[14px] leading-[21px]">
+          {/* The title isn't in the top bar any more, so an article without a
+              separate heading shows its title here. */}
+          <h2 className="whitespace-pre-line text-base font-semibold leading-6">
+            {item.heading || item.title}
+          </h2>
+          <div className="flex flex-col gap-[21px] text-[14px] leading-[21px]">
             {paragraphs.map((p, i) => (
               <p key={i} className="whitespace-pre-line">
                 {p}
