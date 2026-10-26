@@ -300,18 +300,18 @@ create index if not exists idx_contact_requests_target on contact_requests (targ
 -- Default-deny RLS: only the service-role API routes touch this table.
 alter table contact_requests enable row level security;
 
--- Home ("อัพเดท") news, edited from /admin/news. `layout` picks the detail
--- page template: 'article' (heading + paragraphs) or 'steps' (numbered
--- step cards, each optionally with an illustration).
+-- Home ("อัพเดท") news, edited from /admin/news. `category` groups them as
+-- ข่าวสาร ('news') or ระบบ ('system'); `body` is HTML from the admin editor
+-- (older rows may still hold plain paragraphs). Migration 0032 replaced the
+-- old `layout`/`steps` columns, which existing databases keep but nothing reads.
 create table if not exists news (
   id uuid primary key default gen_random_uuid(),
-  layout text not null default 'article' check (layout in ('article', 'steps')),
+  category text not null default 'news' check (category in ('news', 'system')),
   title text not null,
   published_date date not null default current_date,
   cover_image_url text,
   heading text,
-  body text,                       -- paragraphs separated by a blank line
-  steps jsonb not null default '[]'::jsonb,  -- [{title, description, image_url}]
+  body text,                       -- HTML (sanitized on save)
   published boolean not null default true,
   -- Optional show-from / show-until (inclusive, Thai calendar day); migration 0029.
   publish_start date,

@@ -1,16 +1,20 @@
 // Home ("อัพเดท") news. Rows live in the `news` table (0026_news.sql) and are
 // edited from /admin/news; this file holds the shared types plus the pure
 // helpers (date label, payload validation) so they can be unit-tested.
-export type NewsLayout = 'article' | 'steps'
+// Home news is grouped as ข่าวสาร (announcements) or ระบบ (how the system works).
+export type NewsCategory = 'news' | 'system'
 
-export interface NewsStep {
-  title: string
-  description: string
-  image_url: string | null
+export const NEWS_CATEGORIES: { value: NewsCategory; label: string }[] = [
+  { value: 'news', label: 'ข่าวสาร' },
+  { value: 'system', label: 'ระบบ' },
+]
+
+export function newsCategoryLabel(category: NewsCategory): string {
+  return NEWS_CATEGORIES.find((c) => c.value === category)?.label ?? category
 }
 
 export interface NewsPayload {
-  layout: NewsLayout
+  category: NewsCategory
   title: string
   // YYYY-MM-DD
   published_date: string
@@ -18,7 +22,6 @@ export interface NewsPayload {
   heading: string | null
   // Paragraphs separated by a blank line.
   body: string | null
-  steps: NewsStep[]
   published: boolean
   // Optional visibility window (YYYY-MM-DD, inclusive, Thai calendar day);
   // null = no limit on that side. Only matters while `published` is true.
@@ -90,6 +93,12 @@ export function newsVisibility(
   return 'live'
 }
 
+// Bodies saved from the editor are HTML; older ones are plain paragraphs
+// separated by a blank line.
+export function isHtmlBody(body: string | null): boolean {
+  return !!body && body.trimStart().startsWith('<')
+}
+
 export function splitParagraphs(body: string | null): string[] {
   if (!body) return []
   return body
@@ -100,10 +109,9 @@ export function splitParagraphs(body: string | null): string[] {
 
 const TITLE_MAX = 200
 const HEADING_MAX = 300
-const BODY_MAX = 5000
-const STEP_DESCRIPTION_MAX = 500
+// HTML from the editor is longer than the plain paragraphs it replaces.
+const BODY_MAX = 50000
 const URL_MAX = 1000
-const STEPS_MAX = 10
 
 function isImageUrl(v: unknown): v is string {
   return typeof v === 'string' && v.length <= URL_MAX && (v.startsWith('/') || v.startsWith('https://'))
@@ -124,7 +132,7 @@ function isOptionalText(v: unknown, max: number) {
 export function validateNewsPayload(body: unknown): body is NewsPayload {
   if (!body || typeof body !== 'object') return false
   const b = body as Record<string, unknown>
-  if (b.layout !== 'article' && b.layout !== 'steps') return false
+  if (!NEWS_CATEGORIES.some((c) => c.value === b.category)) return false
   if (typeof b.title !== 'string' || !b.title.trim() || b.title.length > TITLE_MAX) return false
   if (!isValidDate(b.published_date)) return false
   if (b.cover_image_url !== null && b.cover_image_url !== undefined && !isImageUrl(b.cover_image_url)) {
@@ -140,35 +148,18 @@ export function validateNewsPayload(body: unknown): body is NewsPayload {
     return false
   }
   if (typeof b.sort_order !== 'number' || !Number.isInteger(b.sort_order)) return false
-  if (!Array.isArray(b.steps) || b.steps.length > STEPS_MAX) return false
-  return b.steps.every((s) => {
-    if (!s || typeof s !== 'object') return false
-    const step = s as Record<string, unknown>
-    return (
-      typeof step.title === 'string' &&
-      !!step.title.trim() &&
-      step.title.length <= TITLE_MAX &&
-      typeof step.description === 'string' &&
-      step.description.length <= STEP_DESCRIPTION_MAX &&
-      (step.image_url === null || step.image_url === undefined || isImageUrl(step.image_url))
-    )
-  })
+  return true
 }
 
 // Normalises a validated payload into the column values to write.
 export function newsPayloadToRow(p: NewsPayload) {
   return {
-    layout: p.layout,
+    category: p.category,
     title: p.title.trim(),
     published_date: p.published_date,
     cover_image_url: p.cover_image_url || null,
     heading: p.heading?.trim() || null,
     body: p.body?.trim() || null,
-    steps: p.steps.map((s) => ({
-      title: s.title.trim(),
-      description: s.description.trim(),
-      image_url: s.image_url || null,
-    })),
     published: p.published,
     publish_start: p.publish_start || null,
     publish_end: p.publish_end || null,

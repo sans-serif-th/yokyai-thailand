@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { RichTextEditor } from '@/components/rich-text-editor'
 import {
   formatNewsDate,
+  NEWS_CATEGORIES,
+  newsCategoryLabel,
   newsVisibility,
   type NewsItem,
   type NewsPayload,
-  type NewsStep,
   type NewsVisibility,
 } from '@/lib/news'
 
@@ -27,20 +29,17 @@ const VISIBILITY_STYLE: Record<NewsVisibility, string> = {
 }
 
 const EMPTY_FORM: NewsPayload = {
-  layout: 'article',
+  category: 'news',
   title: '',
   published_date: new Date().toISOString().slice(0, 10),
   cover_image_url: null,
   heading: null,
   body: null,
-  steps: [],
   published: true,
   publish_start: null,
   publish_end: null,
   sort_order: 0,
 }
-
-const EMPTY_STEP: NewsStep = { title: '', description: '', image_url: null }
 
 const inputClass = 'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm'
 
@@ -51,6 +50,8 @@ export default function AdminNewsPage() {
   const [news, setNews] = useState<NewsItem[]>([])
   const [form, setForm] = useState<NewsPayload | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
+  // Bumped whenever a different item is opened so the editor reloads its content.
+  const [formVersion, setFormVersion] = useState(0)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -82,19 +83,20 @@ export default function AdminNewsPage() {
 
   function startCreate() {
     setEditingId(null)
+    setFormVersion((v) => v + 1)
     setForm({ ...EMPTY_FORM, sort_order: news.length })
   }
 
   function startEdit(item: NewsItem) {
     setEditingId(item.id)
+    setFormVersion((v) => v + 1)
     setForm({
-      layout: item.layout,
+      category: item.category,
       title: item.title,
       published_date: item.published_date,
       cover_image_url: item.cover_image_url,
       heading: item.heading,
       body: item.body,
-      steps: item.steps,
       published: item.published,
       publish_start: item.publish_start,
       publish_end: item.publish_end,
@@ -157,12 +159,6 @@ export default function AdminNewsPage() {
     setForm((f) => (f ? { ...f, ...patch } : f))
   }
 
-  function patchStep(index: number, patch: Partial<NewsStep>) {
-    setForm((f) =>
-      f ? { ...f, steps: f.steps.map((s, i) => (i === index ? { ...s, ...patch } : s)) } : f
-    )
-  }
-
   if (!token) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
@@ -196,14 +192,17 @@ export default function AdminNewsPage() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <label className="flex flex-col gap-1 text-sm">
-                Layout
+                Category
                 <select
                   className={inputClass}
-                  value={form.layout}
-                  onChange={(e) => patchForm({ layout: e.target.value as NewsPayload['layout'] })}
+                  value={form.category}
+                  onChange={(e) => patchForm({ category: e.target.value as NewsPayload['category'] })}
                 >
-                  <option value="article">Article (heading + text)</option>
-                  <option value="steps">Steps (numbered cards)</option>
+                  {NEWS_CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className="flex flex-col gap-1 text-sm">
@@ -272,87 +271,15 @@ export default function AdminNewsPage() {
               />
             </label>
 
-            {form.layout === 'article' ? (
-              <label className="flex flex-col gap-1 text-sm">
-                Body (leave a blank line between paragraphs)
-                <textarea
-                  rows={12}
-                  className={inputClass}
-                  value={form.body ?? ''}
-                  onChange={(e) => patchForm({ body: e.target.value })}
-                />
-              </label>
-            ) : (
-              <div className="flex flex-col gap-3">
-                <p className="text-sm font-medium">Steps</p>
-                {form.steps.map((step, i) => (
-                  <div key={i} className="flex flex-col gap-2 rounded-lg border border-gray-200 p-3">
-                    <div className="flex items-center justify-between text-sm font-medium">
-                      Step {i + 1}
-                      <button
-                        type="button"
-                        className="text-red-600 hover:underline"
-                        onClick={() => patchForm({ steps: form.steps.filter((_, j) => j !== i) })}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                    <input
-                      className={inputClass}
-                      placeholder="Title"
-                      value={step.title}
-                      onChange={(e) => patchStep(i, { title: e.target.value })}
-                    />
-                    <textarea
-                      rows={2}
-                      className={inputClass}
-                      placeholder="Description"
-                      value={step.description}
-                      onChange={(e) => patchStep(i, { description: e.target.value })}
-                    />
-                    <div className="flex items-center gap-3 text-sm">
-                      {step.image_url && (
-                        <Image
-                          src={step.image_url}
-                          alt=""
-                          width={64}
-                          height={64}
-                          unoptimized
-                          className="size-16 rounded object-contain"
-                        />
-                      )}
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0]
-                          if (!file) return
-                          const url = await upload(file)
-                          if (url) patchStep(i, { image_url: url })
-                          e.target.value = ''
-                        }}
-                      />
-                      {step.image_url && (
-                        <button
-                          type="button"
-                          className="text-gray-600 hover:underline"
-                          onClick={() => patchStep(i, { image_url: null })}
-                        >
-                          Clear image
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="w-fit rounded-lg border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-100"
-                  onClick={() => patchForm({ steps: [...form.steps, { ...EMPTY_STEP }] })}
-                >
-                  Add step
-                </button>
-              </div>
-            )}
+            <div className="flex flex-col gap-1 text-sm">
+              Body
+              <RichTextEditor
+                key={formVersion}
+                value={form.body}
+                onChange={(html) => patchForm({ body: html })}
+                onUploadImage={upload}
+              />
+            </div>
 
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -418,7 +345,7 @@ export default function AdminNewsPage() {
                 <th className="w-20 px-3 py-3 font-medium">Cover</th>
                 <th className="px-3 py-3 font-medium">Title</th>
                 <th className="px-3 py-3 font-medium">Date</th>
-                <th className="px-3 py-3 font-medium">Layout</th>
+                <th className="px-3 py-3 font-medium">Category</th>
                 <th className="px-3 py-3 text-right font-medium">Order</th>
                 <th className="px-3 py-3 font-medium">Status</th>
                 <th className="px-3 py-3 font-medium">Show window</th>
@@ -453,7 +380,7 @@ export default function AdminNewsPage() {
                     </td>
                     <td className="max-w-xs px-3 py-2 font-medium">{item.title}</td>
                     <td className="whitespace-nowrap px-3 py-2">{formatNewsDate(item.published_date)}</td>
-                    <td className="px-3 py-2">{item.layout}</td>
+                    <td className="px-3 py-2">{newsCategoryLabel(item.category)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{item.sort_order}</td>
                     <td className="px-3 py-2">
                       <span

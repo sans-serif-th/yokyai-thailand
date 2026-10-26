@@ -1,5 +1,6 @@
 import { checkAdminToken } from '@/lib/admin-token'
-import { isNewsId, newsPayloadToRow, validateNewsPayload } from '@/lib/news'
+import { isNewsId, validateNewsPayload } from '@/lib/news'
+import { newsRowForWrite } from '@/lib/news-html'
 import { createServiceClient } from '@/lib/supabase-server'
 
 type Ctx = { params: Promise<{ id: string }> }
@@ -20,7 +21,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('news')
-    .update(newsPayloadToRow(body))
+    .update(newsRowForWrite(body))
     .eq('id', id)
     .select()
     .maybeSingle()
