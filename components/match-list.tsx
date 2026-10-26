@@ -25,60 +25,50 @@ function ContactAction({
   onCancel?: (requestId: string) => void
 }) {
   const c = match.contact
-  const base = 'mt-1 w-fit rounded-lg px-3 py-1.5 text-xs'
-  const send = 'mt-1 flex h-8 w-full items-center justify-center rounded-lg bg-brand-red px-5 text-base font-bold text-white'
+  // Figma Button: 32px tall, full width, 8px radius, 16px bold. The card's own
+  // 4px gap supplies the spacing above it.
+  const box = 'flex h-8 w-full items-center justify-center rounded-lg px-5 text-base font-bold'
+  const primary = `${box} bg-brand-red text-white`
+  const muted = `${box} bg-zinc-100 text-zinc-500`
+
   if (c?.status === 'cancelled') {
-    if (c.sendsLeft <= 0) {
-      return <span className={`${base} bg-zinc-100 text-zinc-500`}>ส่งคำขอครบ 3 ครั้งแล้ว</span>
-    }
+    if (c.sendsLeft <= 0) return <span className={muted}>ส่งคำขอครบ {MAX_CONTACT_SENDS} ครั้งแล้ว</span>
     return (
-      <button
-        type="button"
-        onClick={() => onRequest(match.teacher.id)}
-        className={send}
-      >
-        ส่งคำขออีกครั้ง (เหลือ {c.sendsLeft} ครั้ง)
+      <button type="button" onClick={() => onRequest(match.teacher.id)} className={primary}>
+        ส่งคำขออีกครั้ง
       </button>
     )
   }
   if (!c) {
     return (
-      <button
-        type="button"
-        onClick={() => onRequest(match.teacher.id)}
-        className={send}
-      >
+      <button type="button" onClick={() => onRequest(match.teacher.id)} className={primary}>
         ส่งคำขอ
       </button>
     )
   }
   if (c.status === 'accepted') {
     return (
-      <Link href="/matches?tab=contacts" className={`${base} bg-[#f0fdf4] text-[#15803d]`}>
+      <Link href="/matches?tab=contacts" className={`${box} bg-[#f0fdf4] text-[#15803d]`}>
         ดูข้อมูลติดต่อ
       </Link>
     )
   }
-  if (c.status === 'declined') {
-    return <span className={`${base} bg-zinc-100 text-zinc-500`}>ไม่สะดวกติดต่อ</span>
-  }
+  if (c.status === 'declined') return <span className={muted}>ไม่สะดวกติดต่อ</span>
   if (c.direction === 'incoming') {
     return (
-      <Link href="/matches?tab=contacts" className={`${base} btn-brand-primary`}>
-        มีคำขอติดต่อ — ตอบกลับ
+      <Link href="/matches?tab=contacts" className={primary}>
+        ตอบกลับคำขอ
       </Link>
     )
   }
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-2">
-      <span className="rounded-lg bg-zinc-100 px-3 py-1.5 text-xs text-zinc-500">
-        ส่งคำขอแล้ว — รออีกฝ่ายตอบ
-      </span>
+    <div className="flex items-center gap-3">
+      <span className={`${muted} min-w-0 flex-1`}>รอยืนยัน</span>
       {onCancel && (
         <button
           type="button"
           onClick={() => onCancel(c.requestId)}
-          className="text-xs text-zinc-500 underline"
+          className="shrink-0 text-xs underline"
         >
           ยกเลิกคำขอ
         </button>
@@ -99,6 +89,10 @@ interface MatchListProps {
   title?: string
   // Rendered right under the top bar (the matches page puts its ผลจับคู่ / คำขอติดต่อ switch here).
   viewTabs?: React.ReactNode
+  // Dev-only controls, shown under viewTabs. They can't sit above MatchList:
+  // the fixed TopBar would cover them while their height still pushes the
+  // page down.
+  devControls?: React.ReactNode
   showSettingsLink?: boolean
   roundLabel?: string | null
   onRefresh?: () => void
@@ -112,6 +106,7 @@ export function MatchList({
   onCancelContact,
   title = 'ผลการจับคู่',
   viewTabs,
+  devControls,
   showSettingsLink = false,
   roundLabel = null,
   onRefresh,
@@ -196,6 +191,7 @@ export function MatchList({
           }
         />
         {viewTabs}
+        {devControls}
         <div className="mt-5 text-center">
           <p className="text-lg">ยังไม่พบคู่สับเปลี่ยนในตอนนี้</p>
           <p className="text-sm mt-1">
@@ -231,6 +227,8 @@ export function MatchList({
       />
 
       {viewTabs}
+
+      {devControls}
 
       <UnderlineTabs
         value={filterTab}
