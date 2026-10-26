@@ -144,10 +144,10 @@ export default function FavoritesPage() {
 
   if (matches.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-lg px-4 pb-6 text-center text-zinc-600">
+      <div className="mx-auto w-full max-w-lg px-4 pb-6 text-zinc-600">
         <TopBar title="รายการโปรด" right={<RoundPill roundLabel={roundLabel} />} />
-        <p className="mt-5 text-lg">ยังไม่มีรายการโปรด</p>
-        <p className="mt-1 text-sm">กดรูปหัวใจที่การ์ดในหน้าค้นหา เพื่อบันทึกไว้ดูภายหลัง</p>
+        <p className="mt-5 text-center text-lg">ยังไม่มีรายการโปรด</p>
+        <p className="mt-1 text-center text-sm">กดรูปหัวใจที่การ์ดในหน้าค้นหา เพื่อบันทึกไว้ดูภายหลัง</p>
       </div>
     )
   }
