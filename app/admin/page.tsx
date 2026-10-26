@@ -48,7 +48,8 @@ interface MatchCoverage {
 
 function formatDate(iso: string) {
   const d = new Date(iso)
-  const date = d.toLocaleDateString('en-CA') // YYYY-MM-DD, locale-independent
+  // th-TH uses the Buddhist calendar, so the year comes out as พ.ศ.
+  const date = d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })
   const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) // HH:mm
   return `${date} ${time}`
 }

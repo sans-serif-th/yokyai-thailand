@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Anuphan } from "next/font/google";
 import "./globals.css";
 
@@ -13,6 +13,12 @@ const anuphan = Anuphan({
 export const metadata: Metadata = {
   title: "โยกย้าย — Teacher Position Swap",
   description: "Find a teacher who wants to mutually swap positions with you.",
+};
+
+// viewport-fit=cover lets the page (and the bottom nav) extend into the
+// home-indicator strip on iPhones instead of leaving a blank band under it.
+export const viewport: Viewport = {
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

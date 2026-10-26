@@ -35,8 +35,8 @@ export function TopBar({ title, backHref, right, centered = false }: TopBarProps
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-20 bg-background">{bar}</div>
-      <div className="invisible shrink-0" aria-hidden>
+      <div className="fixed inset-x-0 top-0 z-20 bg-background pt-[env(safe-area-inset-top)]">{bar}</div>
+      <div className="invisible shrink-0 pt-[env(safe-area-inset-top)]" aria-hidden>
         {bar}
       </div>
     </>

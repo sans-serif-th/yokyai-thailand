@@ -35,7 +35,7 @@ export function BottomNav() {
   }, [])
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 rounded-t-[30px] bg-white shadow-[0_4px_4px_rgba(0,0,0,0.04)]">
+    <nav className="fixed inset-x-0 bottom-0 z-10 rounded-t-[30px] bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_4px_4px_rgba(0,0,0,0.04)]">
       <div className="mx-auto flex h-[88px] max-w-lg items-start justify-center gap-[49px] px-[46px] pt-[23px]">
         {TABS.map(({ href, label, Icon }) => {
           const active = pathname === href

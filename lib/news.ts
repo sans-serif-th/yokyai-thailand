@@ -56,15 +56,15 @@ const THAI_MONTHS_SHORT = [
 
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
 
-// "2026-10-31" -> "31 ต.ค. 26" (Figma: Thai month abbreviation, 2-digit
-// Gregorian year). Parsed from the string, not via Date, so the label never
-// shifts with the viewer's timezone.
+// "2026-10-31" -> "31 ต.ค. 2569" (Thai month abbreviation, พ.ศ. year).
+// Parsed from the string, not via Date, so the label never shifts with the
+// viewer's timezone.
 export function formatNewsDate(isoDate: string): string {
   const m = DATE_PATTERN.exec(isoDate)
   if (!m) return isoDate
   const month = THAI_MONTHS_SHORT[Number(m[2]) - 1]
   if (!month) return isoDate
-  return `${Number(m[3])} ${month} ${m[1].slice(2)}`
+  return `${Number(m[3])} ${month} ${Number(m[1]) + 543}`
 }
 
 // Today's date in Thailand (YYYY-MM-DD) — the news window is counted in Thai
