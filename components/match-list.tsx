@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { HeartIcon, HomeIcon } from './icons'
 import { TopBar } from './top-bar'
 import { RoundPill } from './round-pill'
 import { RefreshButton } from './refresh-button'
+import { Snackbar } from './snackbar'
 import { UnderlineTabs } from './underline-tabs'
 import { getRoleFields } from '@/lib/roles/field-registry'
 import { cardLinesFromFields } from '@/lib/roles/fields'
@@ -83,7 +84,8 @@ const PAGE_SIZE = 25
 
 interface MatchListProps {
   matches: MatchResult[]
-  onToggleFavorite: (teacherId: string, currentlyFavorited: boolean) => void
+  // May reject when saving fails; the card then shows an error snackbar.
+  onToggleFavorite: (teacherId: string, currentlyFavorited: boolean) => void | Promise<void>
   onRequestContact?: (teacherId: string) => void
   onCancelContact?: (requestId: string) => void
   title?: string
@@ -115,6 +117,23 @@ export function MatchList({
   const [filterTab, setFilterTab] = useState<FilterTab>('all')
   const [subjectFilter, setSubjectFilter] = useState('')
   const [destinationFilter, setDestinationFilter] = useState('')
+  const [snack, setSnack] = useState<{ text: string; token: number } | null>(null)
+  const dismissSnack = useCallback(() => setSnack(null), [])
+
+  function showSnack(text: string) {
+    setSnack((prev) => ({ text, token: (prev?.token ?? 0) + 1 }))
+  }
+
+  async function toggleFavorite(teacherId: string, currentlyFavorited: boolean) {
+    // Optimistic: the page flips the heart at once, so confirm at once too and
+    // replace the message if the save then fails.
+    showSnack(currentlyFavorited ? 'นำออกจากรายการโปรดแล้ว' : 'เพิ่มไปยังรายการโปรดแล้ว')
+    try {
+      await onToggleFavorite(teacherId, currentlyFavorited)
+    } catch {
+      showSnack('บันทึกรายการโปรดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')
+    }
+  }
 
   // Each option is tagged with how many current results match it, e.g.
   // "ภาษาไทย (20)" — counted against the full unfiltered list, not against
@@ -285,11 +304,13 @@ export function MatchList({
                   </span>
                   <button
                     type="button"
-                    onClick={() => onToggleFavorite(m.teacher.id, m.favorited)}
+                    onClick={() => toggleFavorite(m.teacher.id, m.favorited)}
                     aria-label={m.favorited ? 'เอาออกจากรายการโปรด' : 'เพิ่มในรายการโปรด'}
-                    className={m.favorited ? 'text-brand-red' : 'text-foreground'}
+                    // 24px icon (Figma) with padding so the tap target is 40px;
+                    // the negative margin keeps the card layout unchanged.
+                    className={`-m-2 p-2 ${m.favorited ? 'text-brand-red' : 'text-foreground'}`}
                   >
-                    <HeartIcon filled={m.favorited} />
+                    <HeartIcon filled={m.favorited} className="size-6" />
                   </button>
                 </div>
               </div>
@@ -332,6 +353,8 @@ export function MatchList({
           <span className="text-xs text-zinc-400">กำลังโหลดเพิ่มเติม...</span>
         </div>
       )}
+
+      <Snackbar message={snack?.text ?? null} token={snack?.token ?? 0} onDismiss={dismissSnack} />
     </div>
   )
 }

@@ -81,8 +81,9 @@ export default function FavoritesPage() {
     setMatches((prev) => prev.filter((m) => m.teacher.id !== teacherId))
     try {
       await withAuthRetry((token) => removeFavorite(token, teacherId))
-    } catch {
+    } catch (err) {
       setMatches(previous)
+      throw err
     }
   }
 
