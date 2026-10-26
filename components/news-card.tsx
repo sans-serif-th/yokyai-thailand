@@ -12,7 +12,7 @@ export function NewsCard({ item }: { item: NewsSummary }) {
         )}
       </div>
       <div className="flex flex-col p-2">
-        <h2 className="text-sm font-semibold leading-[21px]">{item.title}</h2>
+        <h2 className="text-[18px] font-semibold leading-[27px]">{item.title}</h2>
         <p className="text-xs leading-[18px]">{formatNewsDate(item.published_date)}</p>
       </div>
     </Link>
