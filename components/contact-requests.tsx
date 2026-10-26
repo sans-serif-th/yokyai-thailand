@@ -8,6 +8,7 @@ import { positionLabel } from '@/lib/positions'
 import { serviceTypeAbbr } from '@/lib/service-types'
 import { subjectLabel } from '@/lib/subject-label'
 import { teachingGroupLabel } from '@/lib/teaching-groups'
+import { ConfirmDialog } from './confirm-dialog'
 import { UnderlineTabs } from './underline-tabs'
 import type { ContactRequestView } from '@/lib/types'
 
@@ -146,6 +147,8 @@ export function ContactRequestsView({
   onRespond: (id: string, action: 'accept' | 'decline' | 'cancel') => void
 }) {
   const [filter, setFilter] = useState<Filter>('all')
+  // Request awaiting the "delete this connection" confirmation.
+  const [deleteId, setDeleteId] = useState<string | null>(null)
   // Remembered per browser; starts dismissed so a returning user never sees it flash.
   const [noticeDismissed, setNoticeDismissed] = useState(true)
   useEffect(() => {
@@ -261,11 +264,7 @@ export function ContactRequestsView({
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => {
-                    if (window.confirm('ลบรายชื่อนี้จากผลการจับคู่? อีกฝ่ายจะไม่เห็นข้อมูลติดต่อของกันและกันอีก')) {
-                      respond(c.id, 'cancel')
-                    }
-                  }}
+                  onClick={() => setDeleteId(c.id)}
                   className="underline"
                 >
                   ลบรายชื่อนี้จากผลการจับคู่
@@ -280,6 +279,19 @@ export function ContactRequestsView({
           </div>
         )
       })}
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        title="ยืนยันการลบรายชื่อ?"
+        message="เมื่อลบรายชื่อ ทั้งคุณและอีกฝ่ายจะไม่เห็นข้อมูลติดต่อของกันอีก ต้องทำการส่งคำขอใหม่เพื่อดูข้อมูลติดต่ออีกครั้ง"
+        confirmLabel="ลบ"
+        destructive
+        onCancel={() => setDeleteId(null)}
+        onConfirm={() => {
+          if (deleteId) respond(deleteId, 'cancel')
+          setDeleteId(null)
+        }}
+      />
     </div>
   )
 }
