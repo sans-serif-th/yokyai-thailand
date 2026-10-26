@@ -137,12 +137,14 @@ function MatchesContent() {
       await withAuthRetry((token) =>
         currentlyFavorited ? removeFavorite(token, teacherId) : addFavorite(token, teacherId)
       )
-    } catch {
+    } catch (err) {
       // Revert the optimistic update if the request failed.
       const revert = (prev: MatchResult[]) =>
         prev.map((m) => (m.teacher.id === teacherId ? { ...m, favorited: currentlyFavorited } : m))
       setMatches(revert)
       setDevMatches((prev) => (prev ? revert(prev) : prev))
+      // Let the card tell the user the save failed.
+      throw err
     }
   }
 
