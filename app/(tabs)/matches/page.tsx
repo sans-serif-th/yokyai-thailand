@@ -253,10 +253,10 @@ function MatchesContent() {
     )
   }
 
-  return (
-    <div className="flex flex-col gap-2">
+  const devControls = (
+    <>
       {DEV_TOOLS_ENABLED && (
-        <div className="max-w-lg mx-auto w-full px-4 pt-4 flex justify-end">
+        <div className="flex justify-end">
           <button
             type="button"
             onClick={handleToggleDevMode}
@@ -267,25 +267,27 @@ function MatchesContent() {
         </div>
       )}
       {devMode && (
-        <p className="max-w-lg mx-auto w-full px-4 text-xs text-zinc-500">
+        <p className="text-xs text-zinc-500">
           กำลังแสดงข้อมูลนำเข้าทั้งหมด (ไม่ผ่านเงื่อนไขการจับคู่จริง) — สำหรับทดสอบเท่านั้น
         </p>
       )}
-      {devMode && devLoading ? (
-        <p className="text-center p-8 text-zinc-600">กำลังโหลด...</p>
-      ) : (
-        <MatchList
-          matches={devMode ? (devMatches ?? []) : matches}
-          onToggleFavorite={handleToggleFavorite}
-          viewTabs={viewTabs}
-          onRequestContact={devMode ? undefined : handleRequestContact}
-          onCancelContact={devMode ? undefined : handleCancelContact}
-          showSettingsLink
-          roundLabel={roundLabel}
-          onRefresh={handleRefresh}
-          refreshing={refreshing}
-        />
-      )}
-    </div>
+    </>
+  )
+
+  return devMode && devLoading ? (
+    <p className="text-center p-8 text-zinc-600">กำลังโหลด...</p>
+  ) : (
+    <MatchList
+      matches={devMode ? (devMatches ?? []) : matches}
+      onToggleFavorite={handleToggleFavorite}
+      viewTabs={viewTabs}
+      devControls={devControls}
+      onRequestContact={devMode ? undefined : handleRequestContact}
+      onCancelContact={devMode ? undefined : handleCancelContact}
+      showSettingsLink
+      roundLabel={roundLabel}
+      onRefresh={handleRefresh}
+      refreshing={refreshing}
+    />
   )
 }
