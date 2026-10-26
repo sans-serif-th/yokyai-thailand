@@ -60,6 +60,7 @@ export function toContactView(
     name: accepted ? other.display_name : null,
     lineId: accepted ? other.line_id : null,
     phone: accepted ? other.phone : null,
+    wasConnected: row.status === 'cancelled' && row.responded_at !== null,
   }
 }
 
@@ -241,7 +242,11 @@ export async function respondToContactRequest(
   if (accept) await notifyTeacher(row.requester_id, 'request_accepted')
 }
 
-// Only the requester can cancel, and only while the request is still pending.
+// Cancels a request. A pending request can only be withdrawn by its requester;
+// an accepted one (an existing connection) can be ended by either side. The
+// row keeps responded_at so the requester can tell the two apart, and the
+// name/contact details stop being released because the status is no longer
+// accepted (see toContactView).
 export async function cancelContactRequest(lineUserId: string, requestId: string): Promise<void> {
   const me = await getTeacher(lineUserId)
   const supabase = createServiceClient()
@@ -252,8 +257,14 @@ export async function cancelContactRequest(lineUserId: string, requestId: string
     .maybeSingle()
   if (error) throw error
   const row = data as ContactRequestRow | null
-  if (!row || row.requester_id !== me.id) throw new Error('ไม่พบคำขอติดต่อ')
-  if (row.status !== 'pending') throw new Error('ยกเลิกได้เฉพาะคำขอที่ยังรอตอบ')
+  if (!row || (row.requester_id !== me.id && row.target_id !== me.id)) {
+    throw new Error('ไม่พบคำขอติดต่อ')
+  }
+  if (row.status === 'pending') {
+    if (row.requester_id !== me.id) throw new Error('ไม่พบคำขอติดต่อ')
+  } else if (row.status !== 'accepted') {
+    throw new Error('ยกเลิกได้เฉพาะคำขอที่ยังรอตอบหรือเชื่อมต่อแล้ว')
+  }
 
   const { error: updateError } = await supabase
     .from('contact_requests')

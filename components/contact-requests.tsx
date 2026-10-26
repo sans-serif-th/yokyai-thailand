@@ -157,6 +157,18 @@ export function ContactRequestsView({
                   โทร {c.phone}
                 </a>
               )}
+              <button
+                type="button"
+                disabled={busyId === c.id}
+                onClick={() => {
+                  if (window.confirm(`ยกเลิกการเชื่อมต่อกับ ${c.name ?? 'คู่นี้'}? ข้อมูลติดต่อของทั้งสองฝ่ายจะถูกซ่อน`)) {
+                    respond(c.id, 'cancel')
+                  }
+                }}
+                className="mt-1 w-fit text-xs text-zinc-500 underline"
+              >
+                ยกเลิกการเชื่อมต่อ
+              </button>
             </div>
           ))}
         </section>
@@ -173,7 +185,9 @@ export function ContactRequestsView({
                 {c.status === 'pending'
                   ? 'รออีกฝ่ายตอบ'
                   : c.status === 'cancelled'
-                    ? 'ยกเลิกคำขอแล้ว'
+                    ? c.wasConnected
+                      ? 'ยกเลิกการเชื่อมต่อแล้ว'
+                      : 'ยกเลิกคำขอแล้ว'
                     : 'อีกฝ่ายไม่สะดวกติดต่อ'}
               </p>
               {c.status === 'pending' && (

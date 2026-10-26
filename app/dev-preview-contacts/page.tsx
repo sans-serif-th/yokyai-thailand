@@ -60,6 +60,7 @@ const base = {
   name: null,
   lineId: null,
   phone: null,
+  wasConnected: false,
   sendsLeft: 3,
 }
 

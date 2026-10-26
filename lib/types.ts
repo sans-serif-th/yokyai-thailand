@@ -118,6 +118,9 @@ export interface ContactRequestView {
   name: string | null
   lineId: string | null
   phone: string | null
+  // A cancelled request that had been accepted (the connection was ended),
+  // as opposed to a pending request withdrawn before anyone answered.
+  wasConnected: boolean
 }
 
 export interface Round {

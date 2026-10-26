@@ -147,7 +147,8 @@ beforeEach(() => {
     'fetch',
     vi.fn(async (_url: string, init: { body: string }) => {
       const b = JSON.parse(init.body)
-      pushes.push({ to: b.to, text: b.messages[0].text })
+      // Flex message: the whole card JSON stands in for the text.
+      pushes.push({ to: b.to, text: JSON.stringify(b.messages[0]) })
       return new Response('{}', { status: 200 })
     })
   )
@@ -223,6 +224,41 @@ describe('contact request flow', () => {
     expect((await patch(id, 'accept')).status).toBe(400) // target-only
     await patch(id, 'cancel')
     expect((await patch(id, 'cancel')).status).toBe(400) // not pending any more
+  })
+
+  it('either side can end an accepted connection; details are hidden and A can resend', async () => {
+    as('UA')
+    const id = (await send('B')).body.requestId as string
+    as('UB')
+    await patch(id, 'accept')
+
+    // B (the target) ends it.
+    expect((await patch(id, 'cancel')).status).toBe(200)
+    expect(await list()).toHaveLength(0) // cancelled rows are hidden from the non-requester
+    as('UA')
+    expect((await list())[0]).toMatchObject({
+      status: 'cancelled',
+      wasConnected: true,
+      name: null,
+      lineId: null,
+      phone: null,
+    })
+    expect((await patch(id, 'cancel')).status).toBe(400) // already cancelled
+    expect((await send('B')).body.status).toBe('pending') // can ask again
+
+    // A pending request withdrawn before anyone answered is not "was connected".
+    await patch(id, 'cancel')
+    expect((await list())[0]).toMatchObject({ status: 'cancelled', wasConnected: false })
+  })
+
+  it('the requester can also end an accepted connection', async () => {
+    as('UA')
+    const id = (await send('B')).body.requestId as string
+    as('UB')
+    await patch(id, 'accept')
+    as('UA')
+    expect((await patch(id, 'cancel')).status).toBe(200)
+    expect((await list())[0]).toMatchObject({ status: 'cancelled', wasConnected: true, name: null })
   })
 
   it('when B had cancelled, A asking flips direction and resets the count', async () => {
