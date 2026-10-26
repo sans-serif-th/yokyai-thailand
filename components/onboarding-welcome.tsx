@@ -51,37 +51,17 @@ export function SlideIllustration({ index }: { index: number }) {
   const slide = SLIDES[index]
   return (
     <div className="relative h-[300px] w-full shrink-0 overflow-hidden">
-      {index === 0 ? (
-        <>
-          {/* Slide 1's source image is a square with its step badge in the
-                top margin; Figma crops it to the bottom 300px and re-places
-                just the badge on top, so do the same. */}
-          <Image
-            src={slide.image}
-            alt=""
-            fill
-            sizes="512px"
-            className="object-cover object-bottom"
-            priority
-          />
-          <div className="absolute left-1/2 top-0 h-[50px] w-[51px] -translate-x-1/2 overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element -- see above */}
-            <img
-              src={slide.image}
-              alt=""
-              className="absolute max-w-none"
-              style={{
-                width: '795.56%',
-                height: '813.64%',
-                left: '-348.31%',
-                top: '-16.9%',
-              }}
-            />
-          </div>
-        </>
-      ) : (
-        <Image src={slide.image} alt="" fill sizes="512px" className="object-cover" priority />
-      )}
+      {/* The source images are squares with the step badge at the top edge, so
+          show them whole (contain) instead of cropping. They have a white
+          backdrop; multiply blends it into the page background. */}
+      <Image
+        src={slide.image}
+        alt=""
+        fill
+        sizes="300px"
+        className="object-contain mix-blend-multiply"
+        priority={index === 0}
+      />
     </div>
   )
 }

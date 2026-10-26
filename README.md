@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# yokyai (โยกย้าย)
 
-## Getting Started
+เว็บแอปจับคู่ข้าราชการที่ต้องการแลกย้ายตำแหน่ง (เริ่มจากครู) ทำงานใน LINE ผ่าน LIFF ผู้ใช้ login ด้วยบัญชี LINE
 
-First, run the development server:
+- Next.js 16 (App Router) + Tailwind v4 + Supabase (Postgres) + LINE LIFF
+- Production: https://yokyai-thailand.vercel.app (deploy อัตโนมัติจาก branch `main`)
+- ภาพรวมระบบและสภาพแวดล้อม: [docs/infrastructure.md](docs/infrastructure.md)
+- ศัพท์และกติกาของโดเมน: [docs/CONTEXT.md](docs/CONTEXT.md)
+- งานที่ค้างและสถานะ: [docs/status.md](docs/status.md)
+
+> Next.js ที่ใช้เป็นเวอร์ชันที่มี breaking change จากที่คุ้นเคย อ่านคู่มือใน `node_modules/next/dist/docs/` ก่อนเขียนโค้ดที่แตะ API ของ Next (ดู [AGENTS.md](AGENTS.md))
+
+## เริ่มทำงานในเครื่อง
+
+ต้องมี Node.js 24 ขึ้นไป (Vercel ใช้ 24.x)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # แล้วกรอกค่า (ดูหัวข้อถัดไป)
+npx next dev --experimental-https
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+เปิด `https://localhost:3000` ต้องใช้ https เพราะ LIFF ไม่ยอม login บน http (เบราว์เซอร์จะเตือนใบรับรอง กดยอมรับ โฟลเดอร์ `certificates/` ถูก git-ignore แล้ว)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+คำสั่งอื่น:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm test            # vitest (unit test ทั้งหมด)
+npm run lint        # eslint
+npm run build       # ต้องผ่านก่อน merge: Vercel รัน type check ทั้งโปรเจกต์
+```
 
-## Learn More
+## ตัวแปร environment
 
-To learn more about Next.js, take a look at the following resources:
+แม่แบบอยู่ที่ [.env.example](.env.example) ตัวแปรที่แอปอ่าน:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| ตัวแปร | ใช้ทำอะไร | หมายเหตุ |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL โปรเจกต์ Supabase | ฝังตอน build |
+| `SUPABASE_SERVICE_ROLE_KEY` | key ฝั่งเซิร์ฟเวอร์ | ห้ามให้เบราว์เซอร์เห็น |
+| `NEXT_PUBLIC_LIFF_ID` | LIFF app ที่ใช้เปิดแอป | ฝังตอน build |
+| `LINE_CHANNEL_ID` (หรือ `CHANNEL_ID`) | ใช้ตรวจ LINE ID token ฝั่งเซิร์ฟเวอร์ | |
+| `LINE_MESSAGING_ACCESS_TOKEN` | ส่ง Flex message แจ้งคำขอติดต่อ | **ว่างไว้นอก production** เพื่อไม่ส่งข้อความจริง |
+| `ADMIN_TOKEN_SECRET` | เซ็น session ของ `/admin` | สุ่มเอง `openssl rand -hex 32` |
+| `NEXT_PUBLIC_DEV_TOOLS` | แสดงปุ่ม "โหมดทดสอบ" และเปิด `/api/matches/dev` | ตั้งเฉพาะ Preview/local **ห้ามตั้งที่ Production** |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+ตัวแปรที่ขึ้นต้น `NEXT_PUBLIC_` ถูกฝังตอน build แก้แล้วต้อง redeploy
 
-## Deploy on Vercel
+**ในเครื่องให้ชี้โปรเจกต์ Supabase ทดสอบ `yokyai-test` เสมอ ห้ามใช้ key ของโปรเจกต์จริง** วิธีเตรียมข้อมูลทดสอบและ LIFF สำหรับเครื่อง local ดู [docs/infrastructure.md](docs/infrastructure.md) หัวข้อ "เริ่มทำงาน"
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## ฐานข้อมูลและ migration
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+โครงสร้างอยู่ใน `supabase/migrations/NNNN_ชื่อ.sql` และ `supabase/schema.sql` (ต้องตรงกันเสมอ) ขั้นตอนทั้งหมดใน [docs/supabase-cli.md](docs/supabase-cli.md)
+
+## เอกสารอื่น
+
+- [docs/adding-a-role.md](docs/adding-a-role.md): เพิ่ม role (ประเภทผู้ใช้) ใหม่
+- [docs/adding-a-field.md](docs/adding-a-field.md): เพิ่มฟิลด์ในโปรไฟล์
+- [docs/contact-flow-test.md](docs/contact-flow-test.md): ทดสอบ flow คำขอติดต่อ
