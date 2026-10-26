@@ -49,7 +49,7 @@ function ContactAction({
   }
   if (c.status === 'accepted') {
     return (
-      <Link href="/matches?tab=contacts" className={`${box} bg-[#f0fdf4] text-[#15803d]`}>
+      <Link href="/matches?tab=contacts" className={`${box} border border-[#d4d4d4] bg-white`}>
         ดูข้อมูลติดต่อ
       </Link>
     )
