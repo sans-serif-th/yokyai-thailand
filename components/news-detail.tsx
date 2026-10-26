@@ -56,9 +56,9 @@ export function NewsDetail({ item }: { item: NewsItem }) {
       ) : (
         <>
           {item.heading && (
-            <h2 className="whitespace-pre-line text-base font-semibold leading-6">{item.heading}</h2>
+            <h2 className="whitespace-pre-line text-[18px] font-semibold leading-[27px]">{item.heading}</h2>
           )}
-          <div className="flex flex-col gap-[18px] text-xs leading-[18px]">
+          <div className="flex flex-col gap-[18px] text-[14px] leading-[21px]">
             {paragraphs.map((p, i) => (
               <p key={i} className="whitespace-pre-line">
                 {p}
