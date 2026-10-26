@@ -113,7 +113,16 @@ export interface ContactRequestView {
   sendsLeft: number
   createdAt: string
   teacherId: string
-  summary: { position: string; teachingGroup: string | null; originProvince: string }
+  summary: {
+    position: string
+    serviceType: string
+    teachingGroup: string | null
+    subject: string | null
+    originProvince: string
+    originDistrict: string | null
+    originZone: string | null
+    destinations: { province: string; zone: string | null }[]
+  }
   maskedName: string
   name: string | null
   lineId: string | null

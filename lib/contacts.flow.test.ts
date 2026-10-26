@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // push endpoint. Nothing here touches the network or a real database.
 
 type Row = Record<string, unknown>
-const db: Record<string, Row[]> = { teachers: [], contact_requests: [] }
+const db: Record<string, Row[]> = { teachers: [], contact_requests: [], destinations: [] }
 let currentUser = 'UA'
 
 vi.mock('./supabase-server', () => {

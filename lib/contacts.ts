@@ -1,10 +1,12 @@
 import { findMatchesFor, maskName } from './matching'
+import { fetchDestinationsForTeacherIds } from './roles/teacher-matching'
 import { notifyContact, type ContactNotice } from './line-notify'
 import { createServiceClient } from './supabase-server'
 import type {
   ContactDirection,
   ContactRequestView,
   ContactStatus,
+  Destination,
   MatchContact,
   MatchResult,
   Teacher,
@@ -41,7 +43,8 @@ function visibleTo(row: ContactRequestRow, myId: string): boolean {
 export function toContactView(
   row: ContactRequestRow,
   myId: string,
-  other: Teacher
+  other: Teacher,
+  destinations: { province: string; zone: string | null }[] = []
 ): ContactRequestView {
   const accepted = row.status === 'accepted'
   return {
@@ -53,8 +56,13 @@ export function toContactView(
     teacherId: other.id,
     summary: {
       position: other.position,
+      serviceType: other.service_type,
       teachingGroup: other.teaching_group,
+      subject: other.subject,
       originProvince: other.origin_province,
+      originDistrict: other.origin_district,
+      originZone: other.origin_zone,
+      destinations: destinations.map((d) => ({ province: d.province, zone: d.zone })),
     },
     maskedName: maskName(other.display_name),
     name: accepted ? other.display_name : null,
@@ -140,11 +148,16 @@ export async function listContactsFor(lineUserId: string): Promise<ContactReques
   const { data, error } = await supabase.from('teachers').select('*').in('id', otherIds)
   if (error) throw error
   const teachers = new Map((data as Teacher[]).map((t) => [t.id, t]))
+  const destinations = await fetchDestinationsForTeacherIds(supabase, otherIds)
+  const destsByTeacher = new Map<string, Destination[]>()
+  for (const d of destinations) {
+    destsByTeacher.set(d.teacher_id, [...(destsByTeacher.get(d.teacher_id) ?? []), d])
+  }
 
   const views: ContactRequestView[] = []
   for (const row of rows) {
     const other = teachers.get(row.requester_id === me.id ? row.target_id : row.requester_id)
-    if (other) views.push(toContactView(row, me.id, other))
+    if (other) views.push(toContactView(row, me.id, other, destsByTeacher.get(other.id)))
   }
   return views
 }
