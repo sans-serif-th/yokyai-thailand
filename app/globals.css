@@ -22,6 +22,7 @@
   --color-brand-red-soft: #fee4e4; /* section-header icon chip background */
   --color-brand-yellow: #fec524;
   --color-brand-orange: #ea580c; /* stepper connectors (Figma brand/secondary) */
+  --color-brand-line: #39cd00; /* LINE login button (Figma brand/line) */
 }
 
 @theme inline {
@@ -36,6 +37,7 @@
   --color-sage-dark: var(--color-sage-dark);
   --color-brand-red: var(--color-brand-red);
   --color-brand-red-soft: var(--color-brand-red-soft);
+  --color-brand-line: var(--color-brand-line);
   --color-brand-yellow: var(--color-brand-yellow);
   --color-brand-orange: var(--color-brand-orange);
   --font-sans: var(--font-anuphan);
