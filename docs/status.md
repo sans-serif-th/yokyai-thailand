@@ -1,6 +1,6 @@
 # สถานะโปรเจกต์และงานค้าง
 
-อัปเดตล่าสุด: 26 ตุลาคม 2026 · `main` มี PR ถึง #74 และไม่มี PR เปิดค้าง
+อัปเดตล่าสุด: 28 ตุลาคม 2026 · `main` มี PR ถึง #76 และไม่มี PR เปิดค้าง
 
 เอกสารนี้เป็นฉบับที่ไม่มีข้อมูลลับ สำหรับคนที่มารับงานต่อ (บันทึกละเอียดรายรอบของผู้ดูแลเก็บแยกในเครื่อง ไม่อยู่ใน repo)
 
@@ -12,17 +12,17 @@
 - Supabase CLI ลิงก์กับ DB จริงแล้ว ([supabase-cli.md](supabase-cli.md))
 - สภาพแวดล้อมทดสอบแยก: Supabase `yokyai-test` + Preview บน Vercel ที่ branch `preview-test` ใช้งานได้ (login และเห็นครูปลอมแล้ว)
 - ปุ่ม "โหมดทดสอบ" ตั้งเฉพาะ Preview/local ไม่อยู่ใน Production
-- อัปเดต LIFF SDK เป็น 2.31.2 แล้ว
+- อัปเดต LIFF SDK เป็น 2.31.2 แล้ว และทดสอบ LINE login บน Production ผ่านเมื่อ 28 ตุลาคม 2026 (log `/auth-debug` จาก browser ภายนอกและจากมือถือ: `init:done loggedIn=true`, token อายุ 3600 วินาที, ไม่มี error) ก่อนกำหนดที่ LINE จะจำกัด SDK เก่า (ราว 24 พฤศจิกายน 2026)
+- แก้รูป onboarding / FAQ ที่เคยถูกตัด ให้แสดงเต็ม (#76) ยืนยันบน Production แล้ว
 
 ## งานค้าง เรียงตามความสำคัญ
 
-1. **ทดสอบ LINE login บน Production หลังอัปเดต LIFF 2.31.2** ทั้งใน LINE และ browser ภายนอก LINE จะจำกัด SDK เวอร์ชันเก่าราว 24 พฤศจิกายน 2026 (อาจเร็วกว่า) วิธีทดสอบ: เปิด `/auth-debug` ล้าง log → login ด้วย LINE ในอีกแท็บ → รีเฟรช `/auth-debug` ผลที่ควรเห็นคือ `init:done loggedIn=false` → `login:redirect` → กลับมา `code=true` → `init:done loggedIn=true` ไม่มี error
-2. **ทดสอบบนเครื่องจริงในแอป LINE:** แถบเมนูล่างเทียบ home indicator, หน้า login ใหม่, Flex card แจ้งคำขอติดต่อ, หน้าข่าว, flow ลบรายชื่อ/ยกเลิกคำขอ
-3. **เปลี่ยนรูป cover ใน `/admin/news`:** เคยเปลี่ยนไม่ได้ สาเหตุที่แน่ชัดยังไม่พบ แก้ด้วยการย่อรูปฝั่งเบราว์เซอร์ + แสดง error + ปุ่มลบรูป ยังไม่ยืนยันว่าใช้ได้จริง ทดสอบบน Preview ได้
-4. **วิธีทดสอบส่ง Flex card:** (A) ใช้ 2 บัญชีทดสอบผ่านแอป หรือ (B) สคริปต์ที่รันเองด้วย Messaging API token ยังไม่ตัดสินใจ
-5. **จำกัดปุ่มโหมดทดสอบและ `/api/matches/dev`** ให้ใช้ได้เฉพาะ LINE user id ที่อนุญาต (เพื่อกันกรณีเผลอเปิด `NEXT_PUBLIC_DEV_TOOLS` ที่ Production) ยังไม่ตัดสินใจ
-6. **หน้า `app/dev-preview-contacts/`:** ถูก commit อยู่ใน `main` ใช้เป็นหน้า mock ตรวจ UI ต้องตัดสินว่าจะเก็บหรือลบ (หน้า `app/dev-preview-*` ต้อง type check ผ่านเสมอ ไม่งั้น build บน Vercel ล้ม)
-7. ทางเลือกที่ทำเพิ่มได้: แสดงหมวดข่าวบนหน้าแรกของแอป, `contactSummary` แยกตาม role, สร้าง LIFF app แยกสำหรับ Preview (ตอนนี้ใช้ `yokyai-local` ร่วมกับเครื่อง local ต้องสลับ Endpoint URL), ลบ branch เก่าที่ merge แล้ว
+1. **ทดสอบบนเครื่องจริงในแอป LINE:** แถบเมนูล่างเทียบ home indicator, หน้า login ใหม่, การเปิดแอปจากแชต LINE โดยตรง (log login ที่ทดสอบแล้วอาจไม่ได้มาจากแอป LINE), Flex card แจ้งคำขอติดต่อ, หน้าข่าว, flow ลบรายชื่อ/ยกเลิกคำขอ
+2. **เปลี่ยนรูป cover ใน `/admin/news`:** เคยเปลี่ยนไม่ได้ สาเหตุที่แน่ชัดยังไม่พบ แก้ด้วยการย่อรูปฝั่งเบราว์เซอร์ + แสดง error + ปุ่มลบรูป ยังไม่ยืนยันว่าใช้ได้จริง ทดสอบบน Preview ได้
+3. **วิธีทดสอบส่ง Flex card:** (A) ใช้ 2 บัญชีทดสอบผ่านแอป หรือ (B) สคริปต์ที่รันเองด้วย Messaging API token ยังไม่ตัดสินใจ
+4. **จำกัดปุ่มโหมดทดสอบและ `/api/matches/dev`** ให้ใช้ได้เฉพาะ LINE user id ที่อนุญาต (เพื่อกันกรณีเผลอเปิด `NEXT_PUBLIC_DEV_TOOLS` ที่ Production) ยังไม่ตัดสินใจ
+5. **หน้า `app/dev-preview-contacts/`:** ถูก commit อยู่ใน `main` ใช้เป็นหน้า mock ตรวจ UI ต้องตัดสินว่าจะเก็บหรือลบ (หน้า `app/dev-preview-*` ต้อง type check ผ่านเสมอ ไม่งั้น build บน Vercel ล้ม)
+6. ทางเลือกที่ทำเพิ่มได้: แสดงหมวดข่าวบนหน้าแรกของแอป, `contactSummary` แยกตาม role, สร้าง LIFF app แยกสำหรับ Preview (ตอนนี้ใช้ `yokyai-local` ร่วมกับเครื่อง local ต้องสลับ Endpoint URL), ลบ branch เก่าที่ merge แล้ว
 
 ## ข้อจำกัดที่ควรรู้
 
