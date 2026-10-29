@@ -3,7 +3,7 @@
 import { TEACHING_GROUPS } from '@/lib/teaching-groups'
 import { THAI_PROVINCES } from '@/lib/provinces'
 import { SERVICE_TYPES, type ServiceTypeCode } from '@/lib/service-types'
-import { POSITIONS, requiresTeachingGroup, type PositionCode } from '@/lib/positions'
+import { requiresTeachingGroup, selectablePositions, type PositionCode } from '@/lib/positions'
 import { districtsForProvince } from '@/lib/districts'
 import { hasZoneOptions, zonesFor } from '@/lib/education-zones'
 import { BENEFIT_NOTE_MAX_LENGTH } from '@/lib/profile-payload'
@@ -98,7 +98,7 @@ export function OriginFields({
           }}
         >
           <option value="">เลือกตำแหน่ง</option>
-          {POSITIONS.map((p) => (
+          {selectablePositions(position).map((p) => (
             <option key={p.code} value={p.code}>
               {p.nameTh}
             </option>
