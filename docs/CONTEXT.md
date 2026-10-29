@@ -9,7 +9,7 @@ The app's term for anyone using the system to request a position swap — kept a
 _Avoid_: Officer, government officer, user (as UI copy — "Teacher" is still fine for internal/code naming)
 
 **Position (ตำแหน่ง)**:
-The applicant's job classification. MVP supports 2: ครูผู้สอน (teaching staff) and นักจัดการงานทั่วไป (general administrative staff) — both are school-based civil-service roles eligible for mutual transfer, but they are different classifications with different quotas/approval paths. Only ครูผู้สอน has a Teaching Group and Subject; นักจัดการงานทั่วไป has neither. Matching requires both sides to hold the same Position.
+The applicant's job classification. MVP supports 2: ครูผู้สอน (teaching staff) and นักจัดการงานทั่วไป (general administrative staff; hidden from the registration/settings dropdown since 2026-10-29 — existing holders keep it, nobody new can pick it) — both are school-based civil-service roles eligible for mutual transfer, but they are different classifications with different quotas/approval paths. Only ครูผู้สอน has a Teaching Group and Subject; นักจัดการงานทั่วไป has neither. Matching requires both sides to hold the same Position.
 _Avoid_: Role, job title, rank
 
 **Origin (ต้นทาง)**:
