@@ -44,6 +44,7 @@ checks(migration, ok, note) as (values
   ('0031', to_regclass('public.demo_profiles') is not null and exists(select 1 from c where k='teachers.position' and is_nullable='YES'), ''),
   ('0032', exists(select 1 from c where k='news.category'), ''),
   ('0033', not exists(select 1 from news where heading is not null and btrim(heading) <> ''), 'ไม่มีข่าวที่ heading ค้างอยู่'),
+  ('0034', exists(select 1 from c where k='rounds.registration_opens_at') and exists(select 1 from c where k='rounds.registration_closes_at'), ''),
   ('0035', to_regclass('public.position_requests') is not null, '')
 )
 select migration, ok, note from checks order by migration;

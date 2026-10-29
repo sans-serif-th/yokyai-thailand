@@ -33,6 +33,15 @@ export interface RoundInput {
   label: string
   matching_opens_at: string | null
   matching_closes_at: string | null
+  // Registration period (0034); omitted = not touched / not scheduled.
+  registration_opens_at?: string | null
+  registration_closes_at?: string | null
+}
+
+function parseDate(v: unknown): Date | null | 'invalid' {
+  if (v === null || v === undefined) return null
+  const d = typeof v === 'string' ? new Date(v) : new Date(NaN)
+  return Number.isNaN(d.getTime()) ? 'invalid' : d
 }
 
 // Returns an error message, or null when valid. Dates are ISO strings or null.
@@ -51,5 +60,12 @@ export function validateRoundInput(input: RoundInput): string | null {
   const [opens, closes] = dates
   if (closes && !opens) return 'ต้องกำหนดวันเปิดจับคู่ก่อนกำหนดวันปิด'
   if (opens && closes && closes <= opens) return 'วันปิดจับคู่ต้องอยู่หลังวันเปิด'
+
+  const regOpens = parseDate(input.registration_opens_at)
+  const regCloses = parseDate(input.registration_closes_at)
+  if (regOpens === 'invalid' || regCloses === 'invalid') return 'วันที่ไม่ถูกต้อง'
+  if (regOpens && regCloses && regCloses <= regOpens) return 'วันปิดลงทะเบียนต้องอยู่หลังวันเปิดลงทะเบียน'
+  // Sign-ups should not stay open past the day results are announced.
+  if (regCloses && opens && regCloses > opens) return 'วันปิดลงทะเบียนต้องไม่เกินวันเปิดจับคู่'
   return null
 }

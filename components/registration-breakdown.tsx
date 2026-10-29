@@ -22,6 +22,16 @@ function formatNumber(n: number) {
   return n.toLocaleString('th-TH')
 }
 
+// "25 ธันวาคม 2026" — Thai month names with the Gregorian year, as in the design.
+function formatDay(iso: string) {
+  return new Date(iso).toLocaleDateString('th-TH-u-ca-gregory', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Asia/Bangkok',
+  })
+}
+
 const VISIBLE_ROWS = 15
 
 function RankedList({ title, rows }: { title: string; rows: { label: string; count: number }[] }) {
@@ -83,6 +93,16 @@ export function RegistrationBreakdownView({
   refreshing = false,
 }: RegistrationBreakdownViewProps) {
   const [tab, setTab] = useState<BreakdownTab>('origin')
+  const schedule = breakdown.schedule
+  const announceAt = schedule?.matchingOpensAt ?? null
+  const regClosesAt = schedule?.registrationClosesAt ?? null
+  // Rendered once per mount, so a stale "now" is harmless here.
+  const [now] = useState(() => Date.now())
+  const registrationNote = regClosesAt
+    ? new Date(regClosesAt).getTime() > now
+      ? `ลงทะเบียนได้ถึงวันที่ ${formatDay(regClosesAt)}`
+      : `ปิดรับลงทะเบียนแล้วเมื่อ ${formatDay(regClosesAt)}`
+    : null
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pb-6">
@@ -121,7 +141,7 @@ export function RegistrationBreakdownView({
             </span>
             <div className="flex flex-col">
               <p className="text-[14px] font-semibold leading-[21px]">{closed ? 'ปิดการจับคู่แล้ว' : 'ยังอยู่ในช่วงลงทะเบียน'}</p>
-              <p className="text-xs leading-[18px]">
+              <p className="text-[10px] leading-[15px]">
                 {closed ? (
                   <>
                     รอบนี้สิ้นสุดการจับคู่แล้ว
@@ -130,19 +150,23 @@ export function RegistrationBreakdownView({
                   </>
                 ) : (
                   <>
-                    ระบบจะเปิดให้ดูผลการจับคู่
+                    เตรียมความพร้อมสำหรับการจับคู่{roundLabel && ` รอบ ${roundLabel}`}
                     <br />
-                    เมื่อถึงเวลาที่กำหนด{roundLabel && ` (รอบ ${roundLabel})`}
+                    ตรวจสอบข้อมูลของคุณให้ถูกต้องและครบถ้วน
                   </>
                 )}
               </p>
+              {!closed && announceAt && (
+                <p className="text-[14px] font-semibold leading-[21px]">ประกาศผลการจับคู่ {formatDay(announceAt)}</p>
+              )}
             </div>
           </div>
           <p className="flex flex-col pt-3">
             <span className="text-[38px] font-medium leading-[57px] tracking-[-2px]">
               {formatNumber(breakdown.totalRegistered)}
             </span>
-            <span className="text-sm leading-[21px]">คนลงทะเบียนแล้ว</span>
+            <span className="text-[10px] leading-[15px]">คนลงทะเบียนแล้ว</span>
+            {!closed && registrationNote && <span className="text-[10px] leading-[15px]">{registrationNote}</span>}
           </p>
         </div>
       </div>

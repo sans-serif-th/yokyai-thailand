@@ -201,10 +201,18 @@ create table rounds (
   -- NULL = matching stays open until an admin sets a close time.
   matching_closes_at timestamptz,
 
+  -- Registration period (0034): when sign-ups open/close. NULL = not scheduled.
+  -- Informational — the phase logic follows the matching dates only.
+  registration_opens_at timestamptz,
+  registration_closes_at timestamptz,
+
   created_at timestamptz not null default now(),
 
   unique (category, label),
-  check (matching_closes_at is null or matching_opens_at is null or matching_closes_at > matching_opens_at)
+  check (matching_closes_at is null or matching_opens_at is null or matching_closes_at > matching_opens_at),
+  constraint rounds_registration_period_check check (
+    registration_closes_at is null or registration_opens_at is null or registration_closes_at > registration_opens_at
+  )
 );
 
 -- At most one active round per role.

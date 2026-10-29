@@ -28,14 +28,17 @@ function formatDate(iso: string | null) {
 
 interface Draft {
   label: string
+  regOpens: string
+  regCloses: string
   opens: string
   closes: string
 }
 
-const EMPTY_DRAFT: Draft = { label: '', opens: '', closes: '' }
+const EMPTY_DRAFT: Draft = { label: '', regOpens: '', regCloses: '', opens: '', closes: '' }
 
-// One role's matching rounds: which one is active now, and the open/close
-// dates of each (see lib/rounds.ts roundPhase). `onActiveChange` lets the
+// One role's rounds: which one is active now, and the registration and
+// matching open/close dates of each (see lib/rounds.ts roundPhase; the
+// registration dates are informational, shown on the app's registration card). `onActiveChange` lets the
 // dashboard show the active round's phase on its tab.
 export function RoundPanel({
   token,
@@ -106,6 +109,8 @@ export function RoundPanel({
   async function save() {
     const fields = {
       label: draft.label,
+      registration_opens_at: toIso(draft.regOpens),
+      registration_closes_at: toIso(draft.regCloses),
       matching_opens_at: toIso(draft.opens),
       matching_closes_at: toIso(draft.closes),
     }
@@ -120,7 +125,13 @@ export function RoundPanel({
     setEditing(r?.id ?? '')
     setDraft(
       r
-        ? { label: r.label, opens: toDatetimeLocal(r.matching_opens_at), closes: toDatetimeLocal(r.matching_closes_at) }
+        ? {
+            label: r.label,
+            regOpens: toDatetimeLocal(r.registration_opens_at),
+            regCloses: toDatetimeLocal(r.registration_closes_at),
+            opens: toDatetimeLocal(r.matching_opens_at),
+            closes: toDatetimeLocal(r.matching_closes_at),
+          }
         : EMPTY_DRAFT
     )
     setError(null)
@@ -139,8 +150,13 @@ export function RoundPanel({
           <>
             <h2 className="mt-1 text-lg font-bold">รอบ {active.label}</h2>
             <p className="mt-1 text-sm text-gray-600">
-              สถานะ: <span className="font-medium">{PHASE_LABEL[roundPhase(active)]}</span> · เปิด{' '}
-              {formatDate(active.matching_opens_at)} · ปิด {formatDate(active.matching_closes_at)}
+              สถานะ: <span className="font-medium">{PHASE_LABEL[roundPhase(active)]}</span>
+            </p>
+            <p className="mt-1 text-sm text-gray-600">
+              ลงทะเบียน {formatDate(active.registration_opens_at)} – {formatDate(active.registration_closes_at)}
+            </p>
+            <p className="text-sm text-gray-600">
+              จับคู่ (ประกาศผล) {formatDate(active.matching_opens_at)} – {formatDate(active.matching_closes_at)}
             </p>
           </>
         ) : (
@@ -164,10 +180,12 @@ export function RoundPanel({
           </button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[44rem] text-left text-sm">
+          <table className="w-full min-w-[60rem] text-left text-sm">
             <thead className="border-y border-gray-200 bg-gray-50 text-xs uppercase text-gray-500">
               <tr>
                 <th className="px-4 py-2">รอบ</th>
+                <th className="px-4 py-2">เปิดลงทะเบียน</th>
+                <th className="px-4 py-2">ปิดลงทะเบียน</th>
                 <th className="px-4 py-2">เปิดจับคู่</th>
                 <th className="px-4 py-2">ปิดจับคู่</th>
                 <th className="px-4 py-2">สถานะ</th>
@@ -184,6 +202,8 @@ export function RoundPanel({
                 ) : (
                   <tr key={r.id} className={r.is_active ? 'bg-blue-50/40' : undefined}>
                     <td className="px-4 py-2 font-medium">{r.label}</td>
+                    <td className="px-4 py-2">{formatDate(r.registration_opens_at)}</td>
+                    <td className="px-4 py-2">{formatDate(r.registration_closes_at)}</td>
                     <td className="px-4 py-2">{formatDate(r.matching_opens_at)}</td>
                     <td className="px-4 py-2">{formatDate(r.matching_closes_at)}</td>
                     <td className="px-4 py-2">
@@ -227,7 +247,7 @@ export function RoundPanel({
               )}
               {!loading && rounds.length === 0 && editing !== '' && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-6 text-center text-gray-500">
                     ยังไม่มีรอบของ {roleName}
                   </td>
                 </tr>
@@ -259,6 +279,12 @@ function DraftRow({
     <tr className="bg-yellow-50/50">
       <td className="px-4 py-2">
         <input className={input} placeholder="เช่น 1/2570" value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} />
+      </td>
+      <td className="px-4 py-2">
+        <input type="datetime-local" className={input} value={draft.regOpens} onChange={(e) => setDraft({ ...draft, regOpens: e.target.value })} />
+      </td>
+      <td className="px-4 py-2">
+        <input type="datetime-local" className={input} value={draft.regCloses} onChange={(e) => setDraft({ ...draft, regCloses: e.target.value })} />
       </td>
       <td className="px-4 py-2">
         <input type="datetime-local" className={input} value={draft.opens} onChange={(e) => setDraft({ ...draft, opens: e.target.value })} />

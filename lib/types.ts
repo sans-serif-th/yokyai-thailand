@@ -139,6 +139,9 @@ export interface Round {
   category: string
   matching_opens_at: string | null
   matching_closes_at: string | null
+  // Registration period (0034). Informational: shown on the registration card.
+  registration_opens_at: string | null
+  registration_closes_at: string | null
 }
 
 export type PackageCode = 'free' | 'paid'
@@ -170,4 +173,13 @@ export interface RegistrationBreakdown {
   byOriginProvince: { province: string; count: number }[]
   byDestinationProvince: { province: string; count: number }[]
   bySubject: { subject: string; count: number }[]
+  // The active round's dates, for the card text. Added by /api/registration-breakdown.
+  schedule?: RoundSchedule
+}
+
+export interface RoundSchedule {
+  registrationOpensAt: string | null
+  registrationClosesAt: string | null
+  matchingOpensAt: string | null
+  matchingClosesAt: string | null
 }

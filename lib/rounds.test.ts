@@ -36,4 +36,15 @@ describe('validateRoundInput', () => {
     expect(validateRoundInput({ ...ok, matching_closes_at: '2026-09-01T00:00:00Z' })).not.toBeNull()
     expect(validateRoundInput({ ...ok, matching_opens_at: null })).not.toBeNull()
   })
+  it('validates the registration period', () => {
+    expect(validateRoundInput({ ...ok, registration_opens_at: '2026-09-01T00:00:00Z', registration_closes_at: '2026-09-30T00:00:00Z' })).toBeNull()
+    // only a deadline is fine
+    expect(validateRoundInput({ ...ok, registration_closes_at: '2026-09-30T00:00:00Z' })).toBeNull()
+    expect(validateRoundInput({ ...ok, registration_opens_at: 'nope' })).not.toBeNull()
+    expect(validateRoundInput({ ...ok, registration_opens_at: '2026-09-30T00:00:00Z', registration_closes_at: '2026-09-01T00:00:00Z' })).not.toBeNull()
+    // closes after matching opens
+    expect(validateRoundInput({ ...ok, registration_closes_at: '2026-10-05T00:00:00Z' })).not.toBeNull()
+    // matching not scheduled yet: no upper bound to compare against
+    expect(validateRoundInput({ label: 'x', matching_opens_at: null, matching_closes_at: null, registration_closes_at: '2026-12-01T00:00:00Z' })).toBeNull()
+  })
 })
