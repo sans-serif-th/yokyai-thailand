@@ -102,6 +102,10 @@ interface MatchListProps {
   devControls?: React.ReactNode
   showSettingsLink?: boolean
   roundLabel?: string | null
+  // Replaces the round chip (the favorites page's round switch).
+  roundControl?: React.ReactNode
+  // An earlier round's list: hearts and contact buttons are inert.
+  readOnly?: boolean
   onRefresh?: () => void
   refreshing?: boolean
 }
@@ -116,6 +120,8 @@ export function MatchList({
   devControls,
   showSettingsLink = false,
   roundLabel = null,
+  roundControl,
+  readOnly = false,
   onRefresh,
   refreshing = false,
 }: MatchListProps) {
@@ -209,7 +215,7 @@ export function MatchList({
           title={title}
           right={
             <>
-              <RoundPill roundLabel={roundLabel} />
+              {roundControl ?? <RoundPill roundLabel={roundLabel} />}
               {onRefresh && <RefreshButton onClick={onRefresh} refreshing={refreshing} />}
             </>
           }
@@ -239,7 +245,7 @@ export function MatchList({
         title={title}
         right={
           <>
-            <RoundPill roundLabel={roundLabel} />
+            {roundControl ?? <RoundPill roundLabel={roundLabel} />}
             {showSettingsLink && !roundLabel && (
               <Link href="/criteria" className="text-sm link-accent">
                 ตั้งค่า
@@ -307,16 +313,22 @@ export function MatchList({
                   <span className="flex h-6 items-center rounded-lg bg-zinc-100 px-[5px] text-[10px] leading-[15px]">
                     ส่งคำขอ: {m.contact ? MAX_CONTACT_SENDS - m.contact.sendsLeft : 0}/{MAX_CONTACT_SENDS}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => toggleFavorite(m.teacher.id, m.favorited)}
-                    aria-label={m.favorited ? 'เอาออกจากรายการโปรด' : 'เพิ่มในรายการโปรด'}
-                    // 24px icon (Figma) with padding so the tap target is 40px;
-                    // the negative margin keeps the card layout unchanged.
-                    className={`-m-2 p-2 ${m.favorited ? 'text-brand-red' : 'text-foreground'}`}
-                  >
-                    <HeartIcon filled={m.favorited} className="size-6" />
-                  </button>
+                  {readOnly ? (
+                    <span className="text-brand-red">
+                      <HeartIcon filled className="size-6" />
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => toggleFavorite(m.teacher.id, m.favorited)}
+                      aria-label={m.favorited ? 'เอาออกจากรายการโปรด' : 'เพิ่มในรายการโปรด'}
+                      // 24px icon (Figma) with padding so the tap target is 40px;
+                      // the negative margin keeps the card layout unchanged.
+                      className={`-m-2 p-2 ${m.favorited ? 'text-brand-red' : 'text-foreground'}`}
+                    >
+                      <HeartIcon filled={m.favorited} className="size-6" />
+                    </button>
+                  )}
                 </div>
               </div>
               <p className="text-xs text-zinc-600">
@@ -347,7 +359,7 @@ export function MatchList({
                   {m.teacher.benefit_note}
                 </p>
               )}
-              {onRequestContact && <ContactAction match={m} onRequest={onRequestContact} onCancel={onCancelContact} />}
+              {onRequestContact && !readOnly && <ContactAction match={m} onRequest={onRequestContact} onCancel={onCancelContact} />}
             </li>
           ))}
         </ul>

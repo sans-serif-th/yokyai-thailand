@@ -225,16 +225,17 @@ create table favorites (
   teacher_id uuid not null references teachers(id) on delete cascade,
   favorited_teacher_id uuid not null references teachers(id) on delete cascade,
 
-  -- Which round was active when this favorite was (last) added — lets
-  -- future logic tell "still relevant this round" apart from "left over
-  -- from a past round". Not yet used to filter anything; see
-  -- lib/favorites.ts's addFavorite.
+  -- The round this favorite belongs to. Each round has its own list: the same
+  -- teacher can be favorited again in a later round (see 0036 and
+  -- lib/favorites.ts). Null only for legacy rows saved with no active round.
   round_id uuid references rounds(id),
 
   created_at timestamptz not null default now(),
-  unique (teacher_id, favorited_teacher_id),
   check (teacher_id != favorited_teacher_id)
 );
+
+create unique index favorites_teacher_favorited_round_key
+  on favorites (teacher_id, favorited_teacher_id, round_id);
 
 create index idx_favorites_teacher on favorites (teacher_id);
 
