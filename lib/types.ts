@@ -144,6 +144,13 @@ export interface Round {
   registration_closes_at: string | null
 }
 
+// A round that has a favorites list (see lib/favorites.ts).
+export interface FavoriteRound {
+  id: string
+  label: string
+  isActive: boolean
+}
+
 export type PackageCode = 'free' | 'paid'
 
 export interface SubscriptionStatus {

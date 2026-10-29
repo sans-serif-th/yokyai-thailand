@@ -15,8 +15,12 @@ function isValidTeacherId(body: unknown): body is { teacherId: string } {
 export async function GET(request: Request) {
   try {
     const auth = await verifyRequestAuth(request)
-    const matches = await getFavoritedMatchesFor(auth.sub)
-    return NextResponse.json({ matches: await attachContactStatus(auth.sub, matches) })
+    const roundId = new URL(request.url).searchParams.get('round')
+    const { matches, rounds, roundId: shownRoundId } = await getFavoritedMatchesFor(auth.sub, roundId)
+    const active = rounds.find((r) => r.isActive)
+    // Contact status only means something for the live round.
+    const shown = shownRoundId === active?.id ? await attachContactStatus(auth.sub, matches) : matches
+    return NextResponse.json({ matches: shown, rounds, roundId: shownRoundId })
   } catch (err) {
     if (err instanceof LineAuthError) {
       return NextResponse.json({ error: err.message }, { status: 401 })

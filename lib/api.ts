@@ -4,6 +4,7 @@ import type {
   ContactRequestView,
   ContactStatus,
   Destination,
+  FavoriteRound,
   MatchResult,
   PlatformStats,
   ProfilePayload,
@@ -142,8 +143,13 @@ export async function fetchRegistrationBreakdown(idToken: string): Promise<Regis
   return cached('breakdown', () => authedFetch('/api/registration-breakdown', idToken))
 }
 
-export async function fetchFavorites(idToken: string): Promise<{ matches: MatchResult[] }> {
-  return cached('favorites', () => authedFetch('/api/favorites', idToken))
+// `roundId` picks an earlier round's list; omitted = the active round.
+export async function fetchFavorites(
+  idToken: string,
+  roundId?: string | null
+): Promise<{ matches: MatchResult[]; rounds: FavoriteRound[]; roundId: string | null }> {
+  const query = roundId ? `?round=${encodeURIComponent(roundId)}` : ''
+  return cached(`favorites${query}`, () => authedFetch(`/api/favorites${query}`, idToken))
 }
 
 // Dev-only — see app/api/matches/dev/route.ts. 404s unless
