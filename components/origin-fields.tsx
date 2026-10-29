@@ -104,7 +104,7 @@ export function OriginFields({
             </option>
           ))}
           {onRequestPosition && (
-            <option value={REQUEST_POSITION_VALUE}>ไม่พบตำแหน่งของฉัน — ขอเพิ่มตำแหน่ง</option>
+            <option value={REQUEST_POSITION_VALUE}>ขอเพิ่มตำแหน่งใหม่</option>
           )}
         </select>
       </label>
