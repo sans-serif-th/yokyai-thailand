@@ -15,10 +15,11 @@ import { withAuthRetry } from '@/lib/session'
 import { MatchList } from '@/components/match-list'
 import { RegistrationBreakdownView } from '@/components/registration-breakdown'
 import { MAX_CONTACT_SENDS, type MatchContact } from '@/lib/types'
-import type { MatchResult, RegistrationBreakdown } from '@/lib/types'
+import type { FavoriteRound, MatchResult, RegistrationBreakdown } from '@/lib/types'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { TopBar } from '@/components/top-bar'
 import { RoundPill } from '@/components/round-pill'
+import { RoundSelect } from '@/components/round-select'
 
 type View = 'loading' | 'registration' | 'ready' | 'error'
 
@@ -30,6 +31,9 @@ export default function FavoritesPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [breakdown, setBreakdown] = useState<RegistrationBreakdown | null>(null)
   const [roundLabel, setRoundLabel] = useState<string | null>(null)
+  const [rounds, setRounds] = useState<FavoriteRound[]>([])
+  const [roundId, setRoundId] = useState<string | null>(null)
+  const [switching, setSwitching] = useState(false)
 
   useEffect(() => {
     async function bootstrap() {
@@ -47,8 +51,8 @@ export default function FavoritesPage() {
             return { state: 'registration' as const, breakdown, roundLabel: phase.roundLabel, closed: phase.phase === 'closed' }
           }
           const early = await favoritesEarly
-          const { matches } = early ?? (await fetchFavorites(token))
-          return { state: 'ready' as const, matches, roundLabel: phase.roundLabel }
+          const { matches, rounds, roundId } = early ?? (await fetchFavorites(token))
+          return { state: 'ready' as const, matches, rounds, roundId, roundLabel: phase.roundLabel }
         })
 
         if (result.state === 'onboarding') {
@@ -65,6 +69,8 @@ export default function FavoritesPage() {
         }
 
         setMatches(result.matches)
+        setRounds(result.rounds)
+        setRoundId(result.roundId)
         setRoundLabel(result.roundLabel)
         setView('ready')
       } catch (err) {
@@ -74,6 +80,32 @@ export default function FavoritesPage() {
     }
     bootstrap()
   }, [router])
+
+  const activeRoundId = rounds.find((r) => r.isActive)?.id ?? null
+  // An earlier round's list is a record: nothing on it can be changed.
+  const readOnly = roundId !== null && roundId !== activeRoundId
+
+  async function handleSelectRound(nextId: string) {
+    if (nextId === roundId) return
+    setSwitching(true)
+    try {
+      const { result } = await withAuthRetry((token) =>
+        fetchFavorites(token, nextId === activeRoundId ? null : nextId)
+      )
+      setMatches(result.matches)
+      setRounds(result.rounds)
+      setRoundId(result.roundId)
+    } catch (err) {
+      window.alert((err as Error).message)
+    } finally {
+      setSwitching(false)
+    }
+  }
+
+  const roundControl =
+    rounds.length > 1 && roundId ? (
+      <RoundSelect rounds={rounds} value={roundId} onChange={handleSelectRound} disabled={switching} />
+    ) : undefined
 
   // Every card here is already favorited — toggling always means "remove".
   async function handleToggleFavorite(teacherId: string) {
@@ -146,9 +178,11 @@ export default function FavoritesPage() {
   if (matches.length === 0) {
     return (
       <div className="mx-auto w-full max-w-lg px-4 pb-6 text-zinc-600">
-        <TopBar title="รายการโปรด" right={<RoundPill roundLabel={roundLabel} />} />
-        <p className="mt-5 text-center text-lg">ยังไม่มีรายการโปรด</p>
-        <p className="mt-1 text-center text-sm">กดรูปหัวใจที่การ์ดในหน้าค้นหา เพื่อบันทึกไว้ดูภายหลัง</p>
+        <TopBar title="รายการโปรด" right={roundControl ?? <RoundPill roundLabel={roundLabel} />} />
+        <p className="mt-5 text-center text-lg">{readOnly ? 'ไม่มีรายการโปรดในรอบนี้' : 'ยังไม่มีรายการโปรด'}</p>
+        {!readOnly && (
+          <p className="mt-1 text-center text-sm">กดรูปหัวใจที่การ์ดในหน้าค้นหา เพื่อบันทึกไว้ดูภายหลัง</p>
+        )}
       </div>
     )
   }
@@ -161,6 +195,8 @@ export default function FavoritesPage() {
       onCancelContact={handleCancelContact}
       title="รายการโปรด"
       roundLabel={roundLabel}
+      roundControl={roundControl}
+      readOnly={readOnly}
     />
   )
 }

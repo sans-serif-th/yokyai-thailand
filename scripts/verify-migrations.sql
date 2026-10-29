@@ -45,6 +45,7 @@ checks(migration, ok, note) as (values
   ('0032', exists(select 1 from c where k='news.category'), ''),
   ('0033', not exists(select 1 from news where heading is not null and btrim(heading) <> ''), 'ไม่มีข่าวที่ heading ค้างอยู่'),
   ('0034', exists(select 1 from c where k='rounds.registration_opens_at') and exists(select 1 from c where k='rounds.registration_closes_at'), ''),
-  ('0035', to_regclass('public.position_requests') is not null, '')
+  ('0035', to_regclass('public.position_requests') is not null, ''),
+  ('0036', exists(select 1 from pg_indexes where indexname='favorites_teacher_favorited_round_key') and not exists(select 1 from pg_constraint where conname='favorites_teacher_id_favorited_teacher_id_key'), '')
 )
 select migration, ok, note from checks order by migration;
