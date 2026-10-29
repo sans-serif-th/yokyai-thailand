@@ -18,6 +18,7 @@ import { upcomingTransferYears } from '@/lib/transfer-rounds'
 import { DynamicProfileForm } from './dynamic-profile-form'
 import { getRoleFields } from '@/lib/roles/field-registry'
 import { OnboardingWelcome } from './onboarding-welcome'
+import { PositionRequestForm } from './position-request-form'
 import { StepProgress } from './step-progress'
 import { SectionHeader } from './section-header'
 import { TransferFields } from './transfer-fields'
@@ -80,6 +81,8 @@ function TeacherProfileForm({
 
   // Step 1 — ข้อมูลต้นทาง
   const [position, setPosition] = useState<PositionCode | ''>(initialTeacher?.position ?? '')
+  // The "ขอเพิ่มตำแหน่ง" form is shown over the wizard, which keeps its state.
+  const [requestingPosition, setRequestingPosition] = useState(false)
   const [serviceType, setServiceType] = useState<ServiceTypeCode | ''>(
     initialTeacher?.service_type ?? ''
   )
@@ -294,6 +297,10 @@ function TeacherProfileForm({
     }
   }
 
+  if (requestingPosition) {
+    return <PositionRequestForm onBack={() => setRequestingPosition(false)} />
+  }
+
   if (step === -1) {
     return (
       <OnboardingWelcome
@@ -344,6 +351,7 @@ function TeacherProfileForm({
           onRemoveSubject={removeSubject}
           benefitNote={benefitNote}
           onBenefitNoteChange={setBenefitNote}
+          onRequestPosition={() => setRequestingPosition(true)}
         />
       )}
 

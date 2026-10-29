@@ -201,10 +201,18 @@ create table rounds (
   -- NULL = matching stays open until an admin sets a close time.
   matching_closes_at timestamptz,
 
+  -- Registration period (0034): when sign-ups open/close. NULL = not scheduled.
+  -- Informational — the phase logic follows the matching dates only.
+  registration_opens_at timestamptz,
+  registration_closes_at timestamptz,
+
   created_at timestamptz not null default now(),
 
   unique (category, label),
-  check (matching_closes_at is null or matching_opens_at is null or matching_closes_at > matching_opens_at)
+  check (matching_closes_at is null or matching_opens_at is null or matching_closes_at > matching_opens_at),
+  constraint rounds_registration_period_check check (
+    registration_closes_at is null or registration_opens_at is null or registration_closes_at > registration_opens_at
+  )
 );
 
 -- At most one active round per role.
@@ -347,3 +355,19 @@ create table if not exists admin_users (
 );
 
 alter table admin_users enable row level security;
+
+-- Requests to add a position that is missing from the registration dropdown
+-- (0035). Read by the team in the table editor; server-only (RLS default-deny).
+create table position_requests (
+  id uuid primary key default gen_random_uuid(),
+  line_user_id text not null,
+  position_name text not null,
+  transfer_round text,
+  criteria text not null,
+  contact_consent boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index position_requests_created_at_idx on position_requests (created_at desc);
+
+alter table position_requests enable row level security;

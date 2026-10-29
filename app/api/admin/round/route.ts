@@ -30,6 +30,8 @@ export async function POST(request: Request) {
     label: typeof body.label === 'string' ? body.label.trim() : '',
     matching_opens_at: body.matching_opens_at ?? null,
     matching_closes_at: body.matching_closes_at ?? null,
+    registration_opens_at: body.registration_opens_at ?? null,
+    registration_closes_at: body.registration_closes_at ?? null,
   }
   const invalid = validateRoundInput(input)
   if (invalid) return Response.json({ error: invalid }, { status: 400 })

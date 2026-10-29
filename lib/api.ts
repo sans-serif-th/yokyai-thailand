@@ -102,6 +102,16 @@ export async function saveProfile(
   return res
 }
 
+export async function submitPositionRequest(
+  idToken: string,
+  payload: { positionName: string; transferRound: string; criteria: string; contactConsent: boolean }
+): Promise<void> {
+  await authedFetch('/api/position-requests', idToken, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export async function fetchNews(idToken: string): Promise<{ news: NewsSummary[] }> {
   return cached('news', () => authedFetch('/api/news', idToken))
 }
