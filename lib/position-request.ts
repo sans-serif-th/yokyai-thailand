@@ -1,0 +1,37 @@
+// "ขอเพิ่มตำแหน่งในระบบ": the form for users whose position is missing from the
+// registration dropdown. Pure validation shared by the form and the API route.
+
+export const POSITION_NAME_MAX = 100
+export const TRANSFER_ROUND_MAX = 50
+export const CRITERIA_MAX = 2000
+
+export interface PositionRequestInput {
+  positionName: string
+  transferRound: string
+  criteria: string
+  contactConsent: boolean
+}
+
+// Returns an error message, or null when valid. Trims nothing: callers pass the
+// trimmed values from normalizePositionRequest.
+export function validatePositionRequest(input: PositionRequestInput): string | null {
+  if (!input.positionName) return 'กรุณาระบุชื่อตำแหน่ง'
+  if (input.positionName.length > POSITION_NAME_MAX) return `ชื่อตำแหน่งยาวเกิน ${POSITION_NAME_MAX} ตัวอักษร`
+  if (input.transferRound.length > TRANSFER_ROUND_MAX) return 'รอบการย้ายไม่ถูกต้อง'
+  if (!input.criteria) return 'กรุณาระบุเกณฑ์การย้าย'
+  if (input.criteria.length > CRITERIA_MAX) return `เกณฑ์การย้ายยาวเกิน ${CRITERIA_MAX} ตัวอักษร`
+  return null
+}
+
+// Coerces an untrusted JSON body into the typed shape (strings trimmed, junk
+// types become empty, consent only true when it is literally true).
+export function normalizePositionRequest(body: unknown): PositionRequestInput {
+  const b = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>
+  const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
+  return {
+    positionName: str(b.positionName),
+    transferRound: str(b.transferRound),
+    criteria: str(b.criteria),
+    contactConsent: b.contactConsent === true,
+  }
+}

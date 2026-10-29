@@ -347,3 +347,19 @@ create table if not exists admin_users (
 );
 
 alter table admin_users enable row level security;
+
+-- Requests to add a position that is missing from the registration dropdown
+-- (0035). Read by the team in the table editor; server-only (RLS default-deny).
+create table position_requests (
+  id uuid primary key default gen_random_uuid(),
+  line_user_id text not null,
+  position_name text not null,
+  transfer_round text,
+  criteria text not null,
+  contact_consent boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index position_requests_created_at_idx on position_requests (created_at desc);
+
+alter table position_requests enable row level security;
