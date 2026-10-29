@@ -44,7 +44,12 @@ interface OriginFieldsProps {
   onRemoveSubject: (index: number) => void
   benefitNote: string
   onBenefitNoteChange: (value: string) => void
+  // Registration wizard only: adds a "request a missing position" entry to
+  // the ตำแหน่ง dropdown that opens components/position-request-form.tsx.
+  onRequestPosition?: () => void
 }
+
+const REQUEST_POSITION_VALUE = '__request_position__'
 
 // Shared by the onboarding wizard's ข้อมูลต้นทาง step and the standalone
 // ตั้งค่า (search criteria) page — both edit the same matching-relevant
@@ -70,6 +75,7 @@ export function OriginFields({
   onRemoveSubject,
   benefitNote,
   onBenefitNoteChange,
+  onRequestPosition,
 }: OriginFieldsProps) {
   return (
     <>
@@ -84,7 +90,12 @@ export function OriginFields({
         <select
           className="input-field"
           value={position}
-          onChange={(e) => onPositionChange(e.target.value)}
+          onChange={(e) => {
+            // The request entry is an action, not a value: the select keeps
+            // showing the current position (it is controlled by `position`).
+            if (e.target.value === REQUEST_POSITION_VALUE) onRequestPosition?.()
+            else onPositionChange(e.target.value)
+          }}
         >
           <option value="">เลือกตำแหน่ง</option>
           {POSITIONS.map((p) => (
@@ -92,6 +103,9 @@ export function OriginFields({
               {p.nameTh}
             </option>
           ))}
+          {onRequestPosition && (
+            <option value={REQUEST_POSITION_VALUE}>ไม่พบตำแหน่งของฉัน — ขอเพิ่มตำแหน่ง</option>
+          )}
         </select>
       </label>
 
