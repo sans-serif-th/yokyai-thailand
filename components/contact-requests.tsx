@@ -111,27 +111,47 @@ const STATUS_BADGE: Record<'pending' | 'accepted' | 'declined', { label: string;
 const outlineButton =
   'flex h-8 items-center justify-center rounded-lg border border-[#d4d4d4] bg-white px-5 text-base font-bold disabled:opacity-50'
 
+// Shown once per browser as a modal (Figma 204:1805) the first time the
+// contact-requests tab is opened; "เข้าใจและยอมรับเงื่อนไข" remembers it.
 function SafetyNotice({ onDismiss }: { onDismiss: () => void }) {
   return (
-    <div className="flex flex-col gap-[5px] rounded-lg border-2 border-brand-red bg-white px-3 py-2 shadow-[0_0_0_3px_rgba(219,30,52,0.2)]">
-      <p className="text-base font-bold">โปรดทราบก่อนติดต่อคู่จับคู่</p>
-      <p className="text-xs leading-[18px]">
-        แอปโยกย้ายทำหน้าที่ช่วยจับคู่ผู้ที่สนใจย้ายตำแหน่งในเบื้องต้นเท่านั้น
-        ไม่ได้เป็นผู้ดำเนินการย้ายตำแหน่งหรือประสานงานแทนท่าน เมื่อจับคู่สำเร็จ ท่านต้องติดต่อ
-        และประสานงานกับคู่จับคู่โดยตรง นอกระบบ
-      </p>
-      <p className="text-sm font-bold leading-5">ข้อควรระวังด้านความปลอดภัย</p>
-      <p className="text-xs leading-[18px]">
-        <span className="font-bold text-[#b9162b]">
-          ในช่วงทดสอบระบบ แอปยังไม่มีระบบยืนยันตัวตนผู้ใช้งาน ณ ขณะนี้
-          โปรดตรวจสอบตัวตนของคู่จับคู่ให้แน่ใจก่อนติดต่อ หรือแลกเปลี่ยนข้อมูลสำคัญ
-        </span>{' '}
-        และหลีกเลี่ยงการเปิดเผยข้อมูลส่วนบุคคลที่มีความเสี่ยง เรามีแผนพัฒนาระบบยืนยันตัวตนเพื่อเพิ่มความน่าเชื่อถือ
-        และความปลอดภัยในการใช้งานในอนาคต
-      </p>
-      <button type="button" onClick={onDismiss} className={`${outlineButton} w-full`}>
-        เข้าใจแล้ว
-      </button>
+    <div
+      className="fixed inset-0 z-30 flex items-center justify-center bg-[rgba(23,23,23,0.5)] p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="safety-notice-title"
+    >
+      <div className="flex max-h-[calc(100dvh-32px)] w-full max-w-[346px] flex-col gap-5 overflow-y-auto rounded-[32px] bg-background px-4 py-6">
+        <div className="flex flex-col gap-[10px] py-2">
+          <div className="flex flex-col">
+            <p id="safety-notice-title" className="text-base font-semibold leading-6">
+              โปรดอ่านก่อนติดต่อคู่จับคู่
+            </p>
+            <p className="text-sm leading-5 tracking-[0.14px]">
+              แอปช่วยจับคู่ผู้ที่สนใจย้ายตำแหน่งเท่านั้น ไม่ได้ดำเนินการย้ายหรือประสานงานแทน
+              ผู้ใช้ต้องติดต่อและประสานงานกันต่อเองนอกระบบ
+            </p>
+          </div>
+          <div className="flex flex-col">
+            <p className="text-base font-semibold leading-6">ข้อควรระวังด้านความปลอดภัย</p>
+            <p className="text-sm leading-5 tracking-[0.14px]">
+              <span className="font-bold text-[#b9162b]">
+                ในช่วงทดสอบระบบ แอปยังไม่มีระบบยืนยันตัวตนผู้ใช้งาน{' '}
+              </span>
+              <span className="font-bold">
+                โปรดตรวจสอบตัวตนของคู่ให้แน่ใจก่อนติดต่อหรือแลกเปลี่ยนข้อมูลสำคัญใดๆ{' '}
+              </span>
+              และหลีกเลี่ยงการเปิดเผยข้อมูลส่วนบุคคลที่มีความเสี่ยง
+              <br />
+              <br />
+              เรามีแผนพัฒนาระบบยืนยันตัวตนเพื่อเพิ่มความน่าเชื่อถือและความปลอดภัยในการใช้งานในอนาคต
+            </p>
+          </div>
+        </div>
+        <button type="button" onClick={onDismiss} className="btn-brand-primary w-full">
+          เข้าใจและยอมรับเงื่อนไข
+        </button>
+      </div>
     </div>
   )
 }
