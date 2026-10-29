@@ -28,6 +28,10 @@ export async function PATCH(request: Request, { params }: Params) {
       body.matching_opens_at !== undefined ? body.matching_opens_at : round.matching_opens_at,
     matching_closes_at:
       body.matching_closes_at !== undefined ? body.matching_closes_at : round.matching_closes_at,
+    registration_opens_at:
+      body.registration_opens_at !== undefined ? body.registration_opens_at : round.registration_opens_at,
+    registration_closes_at:
+      body.registration_closes_at !== undefined ? body.registration_closes_at : round.registration_closes_at,
   }
   const invalid = validateRoundInput(next)
   if (invalid) return Response.json({ error: invalid }, { status: 400 })
