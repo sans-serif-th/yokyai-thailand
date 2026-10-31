@@ -372,3 +372,12 @@ create table position_requests (
 create index position_requests_created_at_idx on position_requests (created_at desc);
 
 alter table position_requests enable row level security;
+
+-- Defence in depth (0037): the browser-facing roles get no table privileges.
+-- The app reaches the database only through the service role.
+revoke all on all tables in schema public from anon, authenticated;
+revoke all on all sequences in schema public from anon, authenticated;
+revoke all on all functions in schema public from anon, authenticated;
+alter default privileges in schema public revoke all on tables from anon, authenticated;
+alter default privileges in schema public revoke all on sequences from anon, authenticated;
+alter default privileges in schema public revoke all on functions from anon, authenticated;
