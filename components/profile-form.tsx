@@ -315,8 +315,8 @@ function TeacherProfileForm({
   }
 
   return (
-    <div className="flex w-full flex-col gap-5 max-w-lg mx-auto p-4 pb-24">
-      <div className="fixed inset-x-0 top-0 z-20 bg-background">
+    <div className="flex w-full flex-col gap-5 max-w-lg mx-auto p-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
+      <div className="fixed inset-x-0 top-0 z-20 bg-background pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex max-w-lg flex-col gap-4 px-4 pb-3 pt-6">
           <h1 className="py-2 text-xl font-bold">เริ่มใช้งาน</h1>
           <StepProgress
@@ -327,7 +327,7 @@ function TeacherProfileForm({
       </div>
       {/* Spacer matching the fixed header's rendered height above, so
           content doesn't start underneath it. */}
-      <div className="h-[136px]" />
+      <div className="h-[calc(136px+env(safe-area-inset-top))]" />
 
       {step === 1 && (
         <OriginFields
@@ -474,7 +474,7 @@ function TeacherProfileForm({
       {error && <p className="text-terracotta text-sm">{error}</p>}
 
       {
-        <div className="fixed inset-x-0 bottom-0 bg-background p-4">
+        <div className="fixed inset-x-0 bottom-0 z-20 bg-background px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="mx-auto flex max-w-lg justify-between gap-3">
             <button type="button" onClick={goBack} className="btn-brand-secondary flex-1">
               ย้อนกลับ

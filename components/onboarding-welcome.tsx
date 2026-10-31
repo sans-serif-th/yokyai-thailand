@@ -84,7 +84,7 @@ export function OnboardingWelcome({ roles, onContinue }: OnboardingWelcomeProps)
   )
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-lg flex-col gap-5 px-4 py-6">
+    <div className="mx-auto flex min-h-dvh max-w-lg flex-col gap-5 px-4 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(6rem+env(safe-area-inset-bottom))]">
       <SlideIllustration index={index} />
 
       <div className="flex flex-col items-center text-center">
@@ -146,25 +146,28 @@ export function OnboardingWelcome({ roles, onContinue }: OnboardingWelcomeProps)
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        {index > 0 && (
+      {/* Pinned so the buttons stay put while the slide and lists scroll. */}
+      <div className="fixed inset-x-0 bottom-0 z-20 bg-background px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div className="mx-auto flex max-w-lg items-center gap-4">
+          {index > 0 && (
+            <button
+              type="button"
+              onClick={() => setIndex(index - 1)}
+              aria-label="ย้อนกลับ"
+              className="flex size-10 shrink-0 items-center justify-center"
+            >
+              <ArrowLeftIcon />
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => setIndex(index - 1)}
-            aria-label="ย้อนกลับ"
-            className="flex size-10 shrink-0 items-center justify-center"
+            onClick={() => (isLast ? onContinue(selected ?? undefined) : setIndex(index + 1))}
+            disabled={isLast && mustChoose && !selected}
+            className="btn-brand-primary flex-1 disabled:opacity-50"
           >
-            <ArrowLeftIcon />
+            {isLast ? 'เริ่มใช้งาน' : 'ถัดไป'}
           </button>
-        )}
-        <button
-          type="button"
-          onClick={() => (isLast ? onContinue(selected ?? undefined) : setIndex(index + 1))}
-          disabled={isLast && mustChoose && !selected}
-          className="btn-brand-primary flex-1 disabled:opacity-50"
-        >
-          {isLast ? 'เริ่มใช้งาน' : 'ถัดไป'}
-        </button>
+        </div>
       </div>
     </div>
   )

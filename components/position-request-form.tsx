@@ -13,6 +13,7 @@ import {
 import { withAuthRetry } from '@/lib/session'
 import { UserIcon } from './icons'
 import { SectionHeader } from './section-header'
+import { TopBar } from './top-bar'
 
 // "ฟอร์มขอเพิ่มตำแหน่งในระบบ" (Figma 204:2073 / 204:2156): reached from the
 // registration form's ตำแหน่ง dropdown when the user's position is missing.
@@ -58,8 +59,8 @@ export function PositionRequestForm({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col gap-5 px-4 py-6">
-      <h1 className="py-2 text-xl font-bold">ฟอร์มขอเพิ่มตำแหน่งในระบบ</h1>
+    <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col gap-5 px-4 pb-[calc(8rem+env(safe-area-inset-bottom))]">
+      <TopBar title="ฟอร์มขอเพิ่มตำแหน่งในระบบ" />
 
       <div className="flex flex-col gap-4">
         <SectionHeader
@@ -139,15 +140,18 @@ export function PositionRequestForm({ onBack }: { onBack: () => void }) {
         </label>
       </div>
 
-      <div className="mt-auto flex flex-col gap-3">
-        {error && <p className="text-sm text-terracotta">{error}</p>}
-        <div className="flex gap-4">
-          <button type="button" onClick={onBack} disabled={submitting} className="btn-brand-secondary flex-1">
-            ย้อนกลับ
-          </button>
-          <button type="button" onClick={submit} disabled={submitting} className="btn-brand-primary flex-1">
-            {submitting ? 'กำลังส่ง...' : 'ส่งฟอร์ม'}
-          </button>
+      {/* Pinned so the buttons stay put while the form scrolls. */}
+      <div className="fixed inset-x-0 bottom-0 z-20 bg-background px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div className="mx-auto flex max-w-lg flex-col gap-3">
+          {error && <p className="text-sm text-terracotta">{error}</p>}
+          <div className="flex gap-4">
+            <button type="button" onClick={onBack} disabled={submitting} className="btn-brand-secondary flex-1">
+              ย้อนกลับ
+            </button>
+            <button type="button" onClick={submit} disabled={submitting} className="btn-brand-primary flex-1">
+              {submitting ? 'กำลังส่ง...' : 'ส่งฟอร์ม'}
+            </button>
+          </div>
         </div>
       </div>
 

@@ -20,6 +20,7 @@
 - ความปลอดภัยของ DB: ทุกตาราง RLS เปิด ไม่มี policy; migration 0037 เพิกถอนสิทธิ์ `anon`/`authenticated`; test `lib/rls.test.ts` กันตารางใหม่ลืม RLS **ต้องรัน 0037 บน DB จริงก่อน merge** แล้วรัน `scripts/verify-migrations.sql` ดูแถว 0037 และ RLS
 - กันสแปม: login แอดมินจำกัดครั้งที่ลองผิด และฟอร์มขอเพิ่มตำแหน่งจำกัด 5 ครั้ง/คน/วัน (migration 0039) **ต้องรัน 0039 บน DB จริงก่อน merge** แล้ว verify
 - ฟอร์มขอเพิ่มตำแหน่ง: "กำหนดการย้ายที่ใกล้จะถึง" เป็น dropdown เดือน + ปี (พ.ศ. ปีนี้และอีก 2 ปี) เก็บใน `position_requests.transfer_round` เป็นข้อความ เช่น "มีนาคม 2570" ไม่ใช้รอบการย้ายของระบบ (ไม่มี migration)
+- แก้ตามการทดสอบบน iPhone 17 (31 ตุลาคม 2026): แถบล่าง (bottom nav, ปุ่มของ wizard/onboarding/ฟอร์มขอเพิ่มตำแหน่ง, snackbar) เว้น `env(safe-area-inset-bottom)` ไม่ทับ home indicator; ปิดการ zoom (`maximumScale: 1`, `userScalable: false`, `touch-action: manipulation`); หน้า onboarding และฟอร์มขอเพิ่มตำแหน่งตรึงหัว/ปุ่มล่างไว้ตอน scroll **ยังไม่ยืนยันบนเครื่องจริง** (desktop ไม่มี safe-area)
 - หน้า `/admin/position-requests` ดูคำขอเพิ่มตำแหน่งและกด "Mark handled" (migration 0040 คอลัมน์ `handled_at`) **ต้องรัน 0040 บน DB จริงก่อน merge** แล้ว verify
 - ตำแหน่ง `general_admin` ถูกซ่อนจาก dropdown (#82) และ option สุดท้ายของ dropdown ชื่อ "ขอเพิ่มตำแหน่งใหม่" (#83)
 - ขอเพิ่มตำแหน่ง: dropdown "ตำแหน่ง" ตอนลงทะเบียนมีตัวเลือก "ขอเพิ่มตำแหน่งใหม่" เปิดฟอร์มส่งคำขอ เก็บในตาราง `position_requests` (migration 0035, `POST /api/position-requests`) (#80)
