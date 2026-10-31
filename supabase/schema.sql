@@ -27,6 +27,20 @@ on conflict (code) do nothing;
 -- no policies is fine, same rationale as teachers/destinations below.
 alter table teaching_groups enable row level security;
 
+-- Admin-managed list of subjects (วิชาเอก) per teaching group (migration 0014).
+-- teachers.subject stays free text; this table only feeds /admin/master-data.
+create table subjects (
+  id uuid primary key default gen_random_uuid(),
+  teaching_group text not null references teaching_groups(code),
+  name_th text not null,
+  created_at timestamptz not null default now(),
+  unique (teaching_group, name_th)
+);
+
+create index idx_subjects_teaching_group on subjects (teaching_group);
+
+alter table subjects enable row level security;
+
 -- The 3 service types (administrative systems) relevant to teacher
 -- transfers. A teacher can only swap with someone in the same service
 -- type — see lib/service-types.ts (must stay in sync).
@@ -372,6 +386,18 @@ create table position_requests (
 create index position_requests_created_at_idx on position_requests (created_at desc);
 
 alter table position_requests enable row level security;
+
+-- Failed /admin logins, for throttling password guessing (0039, lib/rate-limit.ts).
+create table admin_login_attempts (
+  id uuid primary key default gen_random_uuid(),
+  username text not null,
+  ip text not null,
+  created_at timestamptz not null default now()
+);
+
+create index admin_login_attempts_ip_created_idx on admin_login_attempts (ip, created_at desc);
+
+alter table admin_login_attempts enable row level security;
 
 -- Defence in depth (0037): the browser-facing roles get no table privileges.
 -- The app reaches the database only through the service role.

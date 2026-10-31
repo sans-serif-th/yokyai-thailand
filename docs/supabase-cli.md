@@ -23,6 +23,7 @@ CLI ถูกติดตั้งเป็น devDependency (`npx supabase ...`
 - ดูสิ่งที่จะรัน: `npx supabase db push --dry-run`
 - รันจริง: `npx supabase db push` (รันเฉพาะไฟล์ที่ยังไม่เคยรัน เรียงตามเลข)
 - ลำดับ: รัน `db push` **ก่อน** merge โค้ดที่ต้องใช้โครงสร้างใหม่
+- **หลัง `db push` ทุกครั้ง ให้รัน `scripts/verify-migrations.sql`** ใน SQL editor ของโปรเจกต์นั้น (อ่านอย่างเดียว) แถวของ migration ที่เพิ่งรันและแถว `RLS` ต้องเป็น `true` ถ้าเป็น `false` อย่า merge และบอกผู้ดูแลก่อน (เคยพบ `teachers.admin_status` หายไปโดยไม่มีใครรู้)
 
 ## สถานะของแต่ละโปรเจกต์ (26 ตุลาคม 2026)
 
