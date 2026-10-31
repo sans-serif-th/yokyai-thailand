@@ -2,9 +2,15 @@
 
 import { useState } from 'react'
 import { submitPositionRequest } from '@/lib/api'
-import { CRITERIA_MAX, POSITION_NAME_MAX, validatePositionRequest } from '@/lib/position-request'
+import {
+  CRITERIA_MAX,
+  formatScheduledTransfer,
+  POSITION_NAME_MAX,
+  scheduleYearOptions,
+  THAI_MONTHS,
+  validatePositionRequest,
+} from '@/lib/position-request'
 import { withAuthRetry } from '@/lib/session'
-import { transferRoundYearOptions, upcomingTransferYears } from '@/lib/transfer-rounds'
 import { UserIcon } from './icons'
 import { SectionHeader } from './section-header'
 
@@ -14,18 +20,23 @@ import { SectionHeader } from './section-header'
 // registration form survives going back.
 export function PositionRequestForm({ onBack }: { onBack: () => void }) {
   const [positionName, setPositionName] = useState('')
-  const [roundValue, setRoundValue] = useState('')
+  const [month, setMonth] = useState('')
+  const [year, setYear] = useState('')
   const [criteria, setCriteria] = useState('')
   const [contactConsent, setContactConsent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
-  const [roundOptions] = useState(() => transferRoundYearOptions(upcomingTransferYears()))
+  const [yearOptions] = useState(() => scheduleYearOptions())
 
   async function submit() {
+    if (!month !== !year) {
+      setError('กรุณาเลือกทั้งเดือนและปีของกำหนดการย้าย')
+      return
+    }
     const payload = {
       positionName: positionName.trim(),
-      transferRound: roundOptions.find((o) => o.value === roundValue)?.label ?? '',
+      transferRound: month ? formatScheduledTransfer(Number(month), Number(year)) : '',
       criteria: criteria.trim(),
       contactConsent,
     }
@@ -68,17 +79,37 @@ export function PositionRequestForm({ onBack }: { onBack: () => void }) {
           />
         </label>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-[14px] font-semibold">รอบการย้าย</span>
-          <select className="input-field" value={roundValue} onChange={(e) => setRoundValue(e.target.value)}>
-            <option value="">เลือกรอบ / ปี</option>
-            {roundOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="flex flex-col gap-1">
+          <span className="text-[14px] font-semibold">กำหนดการย้ายที่ใกล้จะถึง</span>
+          <div className="flex gap-3">
+            <select
+              className="input-field flex-1"
+              aria-label="เดือน"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+            >
+              <option value="">เดือน</option>
+              {THAI_MONTHS.map((name, i) => (
+                <option key={name} value={i}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <select
+              className="input-field flex-1"
+              aria-label="ปี พ.ศ."
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+            >
+              <option value="">ปี</option>
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         <label className="flex flex-col gap-1">
           <span className="text-[14px] font-semibold">เกณฑ์การย้าย*</span>
