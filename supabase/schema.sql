@@ -380,6 +380,7 @@ create table position_requests (
   transfer_round text,
   criteria text not null,
   contact_consent boolean not null default false,
+  handled_at timestamptz,
   created_at timestamptz not null default now()
 );
 

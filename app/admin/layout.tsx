@@ -18,6 +18,7 @@ interface MenuRole {
 const NAV = [
   { href: '/admin/news', label: 'News' },
   { href: '/admin/master-data', label: 'Master Data' },
+  { href: '/admin/position-requests', label: 'Position Requests' },
   { href: '/admin/roles', label: 'Roles' },
   { href: '/admin/users', label: 'Admin Users' },
 ]
