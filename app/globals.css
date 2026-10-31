@@ -43,6 +43,11 @@
   --font-sans: var(--font-anuphan);
 }
 
+html {
+  /* No double-tap zoom (see viewport in app/layout.tsx). */
+  touch-action: manipulation;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

@@ -23,7 +23,7 @@ export function Snackbar({
 
   if (!message) return null
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-24 z-30 flex justify-center px-4">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-30 flex justify-center px-4">
       <p
         role="status"
         className="rounded-lg bg-foreground px-4 py-3 text-sm leading-[21px] text-white shadow-lg"
