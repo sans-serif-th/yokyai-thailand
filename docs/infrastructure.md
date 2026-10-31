@@ -128,7 +128,8 @@ flowchart TB
 - แตก branch จาก `main` เสมอ ไม่ commit ตรงเข้า `main` แล้วเปิด PR; ผู้ดูแลเป็นคนสั่ง merge
 - **รัน migration กับ DB จริงก่อน merge** โค้ดที่ใช้โครงสร้างใหม่ (`npx supabase db push --dry-run` ก่อนเสมอ) และแก้ `supabase/schema.sql` ให้ตรงกับ migration
 - ก่อน merge ต้องผ่าน `npm test`, `npm run lint` และ `npm run build` (Vercel รัน type check ทั้งโปรเจกต์ รวมไฟล์ใต้ `app/dev-preview-*`)
-- เขียน migration ใหม่ทุกครั้งให้เพิ่มแถวตรวจใน `scripts/verify-migrations.sql` ด้วย
+- เขียน migration ใหม่ทุกครั้งให้เพิ่มแถวตรวจใน `scripts/verify-migrations.sql` ด้วย และหลังรัน migration บน DB จริงให้วาง verify ใน SQL editor ดูว่าแถวใหม่และ `RLS` เป็น `true`
+- `node scripts/check-columns.mjs` (ต้องตั้ง `SUPABASE_URL` และ `SUPABASE_SERVICE_ROLE_KEY` ของโปรเจกต์ที่จะตรวจ) ตรวจว่า DB มีทุกตารางและคอลัมน์ที่ `schema.sql` ประกาศ อ่านอย่างเดียว ใช้เมื่อสงสัยว่าโครงสร้างหลุด
 - ห้าม `migration repair`, `db reset` หรือ `mark-applied` กับโปรเจกต์จริงโดยไม่ได้ตรวจร่วมกับเจ้าของ
 - ห้ามนำข้อมูลครูจริงหรือค่า secret ใส่ใน repo, PR หรือ docs
 - `NEXT_PUBLIC_DEV_TOOLS` ห้ามตั้งที่ Production (ผู้ใช้ทุกคนจะเห็นปุ่มโหมดทดสอบและเรียก `/api/matches/dev` ได้)
