@@ -79,7 +79,9 @@ flowchart TB
 ## ความปลอดภัย
 
 - Request ต้องผ่านการตรวจ LINE ID token ฝั่งเซิร์ฟเวอร์ ข้อมูลติดต่อซ่อนจนอีกฝ่ายตอบรับคำขอ
-- Service role key อยู่ฝั่งเซิร์ฟเวอร์เท่านั้น
+- Service role key อยู่ฝั่งเซิร์ฟเวอร์เท่านั้น แอปไม่ใช้ anon key เลย
+- ทุกตารางเปิด Row Level Security และไม่มี policy (default-deny) บวก migration 0037 ที่เพิกถอนสิทธิ์ตารางของ role `anon`/`authenticated` มี test (`lib/rls.test.ts`) กันตารางใหม่ลืมเปิด RLS และ `scripts/verify-migrations.sql` แถว `RLS` ใช้ตรวจ DB จริง
+- ข้อสังเกตที่ยังไม่แก้: admin token ส่งใน URL (`?token=`) อาจติดใน log หรือประวัติเบราว์เซอร์ ควรย้ายไป header
 - ตัวแปรสภาพแวดล้อมแยก Production กับ Preview
 
 ## ความเสี่ยงและงานค้าง

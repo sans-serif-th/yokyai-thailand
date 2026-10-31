@@ -47,6 +47,9 @@ checks(migration, ok, note) as (values
   ('0034', exists(select 1 from c where k='rounds.registration_opens_at') and exists(select 1 from c where k='rounds.registration_closes_at'), ''),
   ('0035', to_regclass('public.position_requests') is not null, ''),
   ('0036', exists(select 1 from pg_indexes where indexname='favorites_teacher_favorited_round_key') and not exists(select 1 from pg_constraint where conname='favorites_teacher_id_favorited_teacher_id_key'), ''),
-  ('0038', exists(select 1 from pg_attribute where attrelid='public.teachers'::regclass and attname='admin_status' and not attisdropped), 'คืนคอลัมน์ที่หายไป')
+  ('0037', not exists(select 1 from information_schema.role_table_grants where table_schema='public' and grantee in ('anon','authenticated')), 'anon/authenticated ไม่มีสิทธิ์บนตารางใน public'),
+  ('0038', exists(select 1 from pg_attribute where attrelid='public.teachers'::regclass and attname='admin_status' and not attisdropped), 'คืนคอลัมน์ที่หายไป'),
+  -- ไม่ใช่ migration: ทุกตารางใน public ต้องเปิด RLS (note ขึ้นชื่อตารางที่ปิดอยู่)
+  ('RLS', not exists(select 1 from pg_tables where schemaname='public' and not rowsecurity), coalesce((select string_agg(tablename, ', ') from pg_tables where schemaname='public' and not rowsecurity), ''))
 )
 select migration, ok, note from checks order by migration;
