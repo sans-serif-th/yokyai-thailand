@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { LineAuthError, verifyRequestAuth } from '@/lib/line-auth'
 import { normalizePositionRequest, validatePositionRequest } from '@/lib/position-request'
+import { isOverPositionRequestLimit, positionRequestsSentToday } from '@/lib/rate-limit'
 import { createServiceClient } from '@/lib/supabase-server'
 
 // A user who could not find their position in the registration dropdown asks
@@ -12,6 +13,11 @@ export async function POST(request: Request) {
     const input = normalizePositionRequest(await request.json().catch(() => null))
     const invalid = validatePositionRequest(input)
     if (invalid) return NextResponse.json({ error: invalid }, { status: 400 })
+
+    // A person has few positions to add; more than this a day is spam.
+    if (isOverPositionRequestLimit(await positionRequestsSentToday(auth.sub))) {
+      return NextResponse.json({ error: 'ส่งคำขอครบจำนวนต่อวันแล้ว กรุณาลองใหม่พรุ่งนี้' }, { status: 429 })
+    }
 
     const { error } = await createServiceClient().from('position_requests').insert({
       line_user_id: auth.sub,

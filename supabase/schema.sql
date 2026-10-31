@@ -387,6 +387,18 @@ create index position_requests_created_at_idx on position_requests (created_at d
 
 alter table position_requests enable row level security;
 
+-- Failed /admin logins, for throttling password guessing (0039, lib/rate-limit.ts).
+create table admin_login_attempts (
+  id uuid primary key default gen_random_uuid(),
+  username text not null,
+  ip text not null,
+  created_at timestamptz not null default now()
+);
+
+create index admin_login_attempts_ip_created_idx on admin_login_attempts (ip, created_at desc);
+
+alter table admin_login_attempts enable row level security;
+
 -- Defence in depth (0037): the browser-facing roles get no table privileges.
 -- The app reaches the database only through the service role.
 revoke all on all tables in schema public from anon, authenticated;
