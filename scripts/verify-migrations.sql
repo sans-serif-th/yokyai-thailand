@@ -48,8 +48,9 @@ checks(migration, ok, note) as (values
   ('0035', to_regclass('public.position_requests') is not null, ''),
   ('0036', exists(select 1 from pg_indexes where indexname='favorites_teacher_favorited_round_key') and not exists(select 1 from pg_constraint where conname='favorites_teacher_id_favorited_teacher_id_key'), ''),
   ('0037', not exists(select 1 from information_schema.role_table_grants where table_schema='public' and grantee in ('anon','authenticated')), 'anon/authenticated ไม่มีสิทธิ์บนตารางใน public'),
-  ('0038', exists(select 1 from pg_attribute where attrelid='public.teachers'::regclass and attname='admin_status' and not attisdropped), 'คืนคอลัมน์ที่หายไป'),,
-  ('0039', to_regclass('public.admin_login_attempts') is not null, '')
+  ('0038', exists(select 1 from pg_attribute where attrelid='public.teachers'::regclass and attname='admin_status' and not attisdropped), 'คืนคอลัมน์ที่หายไป'),
+  ('0039', to_regclass('public.admin_login_attempts') is not null, ''),
+  ('0040', exists(select 1 from pg_attribute where attrelid='public.position_requests'::regclass and attname='handled_at' and not attisdropped), ''),
   -- ไม่ใช่ migration: ทุกตารางใน public ต้องเปิด RLS (note ขึ้นชื่อตารางที่ปิดอยู่)
   ('RLS', not exists(select 1 from pg_tables where schemaname='public' and not rowsecurity), coalesce((select string_agg(tablename, ', ') from pg_tables where schemaname='public' and not rowsecurity), ''))
 )
