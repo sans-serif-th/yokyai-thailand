@@ -81,6 +81,7 @@ flowchart TB
 - Request ต้องผ่านการตรวจ LINE ID token ฝั่งเซิร์ฟเวอร์ ข้อมูลติดต่อซ่อนจนอีกฝ่ายตอบรับคำขอ
 - Service role key อยู่ฝั่งเซิร์ฟเวอร์เท่านั้น แอปไม่ใช้ anon key เลย
 - ทุกตารางเปิด Row Level Security และไม่มี policy (default-deny) บวก migration 0037 ที่เพิกถอนสิทธิ์ตารางของ role `anon`/`authenticated` มี test (`lib/rls.test.ts`) กันตารางใหม่ลืมเปิด RLS และ `scripts/verify-migrations.sql` แถว `RLS` ใช้ตรวจ DB จริง
+- กันสแปม (นับใน DB ไม่ใช่ในหน่วยความจำ เพราะ serverless ไม่แชร์ memory): login แอดมินลองผิด 5 ครั้งต่อ username+IP หรือ 20 ครั้งต่อ IP ใน 15 นาทีจะได้ 429 (ตาราง `admin_login_attempts`, migration 0039); ฟอร์มขอเพิ่มตำแหน่งส่งได้ 5 ครั้งต่อคนต่อวัน (`lib/rate-limit.ts`) endpoint อื่นยังไม่จำกัด
 - ข้อสังเกตที่ยังไม่แก้: admin token ส่งใน URL (`?token=`) อาจติดใน log หรือประวัติเบราว์เซอร์ ควรย้ายไป header
 - ตัวแปรสภาพแวดล้อมแยก Production กับ Preview
 

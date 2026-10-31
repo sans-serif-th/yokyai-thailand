@@ -209,6 +209,10 @@ function AdminDashboardContent() {
         body: JSON.stringify({ username, password }),
       })
 
+      if (response.status === 429) {
+        setPasswordError('ลองผิดหลายครั้งเกินไป กรุณารอ 15 นาทีแล้วลองใหม่')
+        return
+      }
       if (!response.ok) {
         setPasswordError('Invalid username or password')
         return
