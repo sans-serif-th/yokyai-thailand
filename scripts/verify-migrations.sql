@@ -25,7 +25,7 @@ checks(migration, ok, note) as (values
   ('0012', exists(select 1 from c where k='teachers.claimed_at'), ''),
   ('0013', to_regclass('public.categories') is not null and exists(select 1 from c where k='teachers.category'), ''),
   ('0014', to_regclass('public.subjects') is not null, ''),
-  ('0015', exists(select 1 from c where k='teachers.admin_status'), ''),
+  ('0015', exists(select 1 from pg_attribute where attrelid='public.teachers'::regclass and attname='admin_status' and not attisdropped), ''),
   ('0016', null, 'ตรวจตรงไม่ได้: 0017 ลบคอลัมน์ที่ 0016 เพิ่ม'),
   ('0017', exists(select 1 from c where k='rounds.matching_opens_at') and not exists(select 1 from c where k='teachers.queue_released_at'), ''),
   ('0018', exists(select 1 from c where k='favorites.round_id'), ''),
@@ -46,6 +46,7 @@ checks(migration, ok, note) as (values
   ('0033', not exists(select 1 from news where heading is not null and btrim(heading) <> ''), 'ไม่มีข่าวที่ heading ค้างอยู่'),
   ('0034', exists(select 1 from c where k='rounds.registration_opens_at') and exists(select 1 from c where k='rounds.registration_closes_at'), ''),
   ('0035', to_regclass('public.position_requests') is not null, ''),
-  ('0036', exists(select 1 from pg_indexes where indexname='favorites_teacher_favorited_round_key') and not exists(select 1 from pg_constraint where conname='favorites_teacher_id_favorited_teacher_id_key'), '')
+  ('0036', exists(select 1 from pg_indexes where indexname='favorites_teacher_favorited_round_key') and not exists(select 1 from pg_constraint where conname='favorites_teacher_id_favorited_teacher_id_key'), ''),
+  ('0038', exists(select 1 from pg_attribute where attrelid='public.teachers'::regclass and attname='admin_status' and not attisdropped), 'คืนคอลัมน์ที่หายไป')
 )
 select migration, ok, note from checks order by migration;
