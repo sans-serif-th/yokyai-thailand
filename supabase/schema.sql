@@ -27,6 +27,20 @@ on conflict (code) do nothing;
 -- no policies is fine, same rationale as teachers/destinations below.
 alter table teaching_groups enable row level security;
 
+-- Admin-managed list of subjects (วิชาเอก) per teaching group (migration 0014).
+-- teachers.subject stays free text; this table only feeds /admin/master-data.
+create table subjects (
+  id uuid primary key default gen_random_uuid(),
+  teaching_group text not null references teaching_groups(code),
+  name_th text not null,
+  created_at timestamptz not null default now(),
+  unique (teaching_group, name_th)
+);
+
+create index idx_subjects_teaching_group on subjects (teaching_group);
+
+alter table subjects enable row level security;
+
 -- The 3 service types (administrative systems) relevant to teacher
 -- transfers. A teacher can only swap with someone in the same service
 -- type — see lib/service-types.ts (must stay in sync).
